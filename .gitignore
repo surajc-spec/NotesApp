@@ -1,0 +1,22 @@
+# Node
+node_modules/
+npm-debug.log
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Build files
+dist/
+build/
+client/dist/
+
+# Server uploads
+server/uploads/
+*.pdf
+
+# IDEs and OS files
+.DS_Store
+.vscode/
+.idea/
