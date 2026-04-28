@@ -13,18 +13,25 @@ const NoteCard = ({ note, onDelete, onDownload }) => {
       await api.post(`/notes/${note._id}/download`);
       onDownload(note._id);
       
+      const isAbsolute = note.fileUrl.startsWith('http');
       const baseUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5000';
-      const fileUrl = `${baseUrl}${note.fileUrl}`;
-      const response = await fetch(fileUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = note.fileUrl.split('/').pop() || 'download';
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      const fileUrl = isAbsolute ? note.fileUrl : `${baseUrl}${note.fileUrl}`;
+      
+      if (isAbsolute) {
+        // Google Drive handles downloads in a new tab, and prevents CORS blob fetching
+        window.open(fileUrl, '_blank');
+      } else {
+        const response = await fetch(fileUrl);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = note.fileUrl.split('/').pop() || 'download';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }
     } catch (error) {
       console.error('Error downloading:', error);
       alert('Could not download file');
@@ -32,8 +39,9 @@ const NoteCard = ({ note, onDelete, onDownload }) => {
   };
 
   const handlePreview = () => {
+    const isAbsolute = note.fileUrl.startsWith('http');
     const baseUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5000';
-    window.open(`${baseUrl}${note.fileUrl}`, '_blank');
+    window.open(isAbsolute ? note.fileUrl : `${baseUrl}${note.fileUrl}`, '_blank');
   };
 
   const handleDelete = async () => {
