@@ -33,9 +33,10 @@ router.post('/upload', protect, upload.single('file'), async (req, res) => {
 // @route GET /api/notes (fetch public notes from same year + user's own private notes)
 router.get('/', protect, async (req, res) => {
   try {
-    // Find all users in the same year
+    // Find all users in the same year (case-insensitive and trimmed)
     const User = require('../models/User');
-    const usersInSameYear = await User.find({ year: req.user.year }).select('_id');
+    const yearRegex = new RegExp(`^${req.user.year.trim()}$`, 'i');
+    const usersInSameYear = await User.find({ year: yearRegex }).select('_id');
     const userIds = usersInSameYear.map(u => u._id);
 
     const notes = await Note.find({
@@ -71,7 +72,8 @@ router.get('/search', protect, async (req, res) => {
     const regex = new RegExp(q, 'i'); // case-insensitive
 
     const User = require('../models/User');
-    const usersInSameYear = await User.find({ year: req.user.year }).select('_id');
+    const yearRegex = new RegExp(`^${req.user.year.trim()}$`, 'i');
+    const usersInSameYear = await User.find({ year: yearRegex }).select('_id');
     const userIds = usersInSameYear.map(u => u._id);
 
     const notes = await Note.find({
