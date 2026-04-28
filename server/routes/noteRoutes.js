@@ -5,29 +5,34 @@ const { protect } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
 // @route POST /api/notes/upload
-router.post('/upload', protect, upload.single('file'), async (req, res) => {
-  try {
-    const { title, subject, description, isPublic } = req.body;
-    
-    if (!req.file) {
-      return res.status(400).json({ message: 'Please upload a file' });
+router.post('/upload', protect, (req, res) => {
+  upload.single('file')(req, res, async (err) => {
+    if (err) {
+      return res.status(400).json({ message: typeof err === 'string' ? err : (err.message || 'File upload error') });
     }
+    try {
+      const { title, subject, description, isPublic } = req.body;
+      
+      if (!req.file) {
+        return res.status(400).json({ message: 'Please upload a file' });
+      }
 
-    const fileUrl = `/uploads/${req.file.filename}`;
+      const fileUrl = `/uploads/${req.file.filename}`;
 
-    const note = await Note.create({
-      title,
-      subject,
-      description,
-      fileUrl,
-      uploader: req.user.id,
-      isPublic: isPublic === 'true' || isPublic === true,
-    });
+      const note = await Note.create({
+        title,
+        subject,
+        description,
+        fileUrl,
+        uploader: req.user.id,
+        isPublic: isPublic === 'true' || isPublic === true,
+      });
 
-    res.status(201).json(note);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+      res.status(201).json(note);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
 });
 
 // @route GET /api/notes (fetch public notes from same year + user's own private notes)
