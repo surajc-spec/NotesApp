@@ -13,7 +13,8 @@ const NoteCard = ({ note, onDelete, onDownload }) => {
       await api.post(`/notes/${note._id}/download`);
       onDownload(note._id);
       
-      const fileUrl = `http://localhost:5000${note.fileUrl}`;
+      const baseUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5000';
+      const fileUrl = `${baseUrl}${note.fileUrl}`;
       const response = await fetch(fileUrl);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -31,7 +32,8 @@ const NoteCard = ({ note, onDelete, onDownload }) => {
   };
 
   const handlePreview = () => {
-    window.open(`http://localhost:5000${note.fileUrl}`, '_blank');
+    const baseUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5000';
+    window.open(`${baseUrl}${note.fileUrl}`, '_blank');
   };
 
   const handleDelete = async () => {
