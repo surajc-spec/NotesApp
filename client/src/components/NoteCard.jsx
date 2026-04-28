@@ -14,7 +14,7 @@ const NoteCard = ({ note, onDelete, onDownload }) => {
       onDownload(note._id);
       
       const isAbsolute = note.fileUrl.startsWith('http');
-      const baseUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5000';
+      const baseUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'https://notesapp-x37n.onrender.com';
       const fileUrl = isAbsolute ? note.fileUrl : `${baseUrl}${note.fileUrl}`;
       
       if (isAbsolute) {
@@ -40,7 +40,7 @@ const NoteCard = ({ note, onDelete, onDownload }) => {
 
   const handlePreview = () => {
     const isAbsolute = note.fileUrl.startsWith('http');
-    const baseUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5000';
+    const baseUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'https://notesapp-x37n.onrender.com';
     window.open(isAbsolute ? note.fileUrl : `${baseUrl}${note.fileUrl}`, '_blank');
   };
 
