@@ -1,5 +1,5 @@
-const API_URL = 'https://notesapp-pbjv.onrender.com/api';
-const HOST_URL = 'https://notesapp-pbjv.onrender.com';
+const API_URL = 'https://notesapp-x37n.onrender.com/api';
+const HOST_URL = 'https://notesapp-x37n.onrender.com';
 
 const testRegistration = async (email, year) => {
   console.log(`[TEST] Registering user ${email} with year "${year}"...`);

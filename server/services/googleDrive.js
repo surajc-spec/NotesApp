@@ -1,18 +1,17 @@
 const { google } = require('googleapis');
 const fs = require('fs');
 
-const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
+const oauth2Client = new google.auth.OAuth2(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  'https://developers.google.com/oauthplayground'
+);
 
-// Use environment variables for authentication
-const auth = new google.auth.GoogleAuth({
-  credentials: {
-    client_email: process.env.GOOGLE_CLIENT_EMAIL,
-    private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'), // handle newlines correctly
-  },
-  scopes: SCOPES,
+oauth2Client.setCredentials({
+  refresh_token: process.env.GOOGLE_REFRESH_TOKEN
 });
 
-const drive = google.drive({ version: 'v3', auth });
+const drive = google.drive({ version: 'v3', auth: oauth2Client });
 
 const uploadFileToDrive = async (filePath, mimeType, originalName) => {
   try {
