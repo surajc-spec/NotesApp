@@ -136,7 +136,7 @@ const UploadNote = () => {
                     <UploadCloud size={40} className={file ? 'text-accent' : 'text-muted/50'} />
                     <div className="text-center px-4">
                         <p className="font-bold truncate max-w-xs">{file ? file.name : 'Click to select or drag & drop'}</p>
-                        <p className="text-xs opacity-70">Supports PDF, DOC, PPT, and Images (Max 50MB)</p>
+                        <p className="text-xs opacity-70">Supports PDF, DOC, PPT, and Images (Max 10MB)</p>
                     </div>
                 </div>
             </div>

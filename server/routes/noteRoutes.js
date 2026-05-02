@@ -37,16 +37,14 @@ router.post('/upload', protect, (req, res) => {
   });
 });
 
-// @route GET /api/notes (fetch notes from same year + branch + optional subject)
+// @route GET /api/notes (fetch notes grouped by subject)
 router.get('/', protect, async (req, res) => {
   try {
     const { subject } = req.query;
     
     let query = {
       $and: [
-        // Privacy: Same branch and Same year
         { branch: req.user.branch, year: req.user.year },
-        // Visibility: Either it's public OR it belongs to the logged-in user
         { $or: [{ isPublic: true }, { uploader: req.user.id }] }
       ]
     };
@@ -59,7 +57,17 @@ router.get('/', protect, async (req, res) => {
       .populate('uploader', 'name email year branch')
       .sort({ createdAt: -1 });
 
-    res.json(notes);
+    // Grouping logic
+    const groupedNotes = notes.reduce((acc, note) => {
+      const sub = note.subject || 'Uncategorized';
+      if (!acc[sub]) {
+        acc[sub] = [];
+      }
+      acc[sub].push(note);
+      return acc;
+    }, {});
+
+    res.json(groupedNotes);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
