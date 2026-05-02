@@ -11,14 +11,10 @@ cloudinary.config({
 
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: async (req, file) => {
-    const path = require('path');
-    const ext = path.extname(file.originalname).toLowerCase();
-    return {
-      folder: 'notes_app_uploads',
-      resource_type: 'raw',
-      public_id: path.basename(file.originalname, ext) + '_' + Date.now(),
-    };
+  params: {
+    folder: 'notes_app_uploads',
+    allowed_formats: ['pdf'],
+    resource_type: 'auto',
   },
 });
 
