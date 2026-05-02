@@ -26,14 +26,25 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (name, email, password, year) => {
+  const register = async (name, email, password, year, branch) => {
     try {
-      const res = await api.post('/auth/register', { name, email, password, year });
+      const res = await api.post('/auth/register', { name, email, password, year, branch });
       setUser(res.data);
       localStorage.setItem('user', JSON.stringify(res.data));
       return { success: true };
     } catch (error) {
       return { success: false, message: error.response?.data?.message || 'Registration failed' };
+    }
+  };
+
+  const updateProfile = async (year, branch) => {
+    try {
+      const res = await api.put('/auth/profile', { year, branch });
+      setUser(res.data);
+      localStorage.setItem('user', JSON.stringify(res.data));
+      return { success: true };
+    } catch (error) {
+      return { success: false, message: error.response?.data?.message || 'Update failed' };
     }
   };
 
@@ -43,7 +54,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, updateProfile, loading }}>
       {!loading && children}
     </AuthContext.Provider>
   );

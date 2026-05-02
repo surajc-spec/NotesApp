@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { LogOut, BookOpen, PlusCircle } from 'lucide-react';
+import { LogOut, BookOpen, PlusCircle, User as UserIcon } from 'lucide-react';
 import './Navbar.css';
 
 const Navbar = () => {
@@ -26,6 +26,9 @@ const Navbar = () => {
               <span className="navbar-user">Hello, {user.name}</span>
               <Link to="/notes" className="nav-link">All Notes</Link>
               <Link to="/dashboard" className="nav-link">My Notes</Link>
+              <Link to="/profile" className="nav-link">
+                <UserIcon size={18} style={{marginRight: '4px', verticalAlign: 'text-bottom'}}/> Profile
+              </Link>
               <Link to="/upload" className="btn btn-primary btn-sm">
                 <PlusCircle size={18} /> Upload
               </Link>

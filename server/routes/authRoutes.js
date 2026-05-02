@@ -11,9 +11,9 @@ const generateToken = (id) => {
 // @route POST /api/auth/register
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, year } = req.body;
+    const { name, email, password, year, branch } = req.body;
 
-    if (!name || !email || !password || !year) {
+    if (!name || !email || !password || !year || !branch) {
       return res.status(400).json({ message: 'Please add all fields' });
     }
 
@@ -29,7 +29,8 @@ router.post('/register', async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      year
+      year,
+      branch
     });
 
     if (user) {
@@ -38,6 +39,7 @@ router.post('/register', async (req, res) => {
         name: user.name,
         email: user.email,
         year: user.year,
+        branch: user.branch,
         token: generateToken(user._id)
       });
     } else {
@@ -61,11 +63,40 @@ router.post('/login', async (req, res) => {
         name: user.name,
         email: user.email,
         year: user.year,
+        branch: user.branch,
         token: generateToken(user._id)
       });
     } else {
       res.status(400).json({ message: 'Invalid credentials' });
     }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+const { protect } = require('../middleware/authMiddleware');
+
+// @route PUT /api/auth/profile
+router.put('/profile', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.year = req.body.year || user.year;
+    user.branch = req.body.branch || user.branch;
+
+    const updatedUser = await user.save();
+
+    res.json({
+      _id: updatedUser.id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      year: updatedUser.year,
+      branch: updatedUser.branch,
+      token: generateToken(updatedUser._id)
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

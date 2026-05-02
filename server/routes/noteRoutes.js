@@ -39,18 +39,19 @@ router.post('/upload', protect, (req, res) => {
 // @route GET /api/notes (fetch public notes from same year + user's own private notes)
 router.get('/', protect, async (req, res) => {
   try {
-    // Find all users in the same year (case-insensitive and trimmed)
+    // Find all users in the same year and branch (case-insensitive and trimmed)
     const User = require('../models/User');
     const yearRegex = new RegExp(`^${req.user.year.trim()}$`, 'i');
-    const usersInSameYear = await User.find({ year: yearRegex }).select('_id');
-    const userIds = usersInSameYear.map(u => u._id);
+    const branchRegex = new RegExp(`^${req.user.branch.trim()}$`, 'i');
+    const usersInSameContext = await User.find({ year: yearRegex, branch: branchRegex }).select('_id');
+    const userIds = usersInSameContext.map(u => u._id);
 
     const notes = await Note.find({
       $or: [
         { isPublic: true, uploader: { $in: userIds } },
         { uploader: req.user.id }
       ]
-    }).populate('uploader', 'name email year').sort({ createdAt: -1 });
+    }).populate('uploader', 'name email year branch').sort({ createdAt: -1 });
 
     res.json(notes);
   } catch (error) {
@@ -79,15 +80,16 @@ router.get('/search', protect, async (req, res) => {
 
     const User = require('../models/User');
     const yearRegex = new RegExp(`^${req.user.year.trim()}$`, 'i');
-    const usersInSameYear = await User.find({ year: yearRegex }).select('_id');
-    const userIds = usersInSameYear.map(u => u._id);
+    const branchRegex = new RegExp(`^${req.user.branch.trim()}$`, 'i');
+    const usersInSameContext = await User.find({ year: yearRegex, branch: branchRegex }).select('_id');
+    const userIds = usersInSameContext.map(u => u._id);
 
     const notes = await Note.find({
       $and: [
         { $or: [{ title: regex }, { subject: regex }] },
         { $or: [{ isPublic: true, uploader: { $in: userIds } }, { uploader: req.user.id }] }
       ]
-    }).populate('uploader', 'name email year').sort({ createdAt: -1 });
+    }).populate('uploader', 'name email year branch').sort({ createdAt: -1 });
 
     res.json(notes);
   } catch (error) {

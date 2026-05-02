@@ -7,7 +7,8 @@ const Register = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [year, setYear] = useState('');
+  const [year, setYear] = useState('First Year');
+  const [branch, setBranch] = useState('Computer Science');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { register } = useContext(AuthContext);
@@ -18,7 +19,7 @@ const Register = () => {
     setError('');
     setLoading(true);
     
-    const res = await register(name, email, password, year);
+    const res = await register(name, email, password, year, branch);
     if (res.success) {
       navigate('/');
     } else {
@@ -65,15 +66,33 @@ const Register = () => {
             />
           </div>
           <div className="form-group">
-            <label>Year (e.g. First Year, Second Year)</label>
-            <input 
-              type="text" 
+            <label>Year</label>
+            <select 
               className="form-control" 
               value={year} 
               onChange={(e) => setYear(e.target.value)} 
-              required 
-              placeholder="e.g. 2nd Year"
-            />
+              required
+            >
+              <option value="First Year">First Year</option>
+              <option value="Second Year">Second Year</option>
+              <option value="Third Year">Third Year</option>
+              <option value="Fourth Year">Fourth Year</option>
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Branch</label>
+            <select 
+              className="form-control" 
+              value={branch} 
+              onChange={(e) => setBranch(e.target.value)} 
+              required
+            >
+              <option value="Computer Science">Computer Science</option>
+              <option value="Information Technology">Information Technology</option>
+              <option value="Electronics">Electronics</option>
+              <option value="Mechanical">Mechanical</option>
+              <option value="Civil">Civil</option>
+            </select>
           </div>
           <button type="submit" className="btn btn-primary auth-btn" disabled={loading}>
             {loading ? 'Signing up...' : 'Sign Up'}
