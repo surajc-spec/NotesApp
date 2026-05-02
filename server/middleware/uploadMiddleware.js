@@ -13,16 +13,24 @@ const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: 'notes_app_uploads',
-    // Allowed formats for Cloudinary
-    allowed_formats: ['jpg', 'png', 'jpeg', 'pdf', 'doc', 'docx', 'ppt', 'pptx', 'csv', 'dot', 'odt'],
-    // Required to support raw files like pdf, doc, etc. alongside images
-    resource_type: 'auto',
+    resource_type: 'auto', // Cloudinary will auto-detect if it's image, video or raw (pdf/doc/csv)
   },
 });
 
 const upload = multer({
   storage: storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.pdf', '.doc', '.docx', '.ppt', '.pptx', '.csv', '.dot', '.odt'];
+    const path = require('path');
+    const ext = path.extname(file.originalname).toLowerCase();
+    
+    if (allowedExtensions.includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error(`File type ${ext} is not supported.`), false);
+    }
+  }
 });
 
 module.exports = upload;
