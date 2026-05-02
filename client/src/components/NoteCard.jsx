@@ -17,16 +17,27 @@ const NoteCard = ({ note, onDelete, onDownload }) => {
       const baseUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'https://notesapp-x37n.onrender.com';
       const fileUrl = isAbsolute ? note.fileUrl : `${baseUrl}${note.fileUrl}`;
       
-      if (isAbsolute) {
+      if (isAbsolute && !fileUrl.includes('cloudinary.com')) {
         // Google Drive handles downloads in a new tab, and prevents CORS blob fetching
         window.open(fileUrl, '_blank');
       } else {
+        // Local files and Cloudinary files (Cloudinary allows CORS)
         const response = await fetch(fileUrl);
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = note.fileUrl.split('/').pop() || 'download';
+        
+        // Extract a clean filename for download
+        let filename = 'download';
+        if (fileUrl.includes('cloudinary.com')) {
+            // Get the last part of the URL before any query params
+            filename = fileUrl.split('/').pop().split('?')[0];
+        } else {
+            filename = fileUrl.split('/').pop();
+        }
+        
+        a.download = filename;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
