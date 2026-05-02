@@ -129,14 +129,14 @@ const UploadNote = () => {
                     type="file" 
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
                     onChange={handleFileChange}
-                    accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.csv"
+                    accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.csv,.dot"
                     required
                 />
                 <div className={`w-full py-10 border-2 border-dashed rounded-[1.5rem] flex flex-col items-center justify-center gap-3 transition-all ${file ? 'bg-accent/5 border-accent text-accent' : 'bg-surface-secondary border-border hover:border-accent/50 text-muted'}`}>
                     <UploadCloud size={40} className={file ? 'text-accent' : 'text-muted/50'} />
                     <div className="text-center px-4">
                         <p className="font-bold truncate max-w-xs">{file ? file.name : 'Click to select or drag & drop'}</p>
-                        <p className="text-xs opacity-70">Supports PDF, DOC, PPT, Images and CSV (Max 10MB)</p>
+                        <p className="text-xs opacity-70">Supports PDF, DOC, PPT, CSV and DOT (Max 10MB)</p>
                     </div>
                 </div>
             </div>

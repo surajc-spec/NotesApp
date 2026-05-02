@@ -14,7 +14,7 @@ const storage = new CloudinaryStorage({
   params: {
     folder: 'notes_app_uploads',
     // Allowed formats for Cloudinary
-    allowed_formats: ['jpg', 'png', 'jpeg', 'pdf', 'doc', 'docx', 'ppt', 'pptx', 'csv'],
+    allowed_formats: ['jpg', 'png', 'jpeg', 'pdf', 'doc', 'docx', 'ppt', 'pptx', 'csv', 'dot'],
     // Required to support raw files like pdf, doc, etc. alongside images
     resource_type: 'auto',
   },
