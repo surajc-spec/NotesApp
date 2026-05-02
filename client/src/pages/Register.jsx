@@ -2,6 +2,7 @@ import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { UserPlus, Mail, Lock, User, GraduationCap, Building2, AlertCircle, Loader2 } from 'lucide-react';
+import CustomSelect from '../components/CustomSelect';
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -13,6 +14,21 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const { register } = useContext(AuthContext);
   const navigate = useNavigate();
+
+  const yearOptions = [
+    { label: 'First Year', value: 'First Year' },
+    { label: 'Second Year', value: 'Second Year' },
+    { label: 'Third Year', value: 'Third Year' },
+    { label: 'Fourth Year', value: 'Fourth Year' },
+  ];
+
+  const branchOptions = [
+    { label: 'Computer Science', value: 'Computer Science' },
+    { label: 'Information Technology', value: 'Information Technology' },
+    { label: 'Electronics', value: 'Electronics' },
+    { label: 'Mechanical', value: 'Mechanical' },
+    { label: 'Civil', value: 'Civil' },
+  ];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -95,42 +111,21 @@ const Register = () => {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-foreground ml-1">Academic Year</label>
-            <div className="relative group">
-              <select 
-                className="w-full pl-12 pr-4 py-3.5 bg-surface-secondary border border-border rounded-field focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all outline-none text-foreground appearance-none" 
-                value={year} 
-                onChange={(e) => setYear(e.target.value)} 
-                required
-              >
-                <option value="First Year">First Year</option>
-                <option value="Second Year">Second Year</option>
-                <option value="Third Year">Third Year</option>
-                <option value="Fourth Year">Fourth Year</option>
-              </select>
-              <GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-accent transition-colors" size={20} />
-            </div>
-          </div>
+          <CustomSelect 
+            label="Academic Year"
+            options={yearOptions}
+            value={year}
+            onChange={setYear}
+            icon={GraduationCap}
+          />
 
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-foreground ml-1">Department/Branch</label>
-            <div className="relative group">
-              <select 
-                className="w-full pl-12 pr-4 py-3.5 bg-surface-secondary border border-border rounded-field focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all outline-none text-foreground appearance-none" 
-                value={branch} 
-                onChange={(e) => setBranch(e.target.value)} 
-                required
-              >
-                <option value="Computer Science">Computer Science</option>
-                <option value="Information Technology">Information Technology</option>
-                <option value="Electronics">Electronics</option>
-                <option value="Mechanical">Mechanical</option>
-                <option value="Civil">Civil</option>
-              </select>
-              <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-accent transition-colors" size={20} />
-            </div>
-          </div>
+          <CustomSelect 
+            label="Department/Branch"
+            options={branchOptions}
+            value={branch}
+            onChange={setBranch}
+            icon={Building2}
+          />
 
           <button 
             type="submit" 
