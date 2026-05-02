@@ -17,13 +17,14 @@ router.post('/upload', protect, (req, res) => {
         return res.status(400).json({ message: 'Please upload a file' });
       }
 
-      // Cloudinary automatically uploads the file and returns the secure URL in req.file.path
       const fileUrl = req.file.path;
 
       const note = await Note.create({
         title,
         subject,
         description,
+        branch: req.user.branch,
+        year: req.user.year,
         fileUrl,
         uploader: req.user.id,
         isPublic: isPublic === 'true' || isPublic === true,
@@ -36,22 +37,27 @@ router.post('/upload', protect, (req, res) => {
   });
 });
 
-// @route GET /api/notes (fetch public notes from same year + user's own private notes)
+// @route GET /api/notes (fetch notes from same year + branch + optional subject)
 router.get('/', protect, async (req, res) => {
   try {
-    // Find all users in the same year and branch (case-insensitive and trimmed)
-    const User = require('../models/User');
-    const yearRegex = new RegExp(`^${req.user.year.trim()}$`, 'i');
-    const branchRegex = new RegExp(`^${req.user.branch.trim()}$`, 'i');
-    const usersInSameContext = await User.find({ year: yearRegex, branch: branchRegex }).select('_id');
-    const userIds = usersInSameContext.map(u => u._id);
-
-    const notes = await Note.find({
-      $or: [
-        { isPublic: true, uploader: { $in: userIds } },
-        { uploader: req.user.id }
+    const { subject } = req.query;
+    
+    let query = {
+      $and: [
+        // Privacy: Same branch and Same year
+        { branch: req.user.branch, year: req.user.year },
+        // Visibility: Either it's public OR it belongs to the logged-in user
+        { $or: [{ isPublic: true }, { uploader: req.user.id }] }
       ]
-    }).populate('uploader', 'name email year branch').sort({ createdAt: -1 });
+    };
+
+    if (subject && subject !== 'All') {
+      query.$and.push({ subject: new RegExp(`^${subject.trim()}$`, 'i') });
+    }
+
+    const notes = await Note.find(query)
+      .populate('uploader', 'name email year branch')
+      .sort({ createdAt: -1 });
 
     res.json(notes);
   } catch (error) {
@@ -76,18 +82,13 @@ router.get('/mine', protect, async (req, res) => {
 router.get('/search', protect, async (req, res) => {
   try {
     const { q } = req.query;
-    const regex = new RegExp(q, 'i'); // case-insensitive
-
-    const User = require('../models/User');
-    const yearRegex = new RegExp(`^${req.user.year.trim()}$`, 'i');
-    const branchRegex = new RegExp(`^${req.user.branch.trim()}$`, 'i');
-    const usersInSameContext = await User.find({ year: yearRegex, branch: branchRegex }).select('_id');
-    const userIds = usersInSameContext.map(u => u._id);
+    const regex = new RegExp(q, 'i');
 
     const notes = await Note.find({
       $and: [
-        { $or: [{ title: regex }, { subject: regex }] },
-        { $or: [{ isPublic: true, uploader: { $in: userIds } }, { uploader: req.user.id }] }
+        { branch: req.user.branch, year: req.user.year },
+        { $or: [{ isPublic: true }, { uploader: req.user.id }] },
+        { $or: [{ title: regex }, { subject: regex }, { description: regex }] }
       ]
     }).populate('uploader', 'name email year branch').sort({ createdAt: -1 });
 
@@ -106,7 +107,6 @@ router.delete('/:id', protect, async (req, res) => {
       return res.status(404).json({ message: 'Note not found' });
     }
 
-    // Ensure users can only delete their own notes
     if (note.uploader.toString() !== req.user.id) {
       return res.status(401).json({ message: 'Not authorized to delete this note' });
     }
@@ -126,8 +126,11 @@ router.post('/:id/download', protect, async (req, res) => {
       return res.status(404).json({ message: 'Note not found' });
     }
     
-    if (!note.isPublic && note.uploader.toString() !== req.user.id) {
-       return res.status(401).json({ message: 'Not authorized to access this note' });
+    // Check access
+    if (note.branch !== req.user.branch || note.year !== req.user.year) {
+        if (note.uploader.toString() !== req.user.id) {
+            return res.status(401).json({ message: 'Not authorized to access notes outside your branch/year' });
+        }
     }
 
     note.downloads += 1;

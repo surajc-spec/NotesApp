@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UploadCloud, FileText, CheckCircle2, AlertCircle, Loader2, Globe, Lock } from 'lucide-react';
+import { UploadCloud, FileText, CheckCircle2, AlertCircle, Loader2, Globe, Lock, BookOpen } from 'lucide-react';
 import api from '../services/api';
+import CustomSelect from '../components/CustomSelect';
 
 const UploadNote = () => {
   const [title, setTitle] = useState('');
-  const [subject, setSubject] = useState('');
+  const [subject, setSubject] = useState('DBMS');
   const [description, setDescription] = useState('');
   const [file, setFile] = useState(null);
   const [isPublic, setIsPublic] = useState(true);
@@ -13,6 +14,16 @@ const UploadNote = () => {
   const [error, setError] = useState('');
   
   const navigate = useNavigate();
+
+  const subjectOptions = [
+    { label: 'DBMS', value: 'DBMS' },
+    { label: 'Data Structures', value: 'Data Structures' },
+    { label: 'Operating Systems', value: 'Operating Systems' },
+    { label: 'Computer Networks', value: 'Computer Networks' },
+    { label: 'Mathematics', value: 'Mathematics' },
+    { label: 'Physics', value: 'Physics' },
+    { label: 'Other', value: 'Other' },
+  ];
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
@@ -50,16 +61,16 @@ const UploadNote = () => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto pb-20">
+    <div className="max-w-3xl mx-auto pb-20 px-4">
       <div className="text-center mb-10">
         <div className="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center text-accent mx-auto mb-6">
             <UploadCloud size={32} />
         </div>
-        <h2 className="text-4xl font-bold text-foreground">Share Your Knowledge</h2>
-        <p className="text-muted mt-2">Upload your study materials and help fellow students excel.</p>
+        <h2 className="text-3xl md:text-4xl font-bold text-foreground">Share Your Knowledge</h2>
+        <p className="text-muted mt-2 text-sm md:text-base">Upload your study materials and help fellow students excel.</p>
       </div>
 
-      <div className="bg-surface border border-border rounded-[2rem] p-8 md:p-12 shadow-2xl relative overflow-hidden">
+      <div className="bg-surface border border-border rounded-[2rem] p-6 md:p-12 shadow-2xl relative">
         {error && (
           <div className="mb-8 p-4 bg-danger/10 border border-danger/20 text-danger rounded-xl flex items-center gap-3 text-sm animate-in fade-in zoom-in duration-200">
             <AlertCircle size={18} />
@@ -67,15 +78,15 @@ const UploadNote = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-                <label className="text-sm font-bold text-foreground ml-1">Document Title</label>
+                <label className="text-sm font-bold text-foreground ml-1 text-center sm:text-left">Document Title</label>
                 <div className="relative group">
                     <input 
                     type="text" 
                     className="w-full pl-12 pr-4 py-3.5 bg-surface-secondary border border-border rounded-field focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all outline-none text-foreground" 
-                    placeholder="e.g. Advanced Calculus Unit 1"
+                    placeholder="e.g. DBMS Unit 1 Notes"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     required 
@@ -84,22 +95,13 @@ const UploadNote = () => {
                 </div>
             </div>
 
-            <div className="space-y-2">
-                <label className="text-sm font-bold text-foreground ml-1">Subject / Department</label>
-                <div className="relative group">
-                    <input 
-                    type="text" 
-                    className="w-full pl-12 pr-4 py-3.5 bg-surface-secondary border border-border rounded-field focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all outline-none text-foreground" 
-                    placeholder="e.g. Computer Science"
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                    required 
-                    />
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-accent transition-colors">
-                        <CheckCircle2 size={20} />
-                    </div>
-                </div>
-            </div>
+            <CustomSelect 
+                label="Subject Category"
+                options={subjectOptions}
+                value={subject}
+                onChange={setSubject}
+                icon={BookOpen}
+            />
           </div>
 
           <div className="space-y-2">
@@ -125,22 +127,22 @@ const UploadNote = () => {
                 />
                 <div className={`w-full py-10 border-2 border-dashed rounded-[1.5rem] flex flex-col items-center justify-center gap-3 transition-all ${file ? 'bg-accent/5 border-accent text-accent' : 'bg-surface-secondary border-border hover:border-accent/50 text-muted'}`}>
                     <UploadCloud size={40} className={file ? 'text-accent' : 'text-muted/50'} />
-                    <div className="text-center">
-                        <p className="font-bold">{file ? file.name : 'Click to select or drag & drop'}</p>
-                        <p className="text-xs opacity-70">Supports PDF, DOC, PPT, and Images (Max 10MB)</p>
+                    <div className="text-center px-4">
+                        <p className="font-bold truncate max-w-xs">{file ? file.name : 'Click to select or drag & drop'}</p>
+                        <p className="text-xs opacity-70">Supports PDF, DOC, PPT, and Images (Max 50MB)</p>
                     </div>
                 </div>
             </div>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6 p-6 bg-surface-secondary rounded-[1.5rem] border border-border">
-            <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isPublic ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}`}>
+            <div className="flex items-center gap-4 text-center sm:text-left">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${isPublic ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}`}>
                     {isPublic ? <Globe size={24} /> : <Lock size={24} />}
                 </div>
                 <div>
                     <h4 className="font-bold text-foreground">Privacy Setting</h4>
-                    <p className="text-xs text-muted">{isPublic ? 'Public: Visible to all students' : 'Private: Only visible to you'}</p>
+                    <p className="text-xs text-muted">{isPublic ? 'Public: Same Branch & Year' : 'Private: Only visible to you'}</p>
                 </div>
             </div>
             
