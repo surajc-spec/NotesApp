@@ -88,7 +88,7 @@ const Profile = () => {
 
         {/* Main Settings Form */}
         <div className="md:col-span-2">
-            <div className="bg-surface border border-border rounded-[2rem] p-8 md:p-12 shadow-2xl relative overflow-hidden">
+            <div className="bg-surface border border-border rounded-[2rem] p-8 md:p-12 shadow-2xl relative">
                 {message && (
                 <div className="mb-8 p-4 bg-success/10 border border-success/20 text-success rounded-xl flex items-center gap-3 text-sm animate-in fade-in slide-in-from-top-4 duration-300">
                     <CheckCircle size={18} />

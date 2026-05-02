@@ -48,7 +48,7 @@ const Register = () => {
     <div className="min-h-[calc(100vh-160px)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl h-[600px] bg-accent/5 blur-[120px] rounded-full -z-10" />
       
-      <div className="max-w-xl w-full bg-surface border border-border rounded-[2rem] p-8 md:p-12 shadow-2xl relative overflow-hidden">
+      <div className="max-w-xl w-full bg-surface border border-border rounded-[2rem] p-8 md:p-12 shadow-2xl relative">
         <div className="text-center mb-10">
           <div className="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center text-accent mx-auto mb-6">
             <UserPlus size={32} />
