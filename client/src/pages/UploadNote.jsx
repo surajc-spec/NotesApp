@@ -95,13 +95,20 @@ const UploadNote = () => {
                 </div>
             </div>
 
-            <CustomSelect 
-                label="Subject Category"
-                options={subjectOptions}
-                value={subject}
-                onChange={setSubject}
-                icon={BookOpen}
-            />
+            <div className="space-y-2">
+                <label className="text-sm font-bold text-foreground ml-1 text-center sm:text-left">Subject Category</label>
+                <div className="relative group">
+                    <input 
+                    type="text" 
+                    className="w-full pl-12 pr-4 py-3.5 bg-surface-secondary border border-border rounded-field focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all outline-none text-foreground" 
+                    placeholder="e.g. DBMS, Physics, etc."
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    required 
+                    />
+                    <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-accent transition-colors" size={20} />
+                </div>
+            </div>
           </div>
 
           <div className="space-y-2">
