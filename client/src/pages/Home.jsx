@@ -20,9 +20,23 @@ const Home = () => {
     setLoading(true);
     try {
       const res = await api.get(`/notes?subject=${subjectFilter}`);
-      setGroupedNotes(res.data);
+      const data = res.data;
+      
+      // Safety check: If backend returns an array, group it here
+      if (Array.isArray(data)) {
+        const grouped = data.reduce((acc, note) => {
+          const sub = note.subject || 'Uncategorized';
+          if (!acc[sub]) acc[sub] = [];
+          acc[sub].push(note);
+          return acc;
+        }, {});
+        setGroupedNotes(grouped);
+      } else {
+        setGroupedNotes(data || {});
+      }
     } catch (error) {
       console.error('Error fetching notes:', error);
+      setGroupedNotes({});
     } finally {
       setLoading(false);
     }
