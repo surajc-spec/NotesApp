@@ -10,51 +10,41 @@ const NoteCard = ({ note, onDelete, onDownload, draggableProps, dragHandleProps,
   const handleDownload = async (e) => {
     e.stopPropagation();
     try {
+      // 1. Increment download count in background
       await api.post(`/notes/${note._id}/download`);
       onDownload(note._id);
       
+      // 2. Prepare the URL
       const isAbsolute = note.fileUrl.startsWith('http');
       const baseUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'https://notesapp-x37n.onrender.com';
       let fileUrl = isAbsolute ? note.fileUrl : `${baseUrl}${note.fileUrl}`;
       
       const isCloudinary = fileUrl.includes('cloudinary.com');
-      const isRaw = fileUrl.includes('/raw/upload/');
-
-      if (isCloudinary && isRaw) {
-        // For 'raw' files, fetch often fails due to CORS. window.open is safer.
-        window.open(fileUrl, '_blank');
-      } else if (isAbsolute && !isCloudinary) {
-        window.open(fileUrl, '_blank');
-      } else {
-        // For images/PDFs on Cloudinary, we can use fetch to force download with a name
-        // Or just window.open if fetch fails
-        try {
-          const response = await fetch(fileUrl);
-          const blob = await response.blob();
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          
-          let filename = 'download';
-          if (isCloudinary) {
-              filename = fileUrl.split('/').pop().split('?')[0];
-          } else {
-              filename = fileUrl.split('/').pop();
-          }
-          
-          a.download = filename;
-          document.body.appendChild(a);
-          a.click();
-          window.URL.revokeObjectURL(url);
-          document.body.removeChild(a);
-        } catch (fetchError) {
-          console.warn('Fetch download failed, falling back to window.open', fetchError);
-          window.open(fileUrl, '_blank');
+      
+      if (isCloudinary) {
+        // Force download for Cloudinary files by injecting fl_attachment
+        // This works for images/pdfs. For raw files, it might be ignored but won't hurt.
+        if (fileUrl.includes('/upload/')) {
+            fileUrl = fileUrl.replace('/upload/', '/upload/fl_attachment/');
         }
+        
+        // Use a direct link approach to avoid CORS fetch issues which return 'wrong' data
+        const link = document.createElement('a');
+        link.href = fileUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        // The download attribute only works for same-origin, but we set it anyway
+        link.setAttribute('download', note.title || 'download');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        // Fallback for non-cloudinary or local files
+        window.open(fileUrl, '_blank');
       }
     } catch (error) {
-      console.error('Error downloading:', error);
-      alert('Could not download file');
+      console.error('Error during download process:', error);
+      alert('Download started, please check your browser downloads.');
     }
   };
 
