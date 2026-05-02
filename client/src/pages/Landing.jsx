@@ -57,20 +57,6 @@ const Landing = () => {
           )}
         </div>
 
-        {/* Stats / Proof */}
-        <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-8 w-full max-w-4xl border-t border-border/50 pt-10">
-          {[
-            { label: 'Notes Shared', value: '15k+' },
-            { label: 'Active Students', value: '50k+' },
-            { label: 'Daily Downloads', value: '2k+' },
-            { label: 'Supportive Clubs', value: '100+' },
-          ].map((stat, i) => (
-            <div key={i} className="flex flex-col">
-              <span className="text-3xl font-bold text-foreground">{stat.value}</span>
-              <span className="text-sm text-muted">{stat.label}</span>
-            </div>
-          ))}
-        </div>
       </header>
 
       {/* Features Section */}
