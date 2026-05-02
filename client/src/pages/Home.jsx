@@ -119,20 +119,22 @@ const Home = () => {
         </div>
         
         <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
-            <div className="w-full sm:w-64">
-                <CustomSelect 
-                    options={subjectOptions}
-                    value={subjectFilter}
-                    onChange={setSubjectFilter}
-                    icon={Filter}
+            <div className="w-full sm:w-64 relative group">
+                <input 
+                    type="text" 
+                    className="w-full pl-12 pr-4 py-3.5 bg-surface border border-border rounded-field focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all outline-none text-foreground placeholder:text-muted" 
+                    placeholder="Filter by Subject..." 
+                    value={subjectFilter === 'All' ? '' : subjectFilter}
+                    onChange={(e) => setSubjectFilter(e.target.value || 'All')}
                 />
+                <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-accent transition-colors" size={20} />
             </div>
 
             <form onSubmit={handleSearch} className="w-full sm:w-auto relative group">
                 <input 
                     type="text" 
                     className="w-full sm:w-[350px] pl-12 pr-4 py-3.5 bg-surface border border-border rounded-field focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all outline-none text-foreground placeholder:text-muted" 
-                    placeholder="Quick search notes..." 
+                    placeholder="Search keywords..." 
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />
