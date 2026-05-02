@@ -11,9 +11,17 @@ cloudinary.config({
 
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: {
-    folder: 'notes_app_uploads',
-    resource_type: 'auto', // Cloudinary will auto-detect if it's image, video or raw (pdf/doc/csv)
+  params: async (req, file) => {
+    const path = require('path');
+    const ext = path.extname(file.originalname).toLowerCase();
+    const isImage = ['.jpg', '.jpeg', '.png'].includes(ext);
+    
+    return {
+      folder: 'notes_app_uploads',
+      // If it's an image, use 'image', otherwise use 'raw' for docs/pdfs/csvs
+      resource_type: isImage ? 'image' : 'raw',
+      public_id: path.basename(file.originalname, ext) + '_' + Date.now(),
+    };
   },
 });
 
