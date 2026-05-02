@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UploadCloud } from 'lucide-react';
+import { UploadCloud, FileText, CheckCircle2, AlertCircle, Loader2, Globe, Lock } from 'lucide-react';
 import api from '../services/api';
-import '../components/Notes.css';
 
 const UploadNote = () => {
   const [title, setTitle] = useState('');
@@ -51,78 +50,122 @@ const UploadNote = () => {
   };
 
   return (
-    <div className="upload-container">
-      <div className="card">
-        <h2 className="mb-4 flex items-center gap-2">
-          <UploadCloud /> Upload a Note
-        </h2>
-        
-        {error && <div className="auth-error">{error}</div>}
-        
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Title</label>
-            <input 
-              type="text" 
-              className="form-control" 
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Data Structures Ch 1"
-              required 
-            />
-          </div>
+    <div className="max-w-3xl mx-auto pb-20">
+      <div className="text-center mb-10">
+        <div className="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center text-accent mx-auto mb-6">
+            <UploadCloud size={32} />
+        </div>
+        <h2 className="text-4xl font-bold text-foreground">Share Your Knowledge</h2>
+        <p className="text-muted mt-2">Upload your study materials and help fellow students excel.</p>
+      </div>
 
-          <div className="form-group">
-            <label>Subject / Category</label>
-            <input 
-              type="text" 
-              className="form-control" 
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              placeholder="e.g. Computer Science"
-              required 
-            />
+      <div className="bg-surface border border-border rounded-[2rem] p-8 md:p-12 shadow-2xl relative overflow-hidden">
+        {error && (
+          <div className="mb-8 p-4 bg-danger/10 border border-danger/20 text-danger rounded-xl flex items-center gap-3 text-sm animate-in fade-in zoom-in duration-200">
+            <AlertCircle size={18} />
+            {error}
           </div>
+        )}
 
-          <div className="form-group">
-            <label>Description</label>
-            <textarea 
-              className="form-control" 
-              rows="3"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Brief description of what this note covers..."
-              required 
-            ></textarea>
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+                <label className="text-sm font-bold text-foreground ml-1">Document Title</label>
+                <div className="relative group">
+                    <input 
+                    type="text" 
+                    className="w-full pl-12 pr-4 py-3.5 bg-surface-secondary border border-border rounded-field focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all outline-none text-foreground" 
+                    placeholder="e.g. Advanced Calculus Unit 1"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    required 
+                    />
+                    <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-accent transition-colors" size={20} />
+                </div>
+            </div>
 
-          <div className="form-group">
-            <label>File (PDF, Image, Doc)</label>
-            <div className="file-upload-wrapper">
-              <input 
-                type="file" 
-                className="file-input" 
-                onChange={handleFileChange}
-                accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png"
-                required
-              />
+            <div className="space-y-2">
+                <label className="text-sm font-bold text-foreground ml-1">Subject / Department</label>
+                <div className="relative group">
+                    <input 
+                    type="text" 
+                    className="w-full pl-12 pr-4 py-3.5 bg-surface-secondary border border-border rounded-field focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all outline-none text-foreground" 
+                    placeholder="e.g. Computer Science"
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    required 
+                    />
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-accent transition-colors">
+                        <CheckCircle2 size={20} />
+                    </div>
+                </div>
             </div>
           </div>
 
-          <div className="checkbox-group">
-            <input 
-              type="checkbox" 
-              id="isPublic"
-              checked={isPublic}
-              onChange={(e) => setIsPublic(e.target.checked)}
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-foreground ml-1">Description</label>
+            <textarea 
+              className="w-full px-5 py-4 bg-surface-secondary border border-border rounded-[1.5rem] focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all outline-none text-foreground min-h-[120px]" 
+              placeholder="What topics does this note cover? Any specific instructions?"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              required 
             />
-            <label htmlFor="isPublic" style={{ margin: 0, fontWeight: 500 }}>
-              Make this note public (visible to everyone)
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-foreground ml-1">Select File</label>
+            <div className="relative group cursor-pointer">
+                <input 
+                    type="file" 
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                    onChange={handleFileChange}
+                    accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png"
+                    required
+                />
+                <div className={`w-full py-10 border-2 border-dashed rounded-[1.5rem] flex flex-col items-center justify-center gap-3 transition-all ${file ? 'bg-accent/5 border-accent text-accent' : 'bg-surface-secondary border-border hover:border-accent/50 text-muted'}`}>
+                    <UploadCloud size={40} className={file ? 'text-accent' : 'text-muted/50'} />
+                    <div className="text-center">
+                        <p className="font-bold">{file ? file.name : 'Click to select or drag & drop'}</p>
+                        <p className="text-xs opacity-70">Supports PDF, DOC, PPT, and Images (Max 10MB)</p>
+                    </div>
+                </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6 p-6 bg-surface-secondary rounded-[1.5rem] border border-border">
+            <div className="flex items-center gap-4">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isPublic ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}`}>
+                    {isPublic ? <Globe size={24} /> : <Lock size={24} />}
+                </div>
+                <div>
+                    <h4 className="font-bold text-foreground">Privacy Setting</h4>
+                    <p className="text-xs text-muted">{isPublic ? 'Public: Visible to all students' : 'Private: Only visible to you'}</p>
+                </div>
+            </div>
+            
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input 
+                type="checkbox" 
+                className="sr-only peer"
+                checked={isPublic}
+                onChange={(e) => setIsPublic(e.target.checked)}
+              />
+              <div className="w-14 h-7 bg-muted/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-accent"></div>
             </label>
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading}>
-            {loading ? 'Uploading...' : 'Upload Note'}
+          <button 
+            type="submit" 
+            className="w-full py-4 bg-accent text-accent-foreground rounded-field font-bold text-lg hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-accent/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            disabled={loading}
+          >
+            {loading ? (
+                <>
+                    <Loader2 className="animate-spin" size={24} />
+                    Uploading Note...
+                </>
+            ) : 'Publish Note'}
           </button>
         </form>
       </div>
