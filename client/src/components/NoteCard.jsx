@@ -15,29 +15,42 @@ const NoteCard = ({ note, onDelete, onDownload, draggableProps, dragHandleProps,
       
       const isAbsolute = note.fileUrl.startsWith('http');
       const baseUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'https://notesapp-x37n.onrender.com';
-      const fileUrl = isAbsolute ? note.fileUrl : `${baseUrl}${note.fileUrl}`;
+      let fileUrl = isAbsolute ? note.fileUrl : `${baseUrl}${note.fileUrl}`;
       
-      if (isAbsolute && !fileUrl.includes('cloudinary.com')) {
+      const isCloudinary = fileUrl.includes('cloudinary.com');
+      const isRaw = fileUrl.includes('/raw/upload/');
+
+      if (isCloudinary && isRaw) {
+        // For 'raw' files, fetch often fails due to CORS. window.open is safer.
+        window.open(fileUrl, '_blank');
+      } else if (isAbsolute && !isCloudinary) {
         window.open(fileUrl, '_blank');
       } else {
-        const response = await fetch(fileUrl);
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        
-        let filename = 'download';
-        if (fileUrl.includes('cloudinary.com')) {
-            filename = fileUrl.split('/').pop().split('?')[0];
-        } else {
-            filename = fileUrl.split('/').pop();
+        // For images/PDFs on Cloudinary, we can use fetch to force download with a name
+        // Or just window.open if fetch fails
+        try {
+          const response = await fetch(fileUrl);
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          
+          let filename = 'download';
+          if (isCloudinary) {
+              filename = fileUrl.split('/').pop().split('?')[0];
+          } else {
+              filename = fileUrl.split('/').pop();
+          }
+          
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        } catch (fetchError) {
+          console.warn('Fetch download failed, falling back to window.open', fetchError);
+          window.open(fileUrl, '_blank');
         }
-        
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
       }
     } catch (error) {
       console.error('Error downloading:', error);
