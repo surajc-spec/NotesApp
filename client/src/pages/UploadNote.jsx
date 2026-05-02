@@ -6,7 +6,7 @@ import CustomSelect from '../components/CustomSelect';
 
 const UploadNote = () => {
   const [title, setTitle] = useState('');
-  const [subject, setSubject] = useState('DBMS');
+  const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
   const [file, setFile] = useState(null);
   const [isPublic, setIsPublic] = useState(true);
