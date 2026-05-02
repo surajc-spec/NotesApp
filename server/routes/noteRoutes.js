@@ -3,8 +3,6 @@ const router = express.Router();
 const Note = require('../models/Note');
 const { protect } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
-const { uploadFileToDrive } = require('../services/googleDrive');
-const fs = require('fs');
 
 // @route POST /api/notes/upload
 router.post('/upload', protect, (req, res) => {
@@ -19,18 +17,8 @@ router.post('/upload', protect, (req, res) => {
         return res.status(400).json({ message: 'Please upload a file' });
       }
 
-      // Upload the local file to Google Drive
-      const driveFile = await uploadFileToDrive(
-        req.file.path,
-        req.file.mimetype,
-        req.file.originalname
-      );
-
-      // We will use the webViewLink for previewing and downloading
-      const fileUrl = driveFile.webViewLink;
-
-      // Delete the temporary file from Render's local disk
-      fs.unlinkSync(req.file.path);
+      // Cloudinary automatically uploads the file and returns the secure URL in req.file.path
+      const fileUrl = req.file.path;
 
       const note = await Note.create({
         title,
