@@ -3,16 +3,6 @@ const router = express.Router();
 const Note = require('../models/Note');
 const { protect } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
-const {
-  canAccessNote,
-  createViewToken,
-  getConvertedPagePath,
-  getPdfPageCount,
-  getSourcePdfPath,
-  renderWatermarkedPage,
-  toSafeNote,
-  verifyViewToken,
-} = require('../services/secureNoteViewer');
 
 // @route POST /api/notes/upload
 router.post('/upload', protect, (req, res) => {
@@ -40,8 +30,7 @@ router.post('/upload', protect, (req, res) => {
         isPublic: isPublic === 'true' || isPublic === true,
       });
 
-      const populatedNote = await note.populate('uploader', 'name email year branch');
-      res.status(201).json(toSafeNote(populatedNote));
+      res.status(201).json(note);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
@@ -74,7 +63,7 @@ router.get('/', protect, async (req, res) => {
       if (!acc[sub]) {
         acc[sub] = [];
       }
-      acc[sub].push(toSafeNote(note));
+      acc[sub].push(note);
       return acc;
     }, {});
 
@@ -91,7 +80,7 @@ router.get('/mine', protect, async (req, res) => {
       .populate('uploader', 'name email')
       .sort({ createdAt: -1 });
 
-    res.json(notes.map(toSafeNote));
+    res.json(notes);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -111,88 +100,9 @@ router.get('/search', protect, async (req, res) => {
       ]
     }).populate('uploader', 'name email year branch').sort({ createdAt: -1 });
 
-    res.json(notes.map(toSafeNote));
+    res.json(notes);
   } catch (error) {
     res.status(500).json({ message: error.message });
-  }
-});
-
-// @route GET /api/notes/secure-view/:id (secure reader metadata)
-router.get('/secure-view/:id', protect, async (req, res) => {
-  try {
-    const note = await Note.findById(req.params.id).populate('uploader', 'name email year branch');
-
-    if (!note) {
-      return res.status(404).json({ message: 'Note not found' });
-    }
-
-    if (!canAccessNote(note, req.user)) {
-      return res.status(403).json({ message: 'Not authorized to view this note' });
-    }
-
-    const sourcePdfPath = await getSourcePdfPath(note);
-    const pageCount = await getPdfPageCount(sourcePdfPath);
-    const viewToken = createViewToken(note, req.user);
-
-    res.set({
-      'Cache-Control': 'no-store, private',
-      Pragma: 'no-cache',
-      'X-Content-Type-Options': 'nosniff',
-    });
-
-    res.json({
-      note: toSafeNote(note),
-      pageCount,
-      viewToken,
-      expiresIn: '5 minutes',
-      pageEndpoint: `/api/notes/secure-view/${note._id}/page/:page`,
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// @route GET /api/notes/secure-view/:id/page/:page (watermarked page image)
-router.get('/secure-view/:id/page/:page', protect, async (req, res) => {
-  try {
-    const note = await Note.findById(req.params.id);
-    const page = Number(req.params.page);
-
-    if (!note) {
-      return res.status(404).json({ message: 'Note not found' });
-    }
-
-    if (!Number.isInteger(page) || page < 1) {
-      return res.status(400).json({ message: 'Invalid page number' });
-    }
-
-    if (!canAccessNote(note, req.user)) {
-      return res.status(403).json({ message: 'Not authorized to view this note' });
-    }
-
-    verifyViewToken(req.get('X-Secure-View-Token') || req.query.token, note._id, req.user);
-
-    const sourcePdfPath = await getSourcePdfPath(note);
-    const pageCount = await getPdfPageCount(sourcePdfPath);
-    if (page > pageCount) {
-      return res.status(404).json({ message: 'Page not found' });
-    }
-
-    const convertedPagePath = await getConvertedPagePath(note, sourcePdfPath, page);
-    const watermarkedPage = await renderWatermarkedPage(convertedPagePath, req.user);
-
-    res.set({
-      'Content-Type': 'image/png',
-      'Cache-Control': 'no-store, private',
-      Pragma: 'no-cache',
-      'X-Content-Type-Options': 'nosniff',
-      'Content-Disposition': `inline; filename="note-${note._id}-page-${page}.png"`,
-    });
-
-    res.send(watermarkedPage);
-  } catch (error) {
-    const status = /token/i.test(error.message) ? 401 : 500;
-    res.status(status).json({ message: error.message });
   }
 });
 

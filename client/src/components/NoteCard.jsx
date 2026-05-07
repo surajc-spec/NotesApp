@@ -1,17 +1,58 @@
-import { useContext } from 'react';
-import { Trash2, Globe, Lock, Clock, Eye, User, FileText, ShieldCheck } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import React, { useContext } from 'react';
+import { Download, Trash2, Globe, Lock, Clock, Eye, User, FileText } from 'lucide-react';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 
-const NoteCard = ({ note, onDelete, draggableProps, dragHandleProps, innerRef }) => {
+const NoteCard = ({ note, onDelete, onDownload, draggableProps, dragHandleProps, innerRef }) => {
   const { user } = useContext(AuthContext);
-  const navigate = useNavigate();
   const isOwner = user && note.uploader && note.uploader._id === user._id;
+
+  const handleDownload = async (e) => {
+    e.stopPropagation();
+    try {
+      // 1. Increment download count in background
+      await api.post(`/notes/${note._id}/download`);
+      onDownload(note._id);
+      
+      // 2. Prepare the URL
+      const isAbsolute = note.fileUrl.startsWith('http');
+      const baseUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'https://notesapp-x37n.onrender.com';
+      let fileUrl = isAbsolute ? note.fileUrl : `${baseUrl}${note.fileUrl}`;
+      
+      const isCloudinary = fileUrl.includes('cloudinary.com');
+      
+      if (isCloudinary) {
+        // Force download for Cloudinary files by injecting fl_attachment
+        // This works for images/pdfs. For raw files, it might be ignored but won't hurt.
+        if (fileUrl.includes('/upload/')) {
+            fileUrl = fileUrl.replace('/upload/', '/upload/fl_attachment/');
+        }
+        
+        // Use a direct link approach to avoid CORS fetch issues which return 'wrong' data
+        const link = document.createElement('a');
+        link.href = fileUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        // The download attribute only works for same-origin, but we set it anyway
+        link.setAttribute('download', note.title || 'download');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        // Fallback for non-cloudinary or local files
+        window.open(fileUrl, '_blank');
+      }
+    } catch (error) {
+      console.error('Error during download process:', error);
+      alert('Download started, please check your browser downloads.');
+    }
+  };
 
   const handlePreview = (e) => {
     e.stopPropagation();
-    navigate(`/notes/${note.noteId || note._id}/read`);
+    const isAbsolute = note.fileUrl.startsWith('http');
+    const baseUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'https://notesapp-x37n.onrender.com';
+    window.open(isAbsolute ? note.fileUrl : `${baseUrl}${note.fileUrl}`, '_blank');
   };
 
   const handleDelete = async (e) => {
@@ -79,9 +120,9 @@ const NoteCard = ({ note, onDelete, draggableProps, dragHandleProps, innerRef })
         </div>
 
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-accent font-bold">
-            <ShieldCheck size={14} />
-            <span className="text-sm">Secure preview</span>
+          <div className="flex items-center gap-1 text-accent font-bold">
+            <Download size={14} />
+            <span className="text-sm">{note.downloads}</span>
           </div>
           
           <div className="flex items-center gap-2">
@@ -91,6 +132,13 @@ const NoteCard = ({ note, onDelete, draggableProps, dragHandleProps, innerRef })
                 title="Preview"
             >
               <Eye size={16} />
+            </button>
+            <button 
+                onClick={handleDownload} 
+                className="p-2 bg-accent text-accent-foreground rounded-lg hover:scale-110 transition-all duration-200 shadow-lg shadow-accent/20"
+                title="Download"
+            >
+              <Download size={16} />
             </button>
             {isOwner && (
               <button 

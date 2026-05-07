@@ -1,4 +1,5 @@
 const API_URL = 'https://notesapp-x37n.onrender.com/api';
+const HOST_URL = 'https://notesapp-x37n.onrender.com';
 
 const testRegistration = async (email, year) => {
   console.log(`[TEST] Registering user ${email} with year "${year}"...`);
@@ -90,26 +91,21 @@ const testSearch = async (token, query, expectedTitle) => {
   }
 };
 
-const testSecurePreview = async (token, note) => {
-  console.log(`[TEST] Testing secure document preview...`);
-  if (note.fileUrl) throw new Error('Raw file URL leaked in note response.');
-
-  const metadataRes = await fetch(`${API_URL}/notes/secure-view/${note.noteId || note._id}`, {
+const testPreviewAndDownload = async (token, note) => {
+  console.log(`[TEST] Testing document Preview...`);
+  const fileUrl = `${HOST_URL}${note.fileUrl}`;
+  const previewRes = await fetch(fileUrl);
+  if (!previewRes.ok) throw new Error('Could not fetch the physical file for preview.');
+  console.log(`[OK] Document preview is accessible (Status: ${previewRes.status}).`);
+  
+  console.log(`[TEST] Testing document Download route...`);
+  const downloadRes = await fetch(`${API_URL}/notes/${note._id}/download`, {
+    method: 'POST',
     headers: { 'Authorization': `Bearer ${token}` }
   });
-  if (!metadataRes.ok) throw new Error('Secure preview metadata route failed.');
-
-  const metadata = await metadataRes.json();
-  if (!metadata.viewToken || !metadata.pageCount) throw new Error('Secure preview metadata is incomplete.');
-
-  const pageRes = await fetch(`${API_URL}/notes/secure-view/${note.noteId || note._id}/page/1`, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'X-Secure-View-Token': metadata.viewToken,
-    }
-  });
-  if (!pageRes.ok) throw new Error('Secure page image route failed.');
-  console.log(`[OK] Secure preview returned a protected page image.`);
+  if (!downloadRes.ok) throw new Error('Download API route failed.');
+  const data = await downloadRes.json();
+  console.log(`[OK] Document download registered! Total downloads: ${data.downloads}`);
 };
 
 const runFullTest = async () => {
@@ -122,7 +118,7 @@ const runFullTest = async () => {
     await testHomeFeed(token1, 'API E2E Test Note');
     await testDashboard(token1, 'API E2E Test Note');
     await testSearch(token1, 'E2E', 'API E2E Test Note');
-    await testSecurePreview(token1, note);
+    await testPreviewAndDownload(token1, note);
     
     console.log('\n[TEST] Logging in as a second user with different case year...');
     const token2 = await testRegistration(`test2_${timestamp}@test.com`, ' final year ');
