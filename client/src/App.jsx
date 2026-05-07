@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -9,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import UploadNote from './pages/UploadNote';
 import Landing from './pages/Landing';
 import Profile from './pages/Profile';
+import SecureNoteReader from './pages/SecureNoteReader';
 
 function App() {
   return (
@@ -21,6 +21,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/notes" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+            <Route path="/notes/:id/read" element={<ProtectedRoute><SecureNoteReader /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/upload" element={<ProtectedRoute><UploadNote /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />

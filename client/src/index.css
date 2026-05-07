@@ -1,6 +1,6 @@
-@import "tailwindcss";
-
 @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap');
+
+@import "tailwindcss";
 
 @theme {
   --font-sans: "Fredoka", ui-sans-serif, system-ui, sans-serif;
@@ -138,4 +138,15 @@
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
   @apply bg-accent/40 rounded-full hover:bg-accent/60 transition-colors;
+}
+
+.secure-reader,
+.secure-reader * {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.secure-reader img {
+  -webkit-user-drag: none;
+  pointer-events: auto;
 }
