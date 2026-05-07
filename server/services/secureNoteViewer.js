@@ -6,6 +6,7 @@ const https = require('https');
 const path = require('path');
 const jwt = require('jsonwebtoken');
 const { PDFDocument } = require('pdf-lib');
+const pdfPoppler = require('pdf-poppler');
 const sharp = require('sharp');
 
 const CACHE_ROOT = path.join(__dirname, '..', '.secure-cache');
@@ -27,30 +28,6 @@ const escapeXml = (value = '') =>
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&apos;');
-
-const isCloudinaryPdf = (fileUrl = '') => /^https?:\/\/res\.cloudinary\.com\//i.test(fileUrl);
-
-const getPdfPoppler = () => {
-  if (!['win32', 'darwin'].includes(process.platform)) {
-    throw new Error('Local PDF conversion is not available on this server platform');
-  }
-
-  return require('pdf-poppler');
-};
-
-const buildCloudinaryPageImageUrl = (fileUrl, page) => {
-  if (!isCloudinaryPdf(fileUrl)) {
-    return null;
-  }
-
-  const normalizedUrl = fileUrl.replace('/raw/upload/', '/image/upload/');
-  const transformedUrl = normalizedUrl.replace(
-    '/image/upload/',
-    `/image/upload/f_png,pg_${page},w_${IMAGE_SCALE},c_limit/`
-  );
-
-  return transformedUrl.replace(/\.pdf($|\?)/i, '.png$1');
-};
 
 const toSafeNote = (note) => {
   const source = typeof note.toObject === 'function' ? note.toObject() : note;
@@ -141,8 +118,6 @@ const downloadRemotePdf = (url, destination, redirectCount = 0) =>
     request.on('error', reject);
   });
 
-const downloadRemoteFile = (url, destination) => downloadRemotePdf(url, destination);
-
 const getSourcePdfPath = async (note) => {
   if (!note.fileUrl) {
     throw new Error('Note does not have an attached file');
@@ -189,13 +164,6 @@ const getConvertedPagePath = async (note, sourcePdfPath, page) => {
     await fsp.access(cachedPage, fs.constants.R_OK);
     return cachedPage;
   } catch (_) {
-    const cloudinaryPageUrl = buildCloudinaryPageImageUrl(note.fileUrl, page);
-    if (cloudinaryPageUrl) {
-      await downloadRemoteFile(cloudinaryPageUrl, cachedPage);
-      return cachedPage;
-    }
-
-    const pdfPoppler = getPdfPoppler();
     const prefix = `render-${page}-${IMAGE_SCALE}-${Date.now()}`;
     await pdfPoppler.convert(sourcePdfPath, {
       format: 'png',
