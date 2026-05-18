@@ -42,17 +42,28 @@ const resolveLocalPdfPath = (fileUrl) => {
   return resolvedPath;
 };
 
-const getSignedStorageUrl = (note) => {
+const compact = (values) => [...new Set(values.filter(Boolean))];
+
+const getStorageUrlCandidates = (note) => {
+  const urls = [note.fileUrl];
+
   if (note.filePublicId) {
-    return cloudinary.url(note.filePublicId, {
-      secure: true,
-      sign_url: true,
-      resource_type: note.fileResourceType || 'raw',
-      type: note.fileStorageType || 'authenticated',
+    const resourceTypes = compact([note.fileResourceType, 'raw', 'image']);
+    const storageTypes = compact([note.fileStorageType, 'authenticated', 'upload']);
+
+    resourceTypes.forEach((resourceType) => {
+      storageTypes.forEach((type) => {
+        urls.push(cloudinary.url(note.filePublicId, {
+          secure: true,
+          sign_url: type === 'authenticated',
+          resource_type: resourceType,
+          type,
+        }));
+      });
     });
   }
 
-  return note.fileUrl;
+  return compact(urls);
 };
 
 const pipeRemoteFile = (url, res, redirectCount = 0) =>
@@ -72,7 +83,7 @@ const pipeRemoteFile = (url, res, redirectCount = 0) =>
 
       if (storageResponse.statusCode < 200 || storageResponse.statusCode >= 300) {
         storageResponse.resume();
-        reject(new Error(`Storage preview failed (${storageResponse.statusCode})`));
+        reject(new Error(`Storage preview failed (${storageResponse.statusCode}) for ${new URL(url).hostname}`));
         return;
       }
 
@@ -85,8 +96,8 @@ const pipeRemoteFile = (url, res, redirectCount = 0) =>
   });
 
 const streamPreviewFile = async (note, res) => {
-  const sourceUrl = getSignedStorageUrl(note);
-  if (!sourceUrl) {
+  const sourceUrls = getStorageUrlCandidates(note);
+  if (sourceUrls.length === 0) {
     throw new Error('Note does not have an attached file');
   }
 
@@ -99,12 +110,27 @@ const streamPreviewFile = async (note, res) => {
     'X-Robots-Tag': 'noindex, noarchive, nosnippet',
   });
 
-  if (/^https?:\/\//i.test(sourceUrl)) {
-    await pipeRemoteFile(sourceUrl, res);
-    return;
+  const remoteUrls = sourceUrls.filter((url) => /^https?:\/\//i.test(url));
+  if (remoteUrls.length > 0) {
+    let lastError;
+    for (const remoteUrl of remoteUrls) {
+      try {
+        await pipeRemoteFile(remoteUrl, res);
+        return;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    throw lastError || new Error('Could not open remote preview');
   }
 
-  const localPath = resolveLocalPdfPath(sourceUrl);
+  const localSource = sourceUrls.find((url) => !/^https?:\/\//i.test(url));
+  if (!localSource) {
+    throw new Error('Note does not have a readable preview source');
+  }
+
+  const localPath = resolveLocalPdfPath(localSource);
   await fsp.access(localPath, fs.constants.R_OK);
   await new Promise((resolve, reject) => {
     const stream = fs.createReadStream(localPath);

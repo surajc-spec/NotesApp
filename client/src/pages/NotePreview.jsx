@@ -15,6 +15,22 @@ const NotePreview = () => {
   const [error, setError] = useState('');
   const previewUrlRef = useRef('');
 
+  const readApiError = async (err) => {
+    if (!err.response?.data) return err.message || 'Could not open protected preview';
+
+    if (err.response.data instanceof Blob) {
+      try {
+        const text = await err.response.data.text();
+        const parsed = JSON.parse(text);
+        return parsed.message || text;
+      } catch (_) {
+        return `Preview request failed (${err.response.status})`;
+      }
+    }
+
+    return err.response.data.message || `Preview request failed (${err.response.status})`;
+  };
+
   const watermark = useMemo(() => {
     const stamp = new Date().toLocaleString('en-IN', {
       year: 'numeric',
@@ -32,17 +48,15 @@ const NotePreview = () => {
     if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
 
     try {
-      const [infoRes, fileRes] = await Promise.all([
-        api.get(`/notes/preview-info/${id}`),
-        api.get(`/notes/preview/${id}`, { responseType: 'blob' }),
-      ]);
-
+      const infoRes = await api.get(`/notes/preview-info/${id}`);
       setNote(infoRes.data);
+
+      const fileRes = await api.get(`/notes/preview/${id}`, { responseType: 'blob' });
       const objectUrl = URL.createObjectURL(fileRes.data);
       previewUrlRef.current = objectUrl;
       setPreviewUrl(objectUrl);
     } catch (err) {
-      setError(err.response?.data?.message || 'Could not open protected preview');
+      setError(await readApiError(err));
     } finally {
       setLoading(false);
     }
