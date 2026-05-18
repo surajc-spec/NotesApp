@@ -1,6 +1,6 @@
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Eye, Loader2, RefreshCw, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Eye, Loader2, Maximize, Minimize, RefreshCw, ShieldCheck } from 'lucide-react';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import AdUnit from '../components/AdUnit';
@@ -13,7 +13,9 @@ const NotePreview = () => {
   const [previewUrl, setPreviewUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const previewUrlRef = useRef('');
+  const previewFrameRef = useRef(null);
 
   const readApiError = async (err) => {
     if (!err.response?.data) return err.message || 'Could not open protected preview';
@@ -69,6 +71,26 @@ const NotePreview = () => {
     };
   }, [id]);
 
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(document.fullscreenElement === previewFrameRef.current);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const toggleFullscreen = async () => {
+    if (!previewFrameRef.current) return;
+
+    if (document.fullscreenElement === previewFrameRef.current) {
+      await document.exitFullscreen();
+      return;
+    }
+
+    await previewFrameRef.current.requestFullscreen();
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
@@ -110,17 +132,26 @@ const NotePreview = () => {
           <h1 className="truncate text-2xl font-bold text-foreground">{note?.title}</h1>
           <p className="text-sm text-muted">{note?.subject} | {note?.uploader?.name || 'Anonymous'}</p>
         </div>
-        <button
-          onClick={loadPreview}
-          className="flex items-center justify-center gap-2 rounded-field bg-surface-secondary px-4 py-3 font-bold hover:bg-surface-tertiary"
-        >
-          <RefreshCw size={18} />
-          Refresh Preview
-        </button>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <button
+            onClick={loadPreview}
+            className="flex items-center justify-center gap-2 rounded-field bg-surface-secondary px-4 py-3 font-bold hover:bg-surface-tertiary"
+          >
+            <RefreshCw size={18} />
+            Refresh Preview
+          </button>
+          <button
+            onClick={toggleFullscreen}
+            className="flex items-center justify-center gap-2 rounded-field bg-accent px-4 py-3 font-bold text-accent-foreground hover:opacity-90"
+          >
+            {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+            {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+          </button>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
-        <section className="relative min-h-[75vh] overflow-hidden rounded-lg border border-border bg-surface">
+        <section ref={previewFrameRef} className="preview-fullscreen-shell relative min-h-[75vh] overflow-hidden rounded-lg border border-border bg-surface">
           <div className="pointer-events-none absolute inset-0 z-10 select-none opacity-70">
             <div className="preview-watermark-grid h-full w-full" style={{ '--watermark-text': `"${watermark}"` }} />
             <div className="absolute bottom-4 left-4 right-4 rounded-lg bg-surface/80 px-4 py-2 text-xs font-bold text-foreground shadow-sm">

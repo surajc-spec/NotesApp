@@ -176,3 +176,15 @@
   text-align: center;
   padding: 2rem;
 }
+
+.preview-fullscreen-shell:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  border: 0;
+  border-radius: 0;
+  background: var(--surface);
+}
+
+.preview-fullscreen-shell:fullscreen iframe {
+  height: 100vh;
+}
