@@ -138,7 +138,6 @@ const NotePreview = () => {
 
         <div className="space-y-6">
           <AdUnit placement="sidebar" className="hidden lg:block" />
-          <AdUnit placement="inContent" />
         </div>
       </div>
 

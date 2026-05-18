@@ -3,18 +3,16 @@ import { useEffect } from 'react';
 const slotMap = {
   top: import.meta.env.VITE_ADSENSE_TOP_SLOT,
   sidebar: import.meta.env.VITE_ADSENSE_SIDEBAR_SLOT,
-  inContent: import.meta.env.VITE_ADSENSE_IN_CONTENT_SLOT,
   footer: import.meta.env.VITE_ADSENSE_FOOTER_SLOT,
 };
 
 const labels = {
   top: 'Sponsored',
   sidebar: 'Sponsored',
-  inContent: 'Sponsored',
   footer: 'Sponsored',
 };
 
-const AdUnit = ({ placement = 'inContent', className = '' }) => {
+const AdUnit = ({ placement = 'top', className = '' }) => {
   const client = import.meta.env.VITE_ADSENSE_CLIENT;
   const slot = slotMap[placement];
   const enabled = Boolean(client && slot);

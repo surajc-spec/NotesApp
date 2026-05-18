@@ -155,8 +155,7 @@ const Home = () => {
       ) : (
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
           <div className="space-y-16">
-          {subjects.sort().map((sub, index) => (
-            <React.Fragment key={sub}>
+          {subjects.sort().map((sub) => (
             <section key={sub} className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="flex items-center gap-4">
                 <div className="p-2.5 bg-accent/5 text-accent rounded-xl border border-accent/10">
@@ -183,8 +182,6 @@ const Home = () => {
                 ))}
               </div>
             </section>
-            {(index + 1) % 2 === 0 && <AdUnit placement="inContent" />}
-            </React.Fragment>
           ))}
           </div>
           <div className="hidden lg:block">
