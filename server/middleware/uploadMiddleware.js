@@ -14,7 +14,8 @@ const storage = new CloudinaryStorage({
   params: {
     folder: 'notes_app_uploads',
     allowed_formats: ['pdf'],
-    resource_type: 'auto',
+    resource_type: 'raw',
+    type: 'authenticated',
   },
 });
 

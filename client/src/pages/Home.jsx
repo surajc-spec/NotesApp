@@ -4,6 +4,7 @@ import NoteCard from '../components/NoteCard';
 import { Search, Filter, Loader2, BookOpen, ChevronRight, Hash } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import CustomSelect from '../components/CustomSelect';
+import AdUnit from '../components/AdUnit';
 
 const Home = () => {
   const [groupedNotes, setGroupedNotes] = useState({});
@@ -81,16 +82,6 @@ const Home = () => {
     setGroupedNotes(newGrouped);
   };
 
-  const handleDownloadNote = (id) => {
-    const newGrouped = { ...groupedNotes };
-    Object.keys(newGrouped).forEach(sub => {
-      newGrouped[sub] = newGrouped[sub].map(note => 
-        note._id === id ? { ...note, downloads: note.downloads + 1 } : note
-      );
-    });
-    setGroupedNotes(newGrouped);
-  };
-
   const subjectOptions = [
     { label: 'All Subjects', value: 'All' },
     { label: 'DBMS', value: 'DBMS' },
@@ -106,6 +97,8 @@ const Home = () => {
 
   return (
     <div className="pb-20">
+      <AdUnit placement="top" className="mb-8" />
+
       {/* Header Area */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 mb-16">
         <div className="flex items-center gap-4">
@@ -160,8 +153,10 @@ const Home = () => {
           </div>
         </div>
       ) : (
-        <div className="space-y-16">
-          {subjects.sort().map((sub) => (
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
+          <div className="space-y-16">
+          {subjects.sort().map((sub, index) => (
+            <React.Fragment key={sub}>
             <section key={sub} className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="flex items-center gap-4">
                 <div className="p-2.5 bg-accent/5 text-accent rounded-xl border border-accent/10">
@@ -184,14 +179,22 @@ const Home = () => {
                     key={note._id} 
                     note={note} 
                     onDelete={handleDeleteNote}
-                    onDownload={handleDownloadNote}
                   />
                 ))}
               </div>
             </section>
+            {(index + 1) % 2 === 0 && <AdUnit placement="inContent" />}
+            </React.Fragment>
           ))}
+          </div>
+          <div className="hidden lg:block">
+            <div className="sticky top-28 space-y-6">
+              <AdUnit placement="sidebar" />
+            </div>
+          </div>
         </div>
       )}
+      <AdUnit placement="footer" className="mt-12" />
     </div>
   );
 };

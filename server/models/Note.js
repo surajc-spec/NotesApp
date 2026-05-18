@@ -7,9 +7,11 @@ const noteSchema = new mongoose.Schema({
   branch: { type: String, required: true },
   year: { type: String, required: true },
   fileUrl: { type: String, required: true }, // Local path or Cloudinary URL
+  filePublicId: { type: String },
+  fileResourceType: { type: String, default: 'raw' },
+  fileStorageType: { type: String, default: 'authenticated' },
   uploader: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  isPublic: { type: Boolean, default: true },
-  downloads: { type: Number, default: 0 }
+  isPublic: { type: Boolean, default: true }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Note', noteSchema);

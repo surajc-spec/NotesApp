@@ -3,6 +3,7 @@ import api from '../services/api';
 import NoteCard from '../components/NoteCard';
 import { LayoutDashboard, PlusCircle, Loader2, BookX } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import AdUnit from '../components/AdUnit';
 
 const Dashboard = () => {
   const [notes, setNotes] = useState([]);
@@ -27,14 +28,10 @@ const Dashboard = () => {
     setNotes(notes.filter(note => note._id !== id));
   };
 
-  const handleDownloadNote = (id) => {
-    setNotes(notes.map(note => 
-      note._id === id ? { ...note, downloads: note.downloads + 1 } : note
-    ));
-  };
-
   return (
     <div className="pb-20">
+      <AdUnit placement="top" className="mb-8" />
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
         <div>
             <h2 className="text-4xl font-bold text-foreground mb-2">My Dashboard</h2>
@@ -62,7 +59,7 @@ const Dashboard = () => {
           </div>
           <div>
             <h3 className="text-2xl font-bold mb-2">No notes uploaded yet</h3>
-            <p className="text-muted max-w-sm mx-auto">Start sharing your knowledge with the community and track your downloads here.</p>
+            <p className="text-muted max-w-sm mx-auto">Start sharing your knowledge with the community and manage your preview-only notes here.</p>
           </div>
           <Link 
             to="/upload" 
@@ -78,13 +75,13 @@ const Dashboard = () => {
                     key={note._id} 
                     note={note} 
                     onDelete={handleDeleteNote}
-                    onDownload={handleDownloadNote}
                     draggableProps={{}}
                     dragHandleProps={{}}
                 />
             ))}
         </div>
       )}
+      <AdUnit placement="footer" className="mt-12" />
     </div>
   );
 };

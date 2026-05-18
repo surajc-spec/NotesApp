@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
+import SecurityDeterrents from './components/SecurityDeterrents';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Home from './pages/Home';
@@ -9,10 +10,12 @@ import Dashboard from './pages/Dashboard';
 import UploadNote from './pages/UploadNote';
 import Landing from './pages/Landing';
 import Profile from './pages/Profile';
+import NotePreview from './pages/NotePreview';
 
 function App() {
   return (
     <Router>
+      <SecurityDeterrents />
       <Navbar />
       <div className="pt-24 min-h-screen">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -21,6 +24,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/notes" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+            <Route path="/notes/:id/preview" element={<ProtectedRoute><NotePreview /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/upload" element={<ProtectedRoute><UploadNote /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />

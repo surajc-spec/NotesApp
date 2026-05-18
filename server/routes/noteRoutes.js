@@ -3,6 +3,7 @@ const router = express.Router();
 const Note = require('../models/Note');
 const { protect } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
+const { canAccessNote, streamPreviewFile, toSafeNote } = require('../services/notePreviewService');
 
 // @route POST /api/notes/upload
 router.post('/upload', protect, (req, res) => {
@@ -26,11 +27,15 @@ router.post('/upload', protect, (req, res) => {
         branch: req.user.branch,
         year: req.user.year,
         fileUrl,
+        filePublicId: req.file.filename || req.file.public_id,
+        fileResourceType: req.file.resource_type || 'raw',
+        fileStorageType: 'authenticated',
         uploader: req.user.id,
         isPublic: isPublic === 'true' || isPublic === true,
       });
 
-      res.status(201).json(note);
+      const populatedNote = await note.populate('uploader', 'name email year branch');
+      res.status(201).json(toSafeNote(populatedNote));
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
@@ -63,7 +68,7 @@ router.get('/', protect, async (req, res) => {
       if (!acc[sub]) {
         acc[sub] = [];
       }
-      acc[sub].push(note);
+      acc[sub].push(toSafeNote(note));
       return acc;
     }, {});
 
@@ -80,7 +85,7 @@ router.get('/mine', protect, async (req, res) => {
       .populate('uploader', 'name email')
       .sort({ createdAt: -1 });
 
-    res.json(notes);
+    res.json(notes.map(toSafeNote));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -100,9 +105,54 @@ router.get('/search', protect, async (req, res) => {
       ]
     }).populate('uploader', 'name email year branch').sort({ createdAt: -1 });
 
-    res.json(notes);
+    res.json(notes.map(toSafeNote));
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+
+// @route GET /api/notes/preview-info/:id
+router.get('/preview-info/:id', protect, async (req, res) => {
+  try {
+    const note = await Note.findById(req.params.id).populate('uploader', 'name email year branch');
+    if (!note) {
+      return res.status(404).json({ message: 'Note not found' });
+    }
+
+    if (!canAccessNote(note, req.user)) {
+      return res.status(403).json({ message: 'Not authorized to preview this note' });
+    }
+
+    res.set({
+      'Cache-Control': 'no-store, private',
+      Pragma: 'no-cache',
+      'X-Content-Type-Options': 'nosniff',
+    });
+    res.json(toSafeNote(note));
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @route GET /api/notes/preview/:id
+router.get('/preview/:id', protect, async (req, res) => {
+  try {
+    const note = await Note.findById(req.params.id);
+    if (!note) {
+      return res.status(404).json({ message: 'Note not found' });
+    }
+
+    if (!canAccessNote(note, req.user)) {
+      return res.status(403).json({ message: 'Not authorized to preview this note' });
+    }
+
+    await streamPreviewFile(note, res);
+  } catch (error) {
+    if (!res.headersSent) {
+      res.status(500).json({ message: error.message });
+    } else {
+      res.end();
+    }
   }
 });
 
@@ -121,30 +171,6 @@ router.delete('/:id', protect, async (req, res) => {
 
     await note.deleteOne();
     res.json({ message: 'Note removed' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// @route POST /api/notes/:id/download (increment download count)
-router.post('/:id/download', protect, async (req, res) => {
-  try {
-    const note = await Note.findById(req.params.id);
-    if (!note) {
-      return res.status(404).json({ message: 'Note not found' });
-    }
-    
-    // Check access
-    if (note.branch !== req.user.branch || note.year !== req.user.year) {
-        if (note.uploader.toString() !== req.user.id) {
-            return res.status(401).json({ message: 'Not authorized to access notes outside your branch/year' });
-        }
-    }
-
-    note.downloads += 1;
-    await note.save();
-
-    res.json({ message: 'Download count updated', downloads: note.downloads });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

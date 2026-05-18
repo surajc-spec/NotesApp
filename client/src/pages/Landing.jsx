@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, Users, DownloadCloud, ShieldCheck, ArrowRight } from 'lucide-react';
+import { BookOpen, Users, Eye, ShieldCheck, ArrowRight } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 
 const Landing = () => {
@@ -80,9 +80,9 @@ const Landing = () => {
                 desc: 'Collaborate with top students from various branches and years.' 
               },
               { 
-                icon: <DownloadCloud className="text-accent" />, 
-                title: 'Lightning Fast', 
-                desc: 'Download your notes instantly with optimized cloud delivery.' 
+                icon: <Eye className="text-accent" />, 
+                title: 'Preview Only', 
+                desc: 'Read notes inside the platform through a protected preview experience.' 
               },
               { 
                 icon: <ShieldCheck className="text-accent" />, 
