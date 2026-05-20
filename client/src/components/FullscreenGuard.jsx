@@ -89,17 +89,15 @@ const FullscreenGuard = ({ children, isEnabled = true }) => {
 
     const handleBlur = () => {
       setTimeout(() => {
-        // Exclude internal focus transfers (e.g. clicking scrollbar on inner iframe)
-        if (document.activeElement && document.activeElement.tagName === 'IFRAME') {
-          return;
+        if (!document.hasFocus()) {
+          setIsFullscreenBlurred(true);
+          setIsBlackoutActive(true);
         }
-        setIsFullscreenBlurred(true);
-        setIsBlackoutActive(true);
-      }, 50);
+      }, 10);
     };
 
     const handleFocus = () => {
-      if (!isFullscreenAlertActive) {
+      if (document.hasFocus() && !isFullscreenAlertActive) {
         setIsFullscreenBlurred(false);
         setIsBlackoutActive(false);
       }

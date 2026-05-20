@@ -128,16 +128,16 @@ const ScreenshotGuard = ({ children, isEnabled = true }) => {
     // Tab Switch & Visibility Change Protections (Requirement 7, 9)
     const handleFocusLoss = () => {
       setTimeout(() => {
-        if (document.activeElement && document.activeElement.tagName === 'IFRAME') {
-          // Focus moved to inner PDF preview iframe; ignore to allow scrolling/reading
-          return;
+        if (!document.hasFocus()) {
+          setIsBlurred(true);
         }
-        setIsBlurred(true);
-      }, 50);
+      }, 10);
     };
 
     const handleFocusGain = () => {
-      setIsBlurred(false);
+      if (document.hasFocus()) {
+        setIsBlurred(false);
+      }
     };
 
     const handleVisibilityChange = () => {
