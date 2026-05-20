@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import SecurityDeterrents from './components/SecurityDeterrents';
+import RegistrationPopup from './components/RegistrationPopup';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Home from './pages/Home';
@@ -21,6 +22,7 @@ function App() {
   return (
     <Router>
       <SecurityDeterrents />
+      <RegistrationPopup />
       <Navbar />
       <div className="pt-24 min-h-screen flex flex-col justify-between">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex-1 w-full">

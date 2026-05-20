@@ -37,6 +37,7 @@ const Register = () => {
     
     const res = await register(name, email, password, year, branch);
     if (res.success) {
+      localStorage.setItem('showRegistrationPopup', 'true');
       navigate('/');
     } else {
       setError(res.message);
