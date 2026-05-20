@@ -1,6 +1,5 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ShieldAlert, EyeOff } from 'lucide-react';
-import { AuthContext } from '../context/AuthContext';
 
 /*
   =============================================================================
@@ -12,49 +11,19 @@ import { AuthContext } from '../context/AuthContext';
 */
 
 const ScreenshotGuard = ({ children, isEnabled = true }) => {
-  const { user } = useContext(AuthContext);
   const [isAlertActive, setIsAlertActive] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [isBlurred, setIsBlurred] = useState(false);
-  const [watermarkTime, setWatermarkTime] = useState('');
 
-  // 1. Dynamic Watermark Timestamp Updater (Requirement 8)
-  useEffect(() => {
-    const updateTime = () => {
-      setWatermarkTime(
-        new Date().toLocaleString('en-IN', {
-          year: 'numeric',
-          month: 'short',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-        })
-      );
-    };
-    updateTime();
-    const interval = setInterval(updateTime, 60000);
-    return () => clearInterval(interval);
-  }, []);
 
-  // 2. Inject Dynamic CSS Watermark Drift & Mobile Protections (Requirement 5, 6, 8, 9)
+
+  // 2. Inject Dynamic CSS Mobile Protections (Requirement 5, 6, 9)
   useEffect(() => {
     const styleId = 'screenshot-guard-advanced-styles';
     if (!document.getElementById(styleId)) {
       const style = document.createElement('style');
       style.id = styleId;
       style.textContent = `
-        /* Watermark float keyframe drifting across the notes area */
-        @keyframes float-watermark-drift {
-          0% { top: 8%; left: 8%; }
-          25% { top: 15%; left: 62%; }
-          50% { top: 78%; left: 48%; }
-          75% { top: 52%; left: 12%; }
-          100% { top: 8%; left: 8%; }
-        }
-        .animate-watermark-drift {
-          animation: float-watermark-drift 22s infinite ease-in-out;
-        }
-
         /* Mobile long-press and selection protection */
         .protected-preview, .protected-preview * {
           -webkit-touch-callout: none !important; /* iOS long-press menu */
@@ -247,15 +216,6 @@ const ScreenshotGuard = ({ children, isEnabled = true }) => {
       >
         {children}
       </div>
-
-      {/* Dynamic Watermark overlay (Requirement 8) */}
-      {isEnabled && !isAlertActive && !isBlurred && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden z-40 select-none">
-          <div className="absolute animate-watermark-drift text-foreground/15 font-semibold text-xs md:text-sm whitespace-nowrap bg-surface/30 px-3 py-1.5 border border-border/10 rounded-full shadow-sm">
-            🛡️ Protected Content | {user?.name || 'Authorized User'} ({user?.email || 'note-share-user'}) | {watermarkTime}
-          </div>
-        </div>
-      )}
 
       {/* Temporary Warning Alert Overlay (Requirement 2, 5) */}
       {isEnabled && isAlertActive && (

@@ -5,6 +5,8 @@
 
 @theme {
   --font-sans: "Fredoka", ui-sans-serif, system-ui, sans-serif;
+  --font-datatype: "Datatype", "Fredoka", sans-serif;
+  --font-iosevka: "Iosevka Charon", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
@@ -127,6 +129,14 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
   }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-datatype);
+  }
+  
+  code, pre, kbd, samp {
+    font-family: var(--font-iosevka);
+  }
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -139,6 +149,10 @@
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
   @apply bg-accent/40 rounded-full hover:bg-accent/60 transition-colors;
+}
+
+.protected-preview {
+  font-family: var(--font-iosevka);
 }
 
 .protected-preview,

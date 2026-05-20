@@ -6,6 +6,7 @@ import { AuthContext } from '../context/AuthContext';
 import AdUnit from '../components/AdUnit';
 import PasswordModal from '../components/PasswordModal';
 import ScreenshotGuard from '../components/ScreenshotGuard';
+import FullscreenGuard from '../components/FullscreenGuard';
 
 const NotePreview = () => {
   const { id } = useParams();
@@ -180,19 +181,21 @@ const NotePreview = () => {
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
           <section ref={previewFrameRef} className="preview-fullscreen-shell relative min-h-[75vh] overflow-hidden rounded-lg border border-border bg-surface">
-            <div className="pointer-events-none absolute inset-0 z-10 select-none opacity-70">
-              <div className="preview-watermark-grid h-full w-full" style={{ '--watermark-text': `"${watermark}"` }} />
-              <div className="absolute bottom-4 left-4 right-4 rounded-lg bg-surface/80 px-4 py-2 text-xs font-bold text-foreground shadow-sm">
-                {watermark}
+            <FullscreenGuard isEnabled={true}>
+              <div className="pointer-events-none absolute inset-0 z-10 select-none opacity-70">
+                <div className="preview-watermark-grid h-full w-full" style={{ '--watermark-text': `"${watermark}"` }} />
+                <div className="absolute bottom-4 left-4 right-4 rounded-lg bg-surface/80 px-4 py-2 text-xs font-bold text-foreground shadow-sm">
+                  {watermark}
+                </div>
               </div>
-            </div>
-            <iframe
-              title={note?.title || 'Protected note preview'}
-              src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=1`}
-              className="h-[78vh] w-full select-none bg-white dark-invert-pdf"
-              draggable="false"
-              onContextMenu={(e) => e.preventDefault()}
-            />
+              <iframe
+                title={note?.title || 'Protected note preview'}
+                src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=1`}
+                className="h-[78vh] w-full select-none bg-white dark-invert-pdf"
+                draggable="false"
+                onContextMenu={(e) => e.preventDefault()}
+              />
+            </FullscreenGuard>
           </section>
 
           <div className="space-y-6">
