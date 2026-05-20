@@ -13,11 +13,13 @@ const SecurityDeterrents = () => {
       const keyCode = event.keyCode;
       
       const isFKey = (keyCode >= 112 && keyCode <= 123) || /^f(1[0-2]|\d)$/i.test(event.key);
-      const isCtrlShiftS = (event.ctrlKey || event.metaKey) && event.shiftKey && (key === 's' || keyCode === 83);
+      const isCtrlShiftS = event.ctrlKey && event.shiftKey && (key === 's' || keyCode === 83);
+      const isWinSnipping = event.metaKey && event.shiftKey && (key === 's' || keyCode === 83);
       
       const blocked =
         isFKey ||
         isCtrlShiftS ||
+        isWinSnipping ||
         (event.ctrlKey && ['s', 'p', 'u'].includes(key)) ||
         (event.ctrlKey && event.shiftKey && ['i', 'j', 'c'].includes(key));
 
