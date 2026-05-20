@@ -78,10 +78,10 @@ const Footer = () => {
 
         <div className="border-t border-separator mt-8 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-xs text-muted">
-            &copy; {new Date().getFullYear()} NoteShare Inc. All rights reserved.
+            &copy; {new Date().getFullYear()} Suraj Chougule  All rights reserved.
           </p>
           <p className="text-xs text-muted flex items-center gap-1">
-            <span>Powered by secure academic streaming</span>
+            {/* <span>Powered by secure academic streaming</span> */}
             <span className="w-1.5 h-1.5 rounded-full bg-success"></span>
             <span className="text-success font-medium">Secured Preview Mode</span>
           </p>

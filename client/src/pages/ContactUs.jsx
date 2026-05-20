@@ -60,8 +60,8 @@ const ContactUs = () => {
             <div>
               <h4 className="font-bold text-foreground">Email Support</h4>
               <p className="text-xs text-muted mt-1">Our team replies within 24 hours.</p>
-              <a href="mailto:support@noteshare.edu" className="text-accent text-sm font-semibold hover:underline mt-2 inline-block">
-                support@noteshare.edu
+              <a href="mailto:surajchougule2706@gmail.com" className="text-accent text-sm font-semibold hover:underline mt-2 inline-block">
+                surajchougule2706@gmail.com
               </a>
             </div>
           </div>
@@ -74,8 +74,8 @@ const ContactUs = () => {
             <div>
               <h4 className="font-bold text-foreground">Academic HQ</h4>
               <p className="text-sm text-muted mt-1 leading-relaxed">
-                University Campus Library,<br />
-                Academic Block 4, Suite 101
+                NA<br />
+                
               </p>
             </div>
           </div>
