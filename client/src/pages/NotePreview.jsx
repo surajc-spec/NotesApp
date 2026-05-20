@@ -7,12 +7,14 @@ import AdUnit from '../components/AdUnit';
 import PasswordModal from '../components/PasswordModal';
 import ScreenshotGuard from '../components/ScreenshotGuard';
 import FullscreenGuard from '../components/FullscreenGuard';
+import PDFCanvasViewer from '../components/PDFCanvasViewer';
 
 const NotePreview = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
   const [note, setNote] = useState(null);
+  const [pdfBlob, setPdfBlob] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -53,6 +55,7 @@ const NotePreview = () => {
   const loadPreview = async (pwd = enteredPassword) => {
     setLoading(true);
     setError('');
+    setPdfBlob(null);
     if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
 
     try {
@@ -65,6 +68,7 @@ const NotePreview = () => {
         responseType: 'blob',
         ...config
       });
+      setPdfBlob(fileRes.data);
       const objectUrl = URL.createObjectURL(fileRes.data);
       previewUrlRef.current = objectUrl;
       setPreviewUrl(objectUrl);
@@ -188,13 +192,16 @@ const NotePreview = () => {
                   {watermark}
                 </div>
               </div>
-              <iframe
-                title={note?.title || 'Protected note preview'}
-                src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=1`}
-                className="h-[78vh] w-full select-none bg-white dark-invert-pdf"
-                draggable="false"
-                onContextMenu={(e) => e.preventDefault()}
-              />
+              {pdfBlob ? (
+                <div className="h-[78vh] fullscreen-scroll overflow-y-auto custom-scrollbar">
+                  <PDFCanvasViewer pdfBlob={pdfBlob} />
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center p-12 min-h-[50vh]">
+                  <Loader2 className="animate-spin text-accent" size={36} />
+                  <p className="text-sm text-muted">Loading note preview...</p>
+                </div>
+              )}
             </FullscreenGuard>
           </section>
 
