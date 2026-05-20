@@ -67,13 +67,9 @@ const RegistrationPopup = () => {
                 </span>
               </div>
               
-              {/* Highlighted Notation */}
-              <div className="font-mono text-2xl font-black text-accent my-3 tracking-wide">
-                [6][8]
-              </div>
-              
-              <p className="text-sm leading-relaxed text-foreground font-medium">
-                This means the question appeared <strong className="text-accent">twice</strong> in past exams—once for <strong className="text-foreground">6 marks</strong>, and another time for <strong className="text-foreground">8 marks</strong>.
+              <p className="text-sm leading-relaxed text-foreground font-medium mt-3 italic">
+                "Write a short note on MACAW and Draw diagram.<strong className="text-accent font-bold not-italic">[6][8]</strong>. 
+                <strong className="text-accent font-bold not-italic">[6][8]</strong> this means question came twice in exam for 6 marks and in other 8 marks"
               </p>
             </div>
           </div>
