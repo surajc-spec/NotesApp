@@ -1,6 +1,6 @@
 {
   "name": "notes-sharing-app",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Full-stack MERN Notes Sharing Application",
   "main": "index.js",
   "scripts": {
