@@ -1,10 +1,12 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { LogOut, BookOpen, PlusCircle, User as UserIcon, LayoutDashboard, Search, Menu, X } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
+import { LogOut, BookOpen, PlusCircle, User as UserIcon, LayoutDashboard, Search, Menu, X, Sun, Moon } from 'lucide-react';
 
 const Navbar = () => {
   const { user, logout } = useContext(AuthContext);
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -55,6 +57,15 @@ const Navbar = () => {
                 {link.name}
               </Link>
             ))}
+
+            {/* Desktop Theme Toggle */}
+            <button 
+              onClick={toggleTheme} 
+              className="p-2.5 text-muted hover:text-accent transition-colors cursor-pointer"
+              title="Toggle Theme"
+            >
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
             
             {user ? (
               <div className="flex items-center gap-4 ml-4">
@@ -62,7 +73,7 @@ const Navbar = () => {
                   <PlusCircle size={18} />
                   Upload
                 </Link>
-                <button onClick={handleLogout} className="p-2.5 text-muted hover:text-danger transition-colors" title="Logout">
+                <button onClick={handleLogout} className="p-2.5 text-muted hover:text-danger transition-colors cursor-pointer" title="Logout">
                   <LogOut size={20} />
                 </button>
               </div>
@@ -73,13 +84,25 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <button 
-            className="md:hidden p-2 text-foreground"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
-            {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
-          </button>
+          {/* Mobile Right Controls */}
+          <div className="flex items-center gap-2 md:hidden">
+            {/* Mobile Theme Toggle */}
+            <button 
+              onClick={toggleTheme} 
+              className="p-2.5 text-muted hover:text-accent transition-colors cursor-pointer"
+              title="Toggle Theme"
+            >
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+
+            {/* Mobile Menu Toggle Button */}
+            <button 
+              className="p-2 text-foreground cursor-pointer"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -112,7 +135,7 @@ const Navbar = () => {
                 </Link>
                 <button 
                   onClick={handleLogout} 
-                  className="w-full py-3 border border-border text-danger rounded-field font-semibold"
+                  className="w-full py-3 border border-border text-danger rounded-field font-semibold cursor-pointer"
                 >
                   Log Out
                 </button>
@@ -134,3 +157,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
+

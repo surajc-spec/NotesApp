@@ -11,14 +11,19 @@ import UploadNote from './pages/UploadNote';
 import Landing from './pages/Landing';
 import Profile from './pages/Profile';
 import NotePreview from './pages/NotePreview';
+import Footer from './components/Footer';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import AboutUs from './pages/AboutUs';
+import ContactUs from './pages/ContactUs';
+import TermsConditions from './pages/TermsConditions';
 
 function App() {
   return (
     <Router>
       <SecurityDeterrents />
       <Navbar />
-      <div className="pt-24 min-h-screen">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="pt-24 min-h-screen flex flex-col justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex-1 w-full">
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
@@ -28,8 +33,13 @@ function App() {
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/upload" element={<ProtectedRoute><UploadNote /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/about" element={<AboutUs />} />
+            <Route path="/contact" element={<ContactUs />} />
+            <Route path="/terms" element={<TermsConditions />} />
           </Routes>
         </div>
+        <Footer />
       </div>
     </Router>
   );
