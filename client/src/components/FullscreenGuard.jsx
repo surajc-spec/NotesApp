@@ -53,17 +53,43 @@ const FullscreenGuard = ({ children, isEnabled = true }) => {
         e.metaKey &&
         e.shiftKey &&
         (key === '3' || key === '4' || key === '5' || keyCode === 51 || keyCode === 52 || keyCode === 53);
-      const isWinSnipping = e.metaKey && e.shiftKey && (key === 's' || keyCode === 83);
+      const isWinSnipping = (e.metaKey || e.ctrlKey) && e.shiftKey && (key === 's' || keyCode === 83);
       
       const isFKey = (keyCode >= 112 && keyCode <= 123) || /^f(1[0-2]|\d)$/i.test(e.key);
       const isCtrlShiftS = (e.ctrlKey || e.metaKey) && e.shiftKey && (key === 's' || keyCode === 83);
       
       const isModifier = e.ctrlKey || e.metaKey;
       const isCopyPasteCut = isModifier && (['c', 'v', 'x'].includes(key) || [67, 86, 88].includes(keyCode));
+      
+      const isSave = isModifier && (key === 's' || keyCode === 83);
+      const isPrint = isModifier && (key === 'p' || keyCode === 80);
+      const isViewSource = isModifier && (key === 'u' || keyCode === 85);
+      
+      const isDevTools = keyCode === 123 || (isModifier && e.shiftKey && (key === 'i' || keyCode === 73));
+      const isInspectElement = isModifier && e.shiftKey && (key === 'c' || keyCode === 67);
+      const isConsole = isModifier && e.shiftKey && (key === 'j' || keyCode === 74);
 
-      if (isPrintScreen || isAltPrintScreen || isMacCapture || isWinSnipping || isF11 || isFKey || isCtrlShiftS || isCopyPasteCut) {
+      if (
+        isPrintScreen || 
+        isAltPrintScreen || 
+        isMacCapture || 
+        isWinSnipping || 
+        isF11 || 
+        isFKey || 
+        isCtrlShiftS || 
+        isCopyPasteCut ||
+        isSave ||
+        isPrint ||
+        isViewSource ||
+        isDevTools ||
+        isInspectElement ||
+        isConsole
+      ) {
         e.preventDefault();
         e.stopPropagation();
+        try {
+          navigator.clipboard.writeText('');
+        } catch (_) {}
         triggerBlackout('Screenshots and copy/paste shortcuts are blocked in protected fullscreen mode.');
         return;
       }
@@ -73,7 +99,7 @@ const FullscreenGuard = ({ children, isEnabled = true }) => {
       const key = e.key ? e.key.toLowerCase() : '';
       const keyCode = e.keyCode;
       const isPrintScreen = e.key === 'PrintScreen' || keyCode === 44;
-      const isWinSnipping = e.metaKey && e.shiftKey && (key === 's' || keyCode === 83);
+      const isWinSnipping = (e.metaKey || e.ctrlKey) && e.shiftKey && (key === 's' || keyCode === 83);
       const isFKey = (keyCode >= 112 && keyCode <= 123) || /^f(1[0-2]|\d)$/i.test(e.key);
       const isCtrlShiftS = (e.ctrlKey || e.metaKey) && e.shiftKey && (key === 's' || keyCode === 83);
       

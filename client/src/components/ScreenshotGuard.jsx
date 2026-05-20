@@ -77,7 +77,7 @@ const ScreenshotGuard = ({ children, isEnabled = true }) => {
         (key === '3' || key === '4' || key === '5' || keyCode === 51 || keyCode === 52 || keyCode === 53);
 
       // D. Windows Snipping Shortcut (Win + Shift + S)
-      const isWinSnipping = e.metaKey && e.shiftKey && (key === 's' || keyCode === 83);
+      const isWinSnipping = (e.metaKey || e.ctrlKey) && e.shiftKey && (key === 's' || keyCode === 83);
 
       // E. All Function Keys (F1 - F12)
       const isFKey = (keyCode >= 112 && keyCode <= 123) || /^f(1[0-2]|\d)$/i.test(e.key);
@@ -99,6 +99,9 @@ const ScreenshotGuard = ({ children, isEnabled = true }) => {
       ) {
         e.preventDefault();
         e.stopPropagation();
+        try {
+          navigator.clipboard.writeText(''); 
+        } catch (_) {}
         triggerTemporaryAlert('Screenshots and copying are disabled for protected notes.');
         return;
       }
@@ -125,6 +128,9 @@ const ScreenshotGuard = ({ children, isEnabled = true }) => {
       if (isCopy || isPaste || isCut || isSave || isPrint || isViewSource || isDevTools || isInspectElement || isConsole) {
         e.preventDefault();
         e.stopPropagation();
+        try {
+          navigator.clipboard.writeText(''); 
+        } catch (_) {}
         triggerTemporaryAlert('Screenshots and copying are disabled for protected notes.');
         return;
       }
@@ -134,7 +140,7 @@ const ScreenshotGuard = ({ children, isEnabled = true }) => {
       const key = e.key ? e.key.toLowerCase() : '';
       const keyCode = e.keyCode;
       const isPrintScreen = e.key === 'PrintScreen' || keyCode === 44;
-      const isWinSnipping = e.metaKey && e.shiftKey && (key === 's' || keyCode === 83);
+      const isWinSnipping = (e.metaKey || e.ctrlKey) && e.shiftKey && (key === 's' || keyCode === 83);
       const isFKey = (keyCode >= 112 && keyCode <= 123) || /^f(1[0-2]|\d)$/i.test(e.key);
       const isCtrlShiftS = (e.ctrlKey || e.metaKey) && e.shiftKey && (key === 's' || keyCode === 83);
       
