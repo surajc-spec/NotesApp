@@ -61,7 +61,7 @@ const ContactUs = () => {
               <h4 className="font-bold text-foreground">Email Support</h4>
               <p className="text-xs text-muted mt-1">Our team replies within 24 hours.</p>
               <a href="mailto:surajchougule2706@gmail.com" className="text-accent text-sm font-semibold hover:underline mt-2 inline-block">
-                surajchougule2706@gmail.com
+                Email
               </a>
             </div>
           </div>
@@ -120,7 +120,7 @@ const ContactUs = () => {
                     <input
                       type="text"
                       className="w-full px-4 py-3 bg-surface-secondary border border-border rounded-field focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all outline-none text-foreground text-sm"
-                      placeholder="e.g. Suraj Chougule"
+                      placeholder="e.g. Sham"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       required
@@ -131,7 +131,7 @@ const ContactUs = () => {
                     <input
                       type="email"
                       className="w-full px-4 py-3 bg-surface-secondary border border-border rounded-field focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all outline-none text-foreground text-sm"
-                      placeholder="e.g. suraj@example.com"
+                      placeholder="e.g. sham@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
