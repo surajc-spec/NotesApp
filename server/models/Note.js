@@ -11,7 +11,8 @@ const noteSchema = new mongoose.Schema({
   fileResourceType: { type: String, default: 'raw' },
   fileStorageType: { type: String, default: 'authenticated' },
   uploader: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  isPublic: { type: Boolean, default: true }
+  isPublic: { type: Boolean, default: true },
+  password: { type: String } // Optional password protection
 }, { timestamps: true });
 
 module.exports = mongoose.model('Note', noteSchema);

@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcryptjs');
 const Note = require('../models/Note');
 const { protect } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
-const { canAccessNote, streamPreviewFile, toSafeNote } = require('../services/notePreviewService');
+const { canAccessNote, verifyNotePassword, streamPreviewFile, toSafeNote } = require('../services/notePreviewService');
 
 // @route POST /api/notes/upload
 router.post('/upload', protect, (req, res) => {
@@ -12,13 +13,19 @@ router.post('/upload', protect, (req, res) => {
       return res.status(400).json({ message: typeof err === 'string' ? err : (err.message || 'File upload error') });
     }
     try {
-      const { title, subject, description, isPublic } = req.body;
+      const { title, subject, description, isPublic, password } = req.body;
       
       if (!req.file) {
         return res.status(400).json({ message: 'Please upload a file' });
       }
 
       const fileUrl = req.file.path;
+
+      let hashedPassword = undefined;
+      if (password && password.trim() !== '') {
+        const salt = await bcrypt.genSalt(10);
+        hashedPassword = await bcrypt.hash(password, salt);
+      }
 
       const note = await Note.create({
         title,
@@ -32,6 +39,7 @@ router.post('/upload', protect, (req, res) => {
         fileStorageType: 'authenticated',
         uploader: req.user.id,
         isPublic: isPublic === 'true' || isPublic === true,
+        password: hashedPassword,
       });
 
       const populatedNote = await note.populate('uploader', 'name email year branch');
@@ -111,6 +119,25 @@ router.get('/search', protect, async (req, res) => {
   }
 });
 
+// @route POST /api/notes/verify-password/:id
+router.post('/verify-password/:id', protect, async (req, res) => {
+  try {
+    const note = await Note.findById(req.params.id);
+    if (!note) {
+      return res.status(404).json({ message: 'Note not found' });
+    }
+    const { password } = req.body;
+    const isCorrect = await verifyNotePassword(note, req.user, password);
+    if (isCorrect) {
+      res.json({ success: true, message: 'Password verified successfully' });
+    } else {
+      res.status(401).json({ success: false, message: 'Invalid password' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // @route GET /api/notes/preview-info/:id
 router.get('/preview-info/:id', protect, async (req, res) => {
   try {
@@ -121,6 +148,12 @@ router.get('/preview-info/:id', protect, async (req, res) => {
 
     if (!canAccessNote(note, req.user)) {
       return res.status(403).json({ message: 'Not authorized to preview this note' });
+    }
+
+    const enteredPassword = req.headers['x-note-password'];
+    const isAuthorized = await verifyNotePassword(note, req.user, enteredPassword);
+    if (!isAuthorized) {
+      return res.status(401).json({ isPasswordRequired: true, message: 'Password required or incorrect' });
     }
 
     res.set({
@@ -144,6 +177,12 @@ router.get('/preview/:id', protect, async (req, res) => {
 
     if (!canAccessNote(note, req.user)) {
       return res.status(403).json({ message: 'Not authorized to preview this note' });
+    }
+
+    const enteredPassword = req.headers['x-note-password'];
+    const isAuthorized = await verifyNotePassword(note, req.user, enteredPassword);
+    if (!isAuthorized) {
+      return res.status(401).json({ isPasswordRequired: true, message: 'Password required or incorrect' });
     }
 
     await streamPreviewFile(note, res);

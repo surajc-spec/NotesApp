@@ -2,7 +2,8 @@ import React, { useContext, useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { LogOut, BookOpen, PlusCircle, User as UserIcon, LayoutDashboard, Search, Menu, X, Sun, Moon } from 'lucide-react';
+import { LogOut, BookOpen, PlusCircle, User as UserIcon, LayoutDashboard, Search, Menu, X } from 'lucide-react';
+import DarkModeToggle from './DarkModeToggle';
 
 const Navbar = () => {
   const { user, logout } = useContext(AuthContext);
@@ -59,13 +60,7 @@ const Navbar = () => {
             ))}
 
             {/* Desktop Theme Toggle */}
-            <button 
-              onClick={toggleTheme} 
-              className="p-2.5 text-muted hover:text-accent transition-colors cursor-pointer"
-              title="Toggle Theme"
-            >
-              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
+            <DarkModeToggle />
             
             {user ? (
               <div className="flex items-center gap-4 ml-4">
@@ -87,13 +82,7 @@ const Navbar = () => {
           {/* Mobile Right Controls */}
           <div className="flex items-center gap-2 md:hidden">
             {/* Mobile Theme Toggle */}
-            <button 
-              onClick={toggleTheme} 
-              className="p-2.5 text-muted hover:text-accent transition-colors cursor-pointer"
-              title="Toggle Theme"
-            >
-              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
+            <DarkModeToggle />
 
             {/* Mobile Menu Toggle Button */}
             <button 

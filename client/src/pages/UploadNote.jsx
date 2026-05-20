@@ -10,6 +10,8 @@ const UploadNote = () => {
   const [description, setDescription] = useState('');
   const [file, setFile] = useState(null);
   const [isPublic, setIsPublic] = useState(true);
+  const [hasPassword, setHasPassword] = useState(false);
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
@@ -44,6 +46,9 @@ const UploadNote = () => {
     formData.append('subject', subject);
     formData.append('description', description);
     formData.append('isPublic', isPublic);
+    if (hasPassword && password.trim() !== '') {
+      formData.append('password', password);
+    }
     formData.append('file', file);
 
     try {
@@ -153,7 +158,7 @@ const UploadNote = () => {
                 </div>
             </div>
             
-            <label className="relative inline-flex items-center cursor-pointer">
+            <label className="relative inline-flex inline-flex items-center cursor-pointer">
               <input 
                 type="checkbox" 
                 className="sr-only peer"
@@ -162,6 +167,44 @@ const UploadNote = () => {
               />
               <div className="w-14 h-7 bg-muted/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-accent"></div>
             </label>
+          </div>
+
+          <div className="space-y-4 p-6 bg-surface-secondary rounded-[1.5rem] border border-border">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+              <div className="flex items-center gap-4 text-center sm:text-left">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${hasPassword ? 'bg-accent/15 text-accent' : 'bg-muted/15 text-muted'}`}>
+                      <Lock size={24} />
+                  </div>
+                  <div>
+                      <h4 className="font-bold text-foreground">Password Protection</h4>
+                      <p className="text-xs text-muted">Restrict access to this note with a password</p>
+                  </div>
+              </div>
+              
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  className="sr-only peer"
+                  checked={hasPassword}
+                  onChange={(e) => setHasPassword(e.target.checked)}
+                />
+                <div className="w-14 h-7 bg-muted/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-accent"></div>
+              </label>
+            </div>
+
+            {hasPassword && (
+              <div className="pt-4 border-t border-border animate-in fade-in slide-in-from-top-2 duration-200">
+                <label className="text-sm font-bold text-foreground ml-1">Set Access Password</label>
+                <input
+                  type="password"
+                  className="w-full mt-2 px-5 py-3.5 bg-surface border border-border rounded-field focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none text-foreground text-sm"
+                  placeholder="Enter access password (e.g. student123)"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required={hasPassword}
+                />
+              </div>
+            )}
           </div>
 
           <button 

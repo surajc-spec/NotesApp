@@ -4,6 +4,8 @@ import { ArrowLeft, Eye, Loader2, Maximize, Minimize, RefreshCw, ShieldCheck } f
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import AdUnit from '../components/AdUnit';
+import PasswordModal from '../components/PasswordModal';
+import ScreenshotGuard from '../components/ScreenshotGuard';
 
 const NotePreview = () => {
   const { id } = useParams();
@@ -14,6 +16,9 @@ const NotePreview = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [enteredPassword, setEnteredPassword] = useState('');
+  const [isPasswordProtected, setIsPasswordProtected] = useState(false);
   const previewUrlRef = useRef('');
   const previewFrameRef = useRef(null);
 
@@ -44,23 +49,45 @@ const NotePreview = () => {
     return `Viewed by ${user?.name || 'User'} | ${user?.email || ''} | ${stamp}`;
   }, [user?.email, user?.name]);
 
-  const loadPreview = async () => {
+  const loadPreview = async (pwd = enteredPassword) => {
     setLoading(true);
     setError('');
     if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
 
     try {
-      const infoRes = await api.get(`/notes/preview-info/${id}`);
+      const config = pwd ? { headers: { 'x-note-password': pwd } } : {};
+      const infoRes = await api.get(`/notes/preview-info/${id}`, config);
       setNote(infoRes.data);
+      setIsPasswordProtected(infoRes.data.isPasswordProtected);
 
-      const fileRes = await api.get(`/notes/preview/${id}`, { responseType: 'blob' });
+      const fileRes = await api.get(`/notes/preview/${id}`, { 
+        responseType: 'blob',
+        ...config
+      });
       const objectUrl = URL.createObjectURL(fileRes.data);
       previewUrlRef.current = objectUrl;
       setPreviewUrl(objectUrl);
+      setIsPasswordModalOpen(false);
     } catch (err) {
-      setError(await readApiError(err));
+      const isPwdReq = err.response?.status === 401 || (err.response?.data && (err.response.data.isPasswordRequired || err.response.data.message?.includes('Password')));
+      if (isPwdReq) {
+        setIsPasswordProtected(true);
+        setIsPasswordModalOpen(true);
+      } else {
+        setError(await readApiError(err));
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePasswordSubmit = async (password) => {
+    try {
+      await api.post(`/notes/verify-password/${id}`, { password });
+      setEnteredPassword(password);
+      await loadPreview(password);
+    } catch (err) {
+      throw new Error(err.response?.data?.message || 'Invalid password');
     }
   };
 
@@ -116,64 +143,73 @@ const NotePreview = () => {
   }
 
   return (
-    <div className="protected-preview pb-16">
-      <AdUnit placement="top" className="mb-6" />
+    <ScreenshotGuard isEnabled={isPasswordProtected}>
+      <div className="protected-preview pb-16">
+        <AdUnit placement="top" className="mb-6" />
 
-      <div className="mb-5 flex flex-col gap-4 rounded-lg border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <button onClick={() => navigate(-1)} className="mb-2 flex items-center gap-2 text-sm font-bold text-muted hover:text-accent">
-            <ArrowLeft size={16} />
-            Back
-          </button>
-          <div className="flex items-center gap-2 text-xs font-bold uppercase text-accent">
-            <Eye size={16} />
-            Preview only
-          </div>
-          <h1 className="truncate text-2xl font-bold text-foreground">{note?.title}</h1>
-          <p className="text-sm text-muted">{note?.subject} | {note?.uploader?.name || 'Anonymous'}</p>
-        </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <button
-            onClick={loadPreview}
-            className="flex items-center justify-center gap-2 rounded-field bg-surface-secondary px-4 py-3 font-bold hover:bg-surface-tertiary"
-          >
-            <RefreshCw size={18} />
-            Refresh Preview
-          </button>
-          <button
-            onClick={toggleFullscreen}
-            className="flex items-center justify-center gap-2 rounded-field bg-accent px-4 py-3 font-bold text-accent-foreground hover:opacity-90"
-          >
-            {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
-            {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
-          </button>
-        </div>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
-        <section ref={previewFrameRef} className="preview-fullscreen-shell relative min-h-[75vh] overflow-hidden rounded-lg border border-border bg-surface">
-          <div className="pointer-events-none absolute inset-0 z-10 select-none opacity-70">
-            <div className="preview-watermark-grid h-full w-full" style={{ '--watermark-text': `"${watermark}"` }} />
-            <div className="absolute bottom-4 left-4 right-4 rounded-lg bg-surface/80 px-4 py-2 text-xs font-bold text-foreground shadow-sm">
-              {watermark}
+        <div className="mb-5 flex flex-col gap-4 rounded-lg border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <button onClick={() => navigate(-1)} className="mb-2 flex items-center gap-2 text-sm font-bold text-muted hover:text-accent">
+              <ArrowLeft size={16} />
+              Back
+            </button>
+            <div className="flex items-center gap-2 text-xs font-bold uppercase text-accent">
+              <Eye size={16} />
+              Preview only
             </div>
+            <h1 className="truncate text-2xl font-bold text-foreground">{note?.title}</h1>
+            <p className="text-sm text-muted">{note?.subject} | {note?.uploader?.name || 'Anonymous'}</p>
           </div>
-          <iframe
-            title={note?.title || 'Protected note preview'}
-            src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=1`}
-            className="h-[78vh] w-full select-none bg-white"
-            draggable="false"
-            onContextMenu={(e) => e.preventDefault()}
-          />
-        </section>
-
-        <div className="space-y-6">
-          <AdUnit placement="sidebar" className="hidden lg:block" />
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button
+              onClick={() => loadPreview()}
+              className="flex items-center justify-center gap-2 rounded-field bg-surface-secondary px-4 py-3 font-bold hover:bg-surface-tertiary"
+            >
+              <RefreshCw size={18} />
+              Refresh Preview
+            </button>
+            <button
+              onClick={toggleFullscreen}
+              className="flex items-center justify-center gap-2 rounded-field bg-accent px-4 py-3 font-bold text-accent-foreground hover:opacity-90"
+            >
+              {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+              {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+            </button>
+          </div>
         </div>
+
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
+          <section ref={previewFrameRef} className="preview-fullscreen-shell relative min-h-[75vh] overflow-hidden rounded-lg border border-border bg-surface">
+            <div className="pointer-events-none absolute inset-0 z-10 select-none opacity-70">
+              <div className="preview-watermark-grid h-full w-full" style={{ '--watermark-text': `"${watermark}"` }} />
+              <div className="absolute bottom-4 left-4 right-4 rounded-lg bg-surface/80 px-4 py-2 text-xs font-bold text-foreground shadow-sm">
+                {watermark}
+              </div>
+            </div>
+            <iframe
+              title={note?.title || 'Protected note preview'}
+              src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=1`}
+              className="h-[78vh] w-full select-none bg-white dark-invert-pdf"
+              draggable="false"
+              onContextMenu={(e) => e.preventDefault()}
+            />
+          </section>
+
+          <div className="space-y-6">
+            <AdUnit placement="sidebar" className="hidden lg:block" />
+          </div>
+        </div>
+
+        <AdUnit placement="footer" className="mt-8" />
       </div>
 
-      <AdUnit placement="footer" className="mt-8" />
-    </div>
+      <PasswordModal
+        isOpen={isPasswordModalOpen}
+        onClose={() => navigate(-1)}
+        onSubmit={handlePasswordSubmit}
+        title={note?.title || 'Protected Note'}
+      />
+    </ScreenshotGuard>
   );
 };
 

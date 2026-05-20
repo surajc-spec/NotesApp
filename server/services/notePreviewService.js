@@ -4,6 +4,7 @@ const http = require('http');
 const https = require('https');
 const path = require('path');
 const cloudinary = require('cloudinary').v2;
+const bcrypt = require('bcryptjs');
 
 const toSafeNote = (note) => {
   const source = typeof note.toObject === 'function' ? note.toObject() : note;
@@ -12,6 +13,7 @@ const toSafeNote = (note) => {
     filePublicId,
     fileResourceType,
     fileStorageType,
+    password, // Exclude hashed password from output
     __v,
     ...safe
   } = source;
@@ -19,6 +21,7 @@ const toSafeNote = (note) => {
   return {
     ...safe,
     noteId: String(source._id),
+    isPasswordProtected: !!source.password,
   };
 };
 
@@ -28,6 +31,17 @@ const canAccessNote = (note, user) => {
   if (isOwner) return true;
 
   return note.isPublic && note.branch === user.branch && note.year === user.year;
+};
+
+const verifyNotePassword = async (note, user, enteredPassword) => {
+  const uploaderId = note.uploader?._id || note.uploader;
+  const isOwner = uploaderId && uploaderId.toString() === String(user._id || user.id);
+  if (isOwner) return true;
+
+  if (!note.password) return true;
+  if (!enteredPassword) return false;
+
+  return await bcrypt.compare(enteredPassword, note.password);
 };
 
 const resolveLocalPdfPath = (fileUrl) => {
@@ -142,6 +156,7 @@ const streamPreviewFile = async (note, res) => {
 
 module.exports = {
   canAccessNote,
+  verifyNotePassword,
   streamPreviewFile,
   toSafeNote,
 };
