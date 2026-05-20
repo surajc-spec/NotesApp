@@ -107,6 +107,8 @@ const ScreenshotGuard = ({ children, isEnabled = true }) => {
       const isModifier = e.ctrlKey || e.metaKey; // Windows Ctrl or macOS Cmd
       
       const isCopy = isModifier && (key === 'c' || keyCode === 67);
+      const isPaste = isModifier && (key === 'v' || keyCode === 86);
+      const isCut = isModifier && (key === 'x' || keyCode === 88);
       const isSave = isModifier && (key === 's' || keyCode === 83);
       const isPrint = isModifier && (key === 'p' || keyCode === 80);
       const isViewSource = isModifier && (key === 'u' || keyCode === 85);
@@ -120,7 +122,7 @@ const ScreenshotGuard = ({ children, isEnabled = true }) => {
       // Console (Ctrl+Shift+J)
       const isConsole = isModifier && e.shiftKey && (key === 'j' || keyCode === 74);
 
-      if (isCopy || isSave || isPrint || isViewSource || isDevTools || isInspectElement || isConsole) {
+      if (isCopy || isPaste || isCut || isSave || isPrint || isViewSource || isDevTools || isInspectElement || isConsole) {
         e.preventDefault();
         e.stopPropagation();
         triggerTemporaryAlert('Screenshots and copying are disabled for protected notes.');
@@ -135,13 +137,17 @@ const ScreenshotGuard = ({ children, isEnabled = true }) => {
       const isWinSnipping = e.metaKey && e.shiftKey && (key === 's' || keyCode === 83);
       const isFKey = (keyCode >= 112 && keyCode <= 123) || /^f(1[0-2]|\d)$/i.test(e.key);
       const isCtrlShiftS = (e.ctrlKey || e.metaKey) && e.shiftKey && (key === 's' || keyCode === 83);
+      
+      const isModifier = e.ctrlKey || e.metaKey;
+      const isCopyPasteCut = isModifier && (['c', 'v', 'x'].includes(key) || [67, 86, 88].includes(keyCode));
 
-      // Clear clipboard on keyup if screenshot hotkey fired
+      // Clear clipboard on keyup if screenshot/copy-paste hotkey fired
       if (
         isPrintScreen || 
         isWinSnipping ||
         isFKey ||
-        isCtrlShiftS
+        isCtrlShiftS ||
+        isCopyPasteCut
       ) {
         try {
           navigator.clipboard.writeText(''); 

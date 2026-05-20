@@ -16,10 +16,14 @@ const SecurityDeterrents = () => {
       const isCtrlShiftS = event.ctrlKey && event.shiftKey && (key === 's' || keyCode === 83);
       const isWinSnipping = event.metaKey && event.shiftKey && (key === 's' || keyCode === 83);
       
+      const isModifier = event.ctrlKey || event.metaKey;
+      const isCopyPasteCut = isModifier && (['c', 'v', 'x'].includes(key) || [67, 86, 88].includes(keyCode));
+      
       const blocked =
         isFKey ||
         isCtrlShiftS ||
         isWinSnipping ||
+        isCopyPasteCut ||
         (event.ctrlKey && ['s', 'p', 'u'].includes(key)) ||
         (event.ctrlKey && event.shiftKey && ['i', 'j', 'c'].includes(key));
 
@@ -29,14 +33,25 @@ const SecurityDeterrents = () => {
       }
     };
 
+    const blockClipboard = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+    };
+
     document.addEventListener('contextmenu', blockContextMenu);
     document.addEventListener('dragstart', blockDrag);
     document.addEventListener('keydown', blockShortcuts, true);
+    document.addEventListener('copy', blockClipboard, true);
+    document.addEventListener('cut', blockClipboard, true);
+    document.addEventListener('paste', blockClipboard, true);
 
     return () => {
       document.removeEventListener('contextmenu', blockContextMenu);
       document.removeEventListener('dragstart', blockDrag);
       document.removeEventListener('keydown', blockShortcuts, true);
+      document.removeEventListener('copy', blockClipboard, true);
+      document.removeEventListener('cut', blockClipboard, true);
+      document.removeEventListener('paste', blockClipboard, true);
     };
   }, []);
 

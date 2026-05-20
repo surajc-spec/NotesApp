@@ -57,11 +57,14 @@ const FullscreenGuard = ({ children, isEnabled = true }) => {
       
       const isFKey = (keyCode >= 112 && keyCode <= 123) || /^f(1[0-2]|\d)$/i.test(e.key);
       const isCtrlShiftS = (e.ctrlKey || e.metaKey) && e.shiftKey && (key === 's' || keyCode === 83);
+      
+      const isModifier = e.ctrlKey || e.metaKey;
+      const isCopyPasteCut = isModifier && (['c', 'v', 'x'].includes(key) || [67, 86, 88].includes(keyCode));
 
-      if (isPrintScreen || isAltPrintScreen || isMacCapture || isWinSnipping || isF11 || isFKey || isCtrlShiftS) {
+      if (isPrintScreen || isAltPrintScreen || isMacCapture || isWinSnipping || isF11 || isFKey || isCtrlShiftS || isCopyPasteCut) {
         e.preventDefault();
         e.stopPropagation();
-        triggerBlackout('Screenshots and capture shortcuts are blocked in protected fullscreen mode.');
+        triggerBlackout('Screenshots and copy/paste shortcuts are blocked in protected fullscreen mode.');
         return;
       }
     };
@@ -73,12 +76,15 @@ const FullscreenGuard = ({ children, isEnabled = true }) => {
       const isWinSnipping = e.metaKey && e.shiftKey && (key === 's' || keyCode === 83);
       const isFKey = (keyCode >= 112 && keyCode <= 123) || /^f(1[0-2]|\d)$/i.test(e.key);
       const isCtrlShiftS = (e.ctrlKey || e.metaKey) && e.shiftKey && (key === 's' || keyCode === 83);
+      
+      const isModifier = e.ctrlKey || e.metaKey;
+      const isCopyPasteCut = isModifier && (['c', 'v', 'x'].includes(key) || [67, 86, 88].includes(keyCode));
 
-      if (isPrintScreen || isWinSnipping || isFKey || isCtrlShiftS) {
+      if (isPrintScreen || isWinSnipping || isFKey || isCtrlShiftS || isCopyPasteCut) {
         try {
           navigator.clipboard.writeText('');
         } catch (_) {}
-        triggerBlackout('Screenshots and capture shortcuts are blocked in protected fullscreen mode.');
+        triggerBlackout('Screenshots and copy/paste shortcuts are blocked in protected fullscreen mode.');
       }
     };
 
