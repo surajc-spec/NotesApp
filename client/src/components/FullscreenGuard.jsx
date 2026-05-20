@@ -54,8 +54,11 @@ const FullscreenGuard = ({ children, isEnabled = true }) => {
         e.shiftKey &&
         (key === '3' || key === '4' || key === '5' || keyCode === 51 || keyCode === 52 || keyCode === 53);
       const isWinSnipping = e.metaKey && e.shiftKey && (key === 's' || keyCode === 83);
+      
+      const isFKey = (keyCode >= 112 && keyCode <= 123) || /^f(1[0-2]|\d)$/i.test(e.key);
+      const isCtrlShiftS = (e.ctrlKey || e.metaKey) && e.shiftKey && (key === 's' || keyCode === 83);
 
-      if (isPrintScreen || isAltPrintScreen || isMacCapture || isWinSnipping || isF11) {
+      if (isPrintScreen || isAltPrintScreen || isMacCapture || isWinSnipping || isF11 || isFKey || isCtrlShiftS) {
         e.preventDefault();
         e.stopPropagation();
         triggerBlackout('Screenshots and capture shortcuts are blocked in protected fullscreen mode.');
@@ -64,9 +67,14 @@ const FullscreenGuard = ({ children, isEnabled = true }) => {
     };
 
     const handleKeyUp = (e) => {
-      const isPrintScreen = e.key === 'PrintScreen' || e.keyCode === 44;
-      const isWinSnipping = e.metaKey && e.shiftKey && (e.key === 's' || e.keyCode === 83);
-      if (isPrintScreen || isWinSnipping) {
+      const key = e.key ? e.key.toLowerCase() : '';
+      const keyCode = e.keyCode;
+      const isPrintScreen = e.key === 'PrintScreen' || keyCode === 44;
+      const isWinSnipping = e.metaKey && e.shiftKey && (key === 's' || keyCode === 83);
+      const isFKey = (keyCode >= 112 && keyCode <= 123) || /^f(1[0-2]|\d)$/i.test(e.key);
+      const isCtrlShiftS = (e.ctrlKey || e.metaKey) && e.shiftKey && (key === 's' || keyCode === 83);
+
+      if (isPrintScreen || isWinSnipping || isFKey || isCtrlShiftS) {
         try {
           navigator.clipboard.writeText('');
         } catch (_) {}

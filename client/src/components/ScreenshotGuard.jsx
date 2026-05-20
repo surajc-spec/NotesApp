@@ -79,7 +79,24 @@ const ScreenshotGuard = ({ children, isEnabled = true }) => {
       // D. Windows Snipping Shortcut (Win + Shift + S)
       const isWinSnipping = e.metaKey && e.shiftKey && (key === 's' || keyCode === 83);
 
-      if (isPrintScreen || isAltPrintScreen || isWinPrintScreen || isWinAltPrintScreen || isShiftPrintScreen || isMacCapture || isWinSnipping || isF11) {
+      // E. All Function Keys (F1 - F12)
+      const isFKey = (keyCode >= 112 && keyCode <= 123) || /^f(1[0-2]|\d)$/i.test(e.key);
+
+      // F. Ctrl + Shift + S Shortcut
+      const isCtrlShiftS = (e.ctrlKey || e.metaKey) && e.shiftKey && (key === 's' || keyCode === 83);
+
+      if (
+        isPrintScreen || 
+        isAltPrintScreen || 
+        isWinPrintScreen || 
+        isWinAltPrintScreen || 
+        isShiftPrintScreen || 
+        isMacCapture || 
+        isWinSnipping || 
+        isF11 ||
+        isFKey ||
+        isCtrlShiftS
+      ) {
         e.preventDefault();
         e.stopPropagation();
         triggerTemporaryAlert('Screenshots and copying are disabled for protected notes.');
@@ -112,11 +129,19 @@ const ScreenshotGuard = ({ children, isEnabled = true }) => {
     };
 
     const handleKeyUp = (e) => {
+      const key = e.key ? e.key.toLowerCase() : '';
+      const keyCode = e.keyCode;
+      const isPrintScreen = e.key === 'PrintScreen' || keyCode === 44;
+      const isWinSnipping = e.metaKey && e.shiftKey && (key === 's' || keyCode === 83);
+      const isFKey = (keyCode >= 112 && keyCode <= 123) || /^f(1[0-2]|\d)$/i.test(e.key);
+      const isCtrlShiftS = (e.ctrlKey || e.metaKey) && e.shiftKey && (key === 's' || keyCode === 83);
+
       // Clear clipboard on keyup if screenshot hotkey fired
       if (
-        e.key === 'PrintScreen' || 
-        e.keyCode === 44 ||
-        (e.metaKey && e.shiftKey && (e.key === 's' || e.keyCode === 83))
+        isPrintScreen || 
+        isWinSnipping ||
+        isFKey ||
+        isCtrlShiftS
       ) {
         try {
           navigator.clipboard.writeText(''); 
