@@ -82,7 +82,7 @@ const Footer = () => {
           </p>
           <p className="text-xs text-muted flex items-center gap-1">
             {/* <span>Powered by secure academic streaming</span> */}
-            <span className="w-1.5 h-1.5 rounded-full bg-success"></span>
+            {/* <span className="w-1.5 h-1.5 rounded-full bg-success"></span> */}
             {/* <span className="text-success font-medium">Secured Preview Mode</span> */}
           </p>
         </div>
