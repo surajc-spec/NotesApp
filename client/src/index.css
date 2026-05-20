@@ -5,8 +5,7 @@
 
 @theme {
   --font-sans: "Fredoka", ui-sans-serif, system-ui, sans-serif;
-  --font-datatype: "Datatype", "Fredoka", sans-serif;
-  --font-iosevka: "Iosevka Charon", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-ubuntu: "Ubuntu", sans-serif;
   
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
@@ -131,11 +130,11 @@
   }
   
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-datatype);
+    font-family: var(--font-ubuntu);
   }
   
   code, pre, kbd, samp {
-    font-family: var(--font-iosevka);
+    font-family: var(--font-ubuntu);
   }
 }
 
@@ -152,7 +151,7 @@
 }
 
 .protected-preview {
-  font-family: var(--font-iosevka);
+  font-family: var(--font-ubuntu);
 }
 
 .protected-preview,
@@ -223,4 +222,53 @@ body,
 .dark .dark-invert-pdf {
   filter: invert(0.9) hue-rotate(180deg);
   background-color: #0f1117 !important;
+}
+
+/* Custom Ubuntu Font Utility Classes */
+.ubuntu-light {
+  font-family: "Ubuntu", sans-serif;
+  font-weight: 300;
+  font-style: normal;
+}
+
+.ubuntu-regular {
+  font-family: "Ubuntu", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.ubuntu-medium {
+  font-family: "Ubuntu", sans-serif;
+  font-weight: 500;
+  font-style: normal;
+}
+
+.ubuntu-bold {
+  font-family: "Ubuntu", sans-serif;
+  font-weight: 700;
+  font-style: normal;
+}
+
+.ubuntu-light-italic {
+  font-family: "Ubuntu", sans-serif;
+  font-weight: 300;
+  font-style: italic;
+}
+
+.ubuntu-regular-italic {
+  font-family: "Ubuntu", sans-serif;
+  font-weight: 400;
+  font-style: italic;
+}
+
+.ubuntu-medium-italic {
+  font-family: "Ubuntu", sans-serif;
+  font-weight: 500;
+  font-style: italic;
+}
+
+.ubuntu-bold-italic {
+  font-family: "Ubuntu", sans-serif;
+  font-weight: 700;
+  font-style: italic;
 }
