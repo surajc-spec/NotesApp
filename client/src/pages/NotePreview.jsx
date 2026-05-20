@@ -143,7 +143,7 @@ const NotePreview = () => {
   }
 
   return (
-    <ScreenshotGuard isEnabled={isPasswordProtected}>
+    <ScreenshotGuard isEnabled={true}>
       <div className="protected-preview pb-16">
         <AdUnit placement="top" className="mb-6" />
 

@@ -22,26 +22,28 @@ const ScreenshotGuard = ({ children, isEnabled = true }) => {
 
     // 1. Keyboard Shortcuts Prevention
     const handleKeyDown = (e) => {
-      // PrintScreen key
-      if (e.key === 'PrintScreen') {
+      // PrintScreen key (standard code 44 or key name)
+      if (e.key === 'PrintScreen' || e.keyCode === 44) {
         e.preventDefault();
-        triggerTemporaryAlert('Screenshots are disabled for protected notes');
+        triggerTemporaryAlert('Screenshots and downloads are disabled for notes');
         return;
       }
 
       // Ctrl + C, Ctrl + S, Ctrl + P
       if (e.ctrlKey && (e.key === 'c' || e.key === 'C' || e.key === 's' || e.key === 'S' || e.key === 'p' || e.key === 'P')) {
         e.preventDefault();
-        triggerTemporaryAlert(`This action (${e.key.toUpperCase()}) is disabled for protected notes`);
+        triggerTemporaryAlert(`This action (${e.key.toUpperCase()}) is disabled for notes`);
         return;
       }
     };
 
     // Print screen on keyup as well
     const handleKeyUp = (e) => {
-      if (e.key === 'PrintScreen') {
-        navigator.clipboard.writeText(''); // Clear clipboard
-        triggerTemporaryAlert('Screenshots are disabled for protected notes');
+      if (e.key === 'PrintScreen' || e.keyCode === 44) {
+        try {
+          navigator.clipboard.writeText(''); // Clear clipboard
+        } catch (_) {}
+        triggerTemporaryAlert('Screenshots and downloads are disabled for notes');
       }
     };
 
