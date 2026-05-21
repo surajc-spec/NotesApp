@@ -7,6 +7,7 @@ import AdUnit from '../components/AdUnit';
 import PasswordModal from '../components/PasswordModal';
 import ScreenshotGuard from '../components/ScreenshotGuard';
 import FullscreenGuard from '../components/FullscreenGuard';
+import ProtectedPdfViewer from '../components/ProtectedPdfViewer';
 
 const NotePreview = () => {
   const { id } = useParams();
@@ -53,7 +54,11 @@ const NotePreview = () => {
   const loadPreview = async (pwd = enteredPassword) => {
     setLoading(true);
     setError('');
-    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = '';
+    }
 
     try {
       const config = pwd ? { headers: { 'x-note-password': pwd } } : {};
@@ -61,16 +66,22 @@ const NotePreview = () => {
       setNote(infoRes.data);
       setIsPasswordProtected(infoRes.data.isPasswordProtected);
 
-      const fileRes = await api.get(`/notes/preview/${id}`, { 
+      const fileRes = await api.get(`/notes/preview/${id}`, {
         responseType: 'blob',
-        ...config
+        ...config,
       });
+
       const objectUrl = URL.createObjectURL(fileRes.data);
       previewUrlRef.current = objectUrl;
       setPreviewUrl(objectUrl);
       setIsPasswordModalOpen(false);
     } catch (err) {
-      const isPwdReq = err.response?.status === 401 || (err.response?.data && (err.response.data.isPasswordRequired || err.response.data.message?.includes('Password')));
+      const isPwdReq =
+        err.response?.status === 401 ||
+        (err.response?.data &&
+          (err.response.data.isPasswordRequired ||
+            err.response.data.message?.includes('Password')));
+
       if (isPwdReq) {
         setIsPasswordProtected(true);
         setIsPasswordModalOpen(true);
@@ -94,6 +105,7 @@ const NotePreview = () => {
 
   useEffect(() => {
     loadPreview();
+
     return () => {
       if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
     };
@@ -136,7 +148,10 @@ const NotePreview = () => {
           <h2 className="text-2xl font-bold">Preview unavailable</h2>
           <p className="mt-2 text-muted">{error}</p>
         </div>
-        <button onClick={() => navigate('/notes')} className="rounded-field bg-accent px-5 py-3 font-bold text-accent-foreground">
+        <button
+          onClick={() => navigate('/notes')}
+          className="rounded-field bg-accent px-5 py-3 font-bold text-accent-foreground"
+        >
           Back to Notes
         </button>
       </div>
@@ -150,7 +165,10 @@ const NotePreview = () => {
 
         <div className="mb-5 flex flex-col gap-4 rounded-lg border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <button onClick={() => navigate(-1)} className="mb-2 flex items-center gap-2 text-sm font-bold text-muted hover:text-accent">
+            <button
+              onClick={() => navigate(-1)}
+              className="mb-2 flex items-center gap-2 text-sm font-bold text-muted hover:text-accent"
+            >
               <ArrowLeft size={16} />
               Back
             </button>
@@ -159,8 +177,11 @@ const NotePreview = () => {
               Preview only
             </div>
             <h1 className="truncate text-2xl font-bold text-foreground">{note?.title}</h1>
-            <p className="text-sm text-muted">{note?.subject} | {note?.uploader?.name || 'Anonymous'}</p>
+            <p className="text-sm text-muted">
+              {note?.subject} | {note?.uploader?.name || 'Anonymous'}
+            </p>
           </div>
+
           <div className="flex flex-col gap-2 sm:flex-row">
             <button
               onClick={() => loadPreview()}
@@ -180,20 +201,25 @@ const NotePreview = () => {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
-          <section ref={previewFrameRef} className="preview-fullscreen-shell relative min-h-[75vh] overflow-hidden rounded-lg border border-border bg-surface">
+          <section
+            ref={previewFrameRef}
+            className="preview-fullscreen-shell relative min-h-[75vh] overflow-hidden rounded-lg border border-border bg-surface"
+            onContextMenu={(e) => e.preventDefault()}
+          >
             <FullscreenGuard isEnabled={true}>
               <div className="pointer-events-none absolute inset-0 z-10 select-none opacity-70">
-                <div className="preview-watermark-grid h-full w-full" style={{ '--watermark-text': `"${watermark}"` }} />
+                <div
+                  className="preview-watermark-grid h-full w-full"
+                  style={{ '--watermark-text': `"${watermark}"` }}
+                />
                 <div className="absolute bottom-4 left-4 right-4 rounded-lg bg-surface/80 px-4 py-2 text-xs font-bold text-foreground shadow-sm">
                   {watermark}
                 </div>
               </div>
-              <iframe
+
+              <ProtectedPdfViewer
+                fileUrl={previewUrl}
                 title={note?.title || 'Protected note preview'}
-                src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=1`}
-                className="h-[78vh] w-full select-none bg-white dark-invert-pdf"
-                draggable="false"
-                onContextMenu={(e) => e.preventDefault()}
               />
             </FullscreenGuard>
           </section>

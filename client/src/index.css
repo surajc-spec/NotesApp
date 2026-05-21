@@ -47,7 +47,6 @@
 .default,
 [data-theme="light"],
 [data-theme="default"] {
-  /* Theme Colors (Light Mode) */
   --accent: oklch(78.00% 0.1700 166.00);
   --accent-foreground: oklch(15% 0.0300 166.00);
   --background: oklch(97.02% 0.0077 166.00);
@@ -79,11 +78,9 @@
   --warning: oklch(78.19% 0.1609 61.79);
   --warning-foreground: oklch(21.03% 0.0059 61.79);
 
-  /* Border Radius */
   --radius: 0.125rem;
   --field-radius: 1rem;
 
-  /* Font Family */
   --font-fredoka: "Fredoka", sans-serif;
   --font-sans: var(--font-fredoka);
 }
@@ -91,7 +88,6 @@
 .dark,
 [data-theme="dark"] {
   color-scheme: dark;
-  /* Theme Colors (Dark Mode) */
   --accent: oklch(78.00% 0.1700 166.00);
   --accent-foreground: oklch(15% 0.0300 166.00);
   --background: oklch(12.00% 0.0077 166.00);
@@ -161,7 +157,8 @@
 }
 
 .protected-preview img,
-.protected-preview iframe {
+.protected-preview iframe,
+.protected-preview canvas {
   -webkit-user-drag: none;
 }
 
@@ -199,11 +196,11 @@
   background: var(--surface);
 }
 
-.preview-fullscreen-shell:fullscreen iframe {
+.preview-fullscreen-shell:fullscreen iframe,
+.preview-fullscreen-shell:fullscreen .protected-pdf-viewer {
   height: 100vh;
 }
 
-/* Smooth theme transition */
 body, 
 .bg-background, 
 .bg-surface, 
@@ -222,6 +219,23 @@ body,
 .dark .dark-invert-pdf {
   filter: invert(0.9) hue-rotate(180deg);
   background-color: #0f1117 !important;
+}
+
+.protected-pdf-viewer {
+  overscroll-behavior: contain;
+}
+
+.protected-pdf-page {
+  display: block;
+  max-width: 100%;
+  background: white;
+  box-shadow: 0 14px 40px color-mix(in oklch, var(--foreground) 14%, transparent);
+}
+
+@media print {
+  .protected-preview {
+    display: none !important;
+  }
 }
 
 /* Custom Ubuntu Font Utility Classes */

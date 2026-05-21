@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { ShieldAlert, EyeOff, Lock } from 'lucide-react';
 import { useFullscreenProtection } from '../hooks/useFullscreenProtection';
 
@@ -20,6 +20,28 @@ const FullscreenGuard = ({ children, isEnabled = true }) => {
     fullscreenAlertMessage,
     setFullscreenAlertMessage,
   } = useFullscreenProtection();
+  const dummyRef = useRef(null);
+
+  useEffect(() => {
+    if (!isEnabled) return;
+
+    const checkFocus = () => {
+      if (document.activeElement && document.activeElement.tagName === 'IFRAME') {
+        try {
+          navigator.clipboard.writeText('');
+        } catch (_) {}
+        dummyRef.current?.focus();
+      }
+    };
+
+    const interval = setInterval(checkFocus, 100);
+    window.addEventListener('blur', checkFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('blur', checkFocus);
+    };
+  }, [isEnabled]);
 
   useEffect(() => {
     if (!isEnabled || !isFullscreen) return;
@@ -172,6 +194,7 @@ const FullscreenGuard = ({ children, isEnabled = true }) => {
 
   return (
     <div className={wrapperClasses}>
+      <div ref={dummyRef} tabIndex={-1} className="sr-only outline-none" />
       {/* Content wrapper with heavy blur and opacity filter */}
       <div className={`${contentFilter} ${transitionClass} w-full h-full`}>
         {children}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { ShieldAlert, EyeOff } from 'lucide-react';
 
 /*
@@ -14,6 +14,28 @@ const ScreenshotGuard = ({ children, isEnabled = true }) => {
   const [isAlertActive, setIsAlertActive] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [isBlurred, setIsBlurred] = useState(false);
+  const dummyRef = useRef(null);
+
+  useEffect(() => {
+    if (!isEnabled) return;
+
+    const checkFocus = () => {
+      if (document.activeElement && document.activeElement.tagName === 'IFRAME') {
+        try {
+          navigator.clipboard.writeText('');
+        } catch (_) {}
+        dummyRef.current?.focus();
+      }
+    };
+
+    const interval = setInterval(checkFocus, 100);
+    window.addEventListener('blur', checkFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('blur', checkFocus);
+    };
+  }, [isEnabled]);
 
 
 
@@ -242,6 +264,7 @@ const ScreenshotGuard = ({ children, isEnabled = true }) => {
 
   return (
     <div className={`relative ${guardClasses} w-full h-full`}>
+      <div ref={dummyRef} tabIndex={-1} className="sr-only outline-none" />
       
       {/* Target Content Wrapper */}
       <div 
