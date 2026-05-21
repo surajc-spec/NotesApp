@@ -4,12 +4,14 @@ const slotMap = {
   top: import.meta.env.VITE_ADSENSE_TOP_SLOT,
   sidebar: import.meta.env.VITE_ADSENSE_SIDEBAR_SLOT,
   footer: import.meta.env.VITE_ADSENSE_FOOTER_SLOT,
+  fullscreen: import.meta.env.VITE_ADSENSE_FULLSCREEN_SLOT,
 };
 
 const labels = {
   top: 'Sponsored',
   sidebar: 'Sponsored',
   footer: 'Sponsored',
+  fullscreen: 'Sponsored',
 };
 
 const AdUnit = ({ placement = 'top', className = '' }) => {
@@ -44,6 +46,7 @@ const AdUnit = ({ placement = 'top', className = '' }) => {
       <div className="border-b border-border px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted">
         {labels[placement] || 'Sponsored'}
       </div>
+
       {enabled ? (
         <ins
           className="adsbygoogle block min-h-24"
