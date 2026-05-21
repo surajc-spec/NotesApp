@@ -4,7 +4,7 @@ import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
-const ProtectedPdfViewer = ({ fileUrl, title }) => {
+const ProtectedPdfViewer = ({ fileUrl, title, isFullscreen = false }) => {
   const containerRef = useRef(null);
   const canvasRefs = useRef([]);
   const [pages, setPages] = useState([]);
@@ -74,7 +74,9 @@ const ProtectedPdfViewer = ({ fileUrl, title }) => {
     <div
       ref={containerRef}
       title={title}
-      className="protected-pdf-viewer custom-scrollbar h-[78vh] overflow-y-auto bg-surface-secondary px-3 py-5"
+      className={`protected-pdf-viewer custom-scrollbar overflow-y-auto bg-surface-secondary px-3 py-5 ${
+        isFullscreen ? 'h-[calc(100vh-96px)]' : 'h-[78vh]'
+      }`}
       onContextMenu={(e) => e.preventDefault()}
       draggable="false"
     >
