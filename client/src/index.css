@@ -286,3 +286,8 @@ body,
   font-weight: 700;
   font-style: italic;
 }
+@media print {
+  .protected-preview {
+    display: none !important;
+  }
+}

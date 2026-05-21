@@ -21,8 +21,22 @@ const NotePreview = () => {
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [enteredPassword, setEnteredPassword] = useState('');
   const [isPasswordProtected, setIsPasswordProtected] = useState(false);
+  const [isScreenShieldVisible, setIsScreenShieldVisible] = useState(false);
   const previewUrlRef = useRef('');
   const previewFrameRef = useRef(null);
+  const shieldTimerRef = useRef(null);
+
+  const showScreenShield = () => {
+    setIsScreenShieldVisible(true);
+
+    if (shieldTimerRef.current) {
+      clearTimeout(shieldTimerRef.current);
+    }
+
+    shieldTimerRef.current = setTimeout(() => {
+      setIsScreenShieldVisible(false);
+    }, 1400);
+  };
 
   const readApiError = async (err) => {
     if (!err.response?.data) return err.message || 'Could not open protected preview';
@@ -48,6 +62,7 @@ const NotePreview = () => {
       hour: '2-digit',
       minute: '2-digit',
     });
+
     return `Viewed by ${user?.name || 'User'} | ${user?.email || ''} | ${stamp}`;
   }, [user?.email, user?.name]);
 
@@ -108,16 +123,102 @@ const NotePreview = () => {
 
     return () => {
       if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+      if (shieldTimerRef.current) clearTimeout(shieldTimerRef.current);
     };
   }, [id]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(document.fullscreenElement === previewFrameRef.current);
+      const isPreviewFullscreen = document.fullscreenElement === previewFrameRef.current;
+      setIsFullscreen(isPreviewFullscreen);
+
+      if (isPreviewFullscreen) {
+        previewFrameRef.current?.focus();
+      }
     };
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  useEffect(() => {
+    const blockEvent = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
+      return false;
+    };
+
+    const blockProtectedShortcuts = (event) => {
+      const key = event.key?.toLowerCase();
+      const code = event.code?.toLowerCase();
+
+      const hasModifier = event.ctrlKey || event.metaKey || event.altKey || event.shiftKey;
+
+      const isPrintScreen =
+        key === 'printscreen' ||
+        code === 'printscreen' ||
+        event.keyCode === 44;
+
+      const isWindowsScreenshot =
+        event.metaKey &&
+        event.shiftKey &&
+        ['s', '4', '5'].includes(key);
+
+      const isSavePrintViewSource =
+        (event.ctrlKey || event.metaKey) &&
+        ['s', 'p', 'u'].includes(key);
+
+      const isDevTools =
+        key === 'f12' ||
+        ((event.ctrlKey || event.metaKey) && event.shiftKey && ['i', 'j', 'c'].includes(key));
+
+      const isCopyCutSelect =
+        (event.ctrlKey || event.metaKey) &&
+        ['a', 'c', 'x'].includes(key);
+
+      if (
+        isPrintScreen ||
+        isWindowsScreenshot ||
+        isSavePrintViewSource ||
+        isDevTools ||
+        isCopyCutSelect
+      ) {
+        showScreenShield();
+        return blockEvent(event);
+      }
+
+      return true;
+    };
+
+    const blockContextMenu = (event) => blockEvent(event);
+    const blockCopy = (event) => blockEvent(event);
+    const blockPrint = (event) => {
+      showScreenShield();
+      return blockEvent(event);
+    };
+
+    window.addEventListener('keydown', blockProtectedShortcuts, true);
+    window.addEventListener('keyup', blockProtectedShortcuts, true);
+    document.addEventListener('keydown', blockProtectedShortcuts, true);
+    document.addEventListener('keyup', blockProtectedShortcuts, true);
+    document.addEventListener('contextmenu', blockContextMenu, true);
+    document.addEventListener('copy', blockCopy, true);
+    document.addEventListener('cut', blockCopy, true);
+    document.addEventListener('paste', blockCopy, true);
+    window.addEventListener('beforeprint', blockPrint, true);
+
+    return () => {
+      window.removeEventListener('keydown', blockProtectedShortcuts, true);
+      window.removeEventListener('keyup', blockProtectedShortcuts, true);
+      document.removeEventListener('keydown', blockProtectedShortcuts, true);
+      document.removeEventListener('keyup', blockProtectedShortcuts, true);
+      document.removeEventListener('contextmenu', blockContextMenu, true);
+      document.removeEventListener('copy', blockCopy, true);
+      document.removeEventListener('cut', blockCopy, true);
+      document.removeEventListener('paste', blockCopy, true);
+      window.removeEventListener('beforeprint', blockPrint, true);
+    };
   }, []);
 
   const toggleFullscreen = async () => {
@@ -129,6 +230,7 @@ const NotePreview = () => {
     }
 
     await previewFrameRef.current.requestFullscreen();
+    previewFrameRef.current.focus();
   };
 
   if (loading) {
@@ -161,6 +263,12 @@ const NotePreview = () => {
   return (
     <ScreenshotGuard isEnabled={true}>
       <div className="protected-preview pb-16">
+        {isScreenShieldVisible && (
+          <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black text-center text-lg font-bold text-white">
+            Protected preview
+          </div>
+        )}
+
         <AdUnit placement="top" className="mb-6" />
 
         <div className="mb-5 flex flex-col gap-4 rounded-lg border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -203,7 +311,8 @@ const NotePreview = () => {
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
           <section
             ref={previewFrameRef}
-            className="preview-fullscreen-shell relative min-h-[75vh] overflow-hidden rounded-lg border border-border bg-surface"
+            tabIndex={-1}
+            className="preview-fullscreen-shell relative min-h-[75vh] overflow-hidden rounded-lg border border-border bg-surface outline-none"
             onContextMenu={(e) => e.preventDefault()}
           >
             <FullscreenGuard isEnabled={true}>
