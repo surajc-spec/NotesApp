@@ -6,7 +6,6 @@ import { AuthContext } from '../context/AuthContext';
 import AdUnit from '../components/AdUnit';
 import PasswordModal from '../components/PasswordModal';
 import ScreenshotGuard from '../components/ScreenshotGuard';
-import FullscreenGuard from '../components/FullscreenGuard';
 import ProtectedPdfViewer from '../components/ProtectedPdfViewer';
 
 const NotePreview = () => {
@@ -28,12 +27,8 @@ const NotePreview = () => {
 
   const showScreenShield = () => {
     setIsScreenShieldVisible(true);
-
     if (shieldTimerRef.current) clearTimeout(shieldTimerRef.current);
-
-    shieldTimerRef.current = setTimeout(() => {
-      setIsScreenShieldVisible(false);
-    }, 1400);
+    shieldTimerRef.current = setTimeout(() => setIsScreenShieldVisible(false), 1400);
   };
 
   const readApiError = async (err) => {
@@ -138,19 +133,12 @@ const NotePreview = () => {
       const code = event.code?.toLowerCase();
 
       const isPrintScreen = key === 'printscreen' || code === 'printscreen' || event.keyCode === 44;
-
-      const isWindowsScreenshot =
-        event.metaKey && event.shiftKey && ['s', '4', '5'].includes(key);
-
-      const isSavePrintViewSource =
-        (event.ctrlKey || event.metaKey) && ['s', 'p', 'u'].includes(key);
-
+      const isWindowsScreenshot = event.metaKey && event.shiftKey && ['s', '4', '5'].includes(key);
+      const isSavePrintViewSource = (event.ctrlKey || event.metaKey) && ['s', 'p', 'u'].includes(key);
       const isDevTools =
         key === 'f12' ||
         ((event.ctrlKey || event.metaKey) && event.shiftKey && ['i', 'j', 'c'].includes(key));
-
-      const isCopyCutSelect =
-        (event.ctrlKey || event.metaKey) && ['a', 'c', 'x'].includes(key);
+      const isCopyCutSelect = (event.ctrlKey || event.metaKey) && ['a', 'c', 'x'].includes(key);
 
       if (
         isPrintScreen ||
@@ -216,10 +204,7 @@ const NotePreview = () => {
 
   const toggleFullscreen = () => {
     setIsFullscreen((prev) => !prev);
-
-    requestAnimationFrame(() => {
-      previewFrameRef.current?.focus();
-    });
+    requestAnimationFrame(() => previewFrameRef.current?.focus());
   };
 
   if (loading) {
@@ -253,7 +238,7 @@ const NotePreview = () => {
     <ScreenshotGuard isEnabled={true}>
       <div className="protected-preview pb-16">
         {isScreenShieldVisible && (
-          <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black text-center text-lg font-bold text-white">
+          <div className="fixed inset-0 z-[2147483647] flex items-center justify-center bg-black text-center text-lg font-bold text-white">
             Protected preview
           </div>
         )}
@@ -305,66 +290,54 @@ const NotePreview = () => {
             tabIndex={-1}
             className={`preview-fullscreen-shell relative overflow-hidden rounded-lg border border-border bg-surface outline-none ${
               isFullscreen
-                ? 'fixed inset-0 z-[9999] flex h-screen flex-col rounded-none border-0 bg-background'
+                ? 'fixed inset-0 z-[999999] flex h-[100dvh] w-screen flex-col rounded-none border-0 bg-background'
                 : 'min-h-[75vh]'
             }`}
             onContextMenu={(e) => e.preventDefault()}
           >
-            <FullscreenGuard isEnabled={true}>
-              {isFullscreen && (
-                <div className="relative z-30 flex h-24 shrink-0 items-center gap-3 border-b border-border bg-surface px-4">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase text-accent">
-                      <Eye size={16} />
-                      Preview only
-                    </div>
-                    <p className="truncate text-sm font-bold text-foreground">{note?.title}</p>
+            {isFullscreen && (
+              <div className="relative z-30 grid h-20 shrink-0 grid-cols-[minmax(0,1fr)_minmax(220px,520px)_auto] items-center gap-3 border-b border-border bg-surface px-4">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase text-accent">
+                    <Eye size={16} />
+                    Preview only
                   </div>
-
-                  <div className="hidden min-w-0 flex-[2] justify-center md:flex">
-                    <AdUnit
-                      placement="fullscreen"
-                      className="max-h-20 w-full max-w-3xl overflow-hidden"
-                    />
-                  </div>
-
-                  <button
-                    onClick={toggleFullscreen}
-                    className="flex shrink-0 items-center justify-center gap-2 rounded-field bg-accent px-4 py-3 font-bold text-accent-foreground shadow-lg hover:opacity-90"
-                  >
-                    <Minimize size={18} />
-                    Exit
-                  </button>
+                  <p className="truncate text-sm font-bold text-foreground">{note?.title}</p>
                 </div>
-              )}
 
-              <div className="pointer-events-none absolute inset-0 z-10 select-none opacity-70">
-                <div
-                  className="preview-watermark-grid h-full w-full"
-                  style={{ '--watermark-text': `"${watermark}"` }}
+                <AdUnit
+                  placement="fullscreen"
+                  compact
+                  className="h-14 max-h-14 w-full"
                 />
-                <div className="absolute bottom-4 left-4 right-4 rounded-lg bg-surface/80 px-4 py-2 text-xs font-bold text-foreground shadow-sm">
-                  {watermark}
-                </div>
-              </div>
 
-              <div className={isFullscreen ? 'min-h-0 flex-1' : ''}>
-                <ProtectedPdfViewer
-                  fileUrl={previewUrl}
-                  title={note?.title || 'Protected note preview'}
-                  isFullscreen={isFullscreen}
-                />
+                <button
+                  onClick={toggleFullscreen}
+                  className="flex shrink-0 items-center justify-center gap-2 rounded-field bg-accent px-4 py-3 font-bold text-accent-foreground shadow-lg hover:opacity-90"
+                >
+                  <Minimize size={18} />
+                  Exit
+                </button>
               </div>
+            )}
 
-              {isFullscreen && (
-                <div className="relative z-30 flex h-20 shrink-0 items-center justify-center border-t border-border bg-surface px-4">
-                  <AdUnit
-                    placement="fullscreen-footer"
-                    className="max-h-16 w-full max-w-4xl overflow-hidden"
-                  />
-                </div>
-              )}
-            </FullscreenGuard>
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 top-20 z-10 select-none opacity-70">
+              <div
+                className="preview-watermark-grid h-full w-full"
+                style={{ '--watermark-text': `"${watermark}"` }}
+              />
+              <div className="absolute bottom-4 left-4 right-4 rounded-lg bg-surface/80 px-4 py-2 text-xs font-bold text-foreground shadow-sm">
+                {watermark}
+              </div>
+            </div>
+
+            <div className={isFullscreen ? 'min-h-0 flex-1' : ''}>
+              <ProtectedPdfViewer
+                fileUrl={previewUrl}
+                title={note?.title || 'Protected note preview'}
+                isFullscreen={isFullscreen}
+              />
+            </div>
           </section>
 
           {!isFullscreen && (

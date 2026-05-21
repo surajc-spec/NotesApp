@@ -14,10 +14,11 @@ const labels = {
   fullscreen: 'Sponsored',
 };
 
-const AdUnit = ({ placement = 'top', className = '' }) => {
+const AdUnit = ({ placement = 'top', className = '', compact = false }) => {
   const client = import.meta.env.VITE_ADSENSE_CLIENT;
   const slot = slotMap[placement];
   const enabled = Boolean(client && slot);
+  const adMinHeight = compact ? 'min-h-10' : 'min-h-24';
 
   useEffect(() => {
     if (!enabled || document.querySelector(`script[data-adsense-client="${client}"]`)) return;
@@ -43,13 +44,15 @@ const AdUnit = ({ placement = 'top', className = '' }) => {
 
   return (
     <aside className={`overflow-hidden rounded-lg border border-border bg-surface/80 ${className}`}>
-      <div className="border-b border-border px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted">
-        {labels[placement] || 'Sponsored'}
-      </div>
+      {!compact && (
+        <div className="border-b border-border px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted">
+          {labels[placement] || 'Sponsored'}
+        </div>
+      )}
 
       {enabled ? (
         <ins
-          className="adsbygoogle block min-h-24"
+          className={`adsbygoogle block ${adMinHeight}`}
           style={{ display: 'block' }}
           data-ad-client={client}
           data-ad-slot={slot}
@@ -57,7 +60,7 @@ const AdUnit = ({ placement = 'top', className = '' }) => {
           data-full-width-responsive="true"
         />
       ) : (
-        <div className="flex min-h-24 items-center justify-center px-4 py-6 text-center text-xs font-medium text-muted">
+        <div className={`flex ${adMinHeight} items-center justify-center px-4 text-center text-xs font-medium text-muted`}>
           Ad placement
         </div>
       )}
