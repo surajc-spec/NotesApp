@@ -1,4 +1,5 @@
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Eye, Loader2, Maximize, Minimize, RefreshCw, ShieldCheck } from 'lucide-react';
 import api from '../services/api';
@@ -187,17 +188,32 @@ const NotePreview = () => {
   useEffect(() => {
     if (!isFullscreen) return;
 
+    const scrollY = window.scrollY;
+
     const handleEscape = (event) => {
       if (event.key === 'Escape') setIsFullscreen(false);
     };
 
+    document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
-    previewFrameRef.current?.focus();
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.width = '100%';
 
+    previewFrameRef.current?.focus();
     window.addEventListener('keydown', handleEscape, true);
 
     return () => {
+      document.documentElement.style.overflow = '';
       document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.width = '';
+      window.scrollTo(0, scrollY);
       window.removeEventListener('keydown', handleEscape, true);
     };
   }, [isFullscreen]);
@@ -206,6 +222,56 @@ const NotePreview = () => {
     setIsFullscreen((prev) => !prev);
     requestAnimationFrame(() => previewFrameRef.current?.focus());
   };
+
+  const fullscreenLayer =
+    isFullscreen &&
+    createPortal(
+      <section
+        ref={previewFrameRef}
+        tabIndex={-1}
+        className="fixed inset-0 z-[999999] flex h-[100dvh] w-screen flex-col overflow-hidden bg-background outline-none"
+        onContextMenu={(e) => e.preventDefault()}
+      >
+        <div className="relative z-30 grid h-20 shrink-0 grid-cols-[minmax(0,1fr)_minmax(220px,520px)_auto] items-center gap-3 border-b border-border bg-surface px-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase text-accent">
+              <Eye size={16} />
+              Preview only
+            </div>
+            <p className="truncate text-sm font-bold text-foreground">{note?.title}</p>
+          </div>
+
+          <AdUnit placement="fullscreen" compact className="h-14 max-h-14 w-full" />
+
+          <button
+            onClick={toggleFullscreen}
+            className="flex shrink-0 items-center justify-center gap-2 rounded-field bg-accent px-4 py-3 font-bold text-accent-foreground shadow-lg hover:opacity-90"
+          >
+            <Minimize size={18} />
+            Exit
+          </button>
+        </div>
+
+        <div className="relative min-h-0 flex-1 overflow-hidden">
+          <div className="pointer-events-none absolute inset-0 z-10 select-none opacity-70">
+            <div
+              className="preview-watermark-grid h-full w-full"
+              style={{ '--watermark-text': `"${watermark}"` }}
+            />
+            <div className="absolute bottom-4 left-4 right-4 rounded-lg bg-surface/80 px-4 py-2 text-xs font-bold text-foreground shadow-sm">
+              {watermark}
+            </div>
+          </div>
+
+          <ProtectedPdfViewer
+            fileUrl={previewUrl}
+            title={note?.title || 'Protected note preview'}
+            isFullscreen={true}
+          />
+        </div>
+      </section>,
+      document.body
+    );
 
   if (loading) {
     return (
@@ -237,91 +303,59 @@ const NotePreview = () => {
   return (
     <ScreenshotGuard isEnabled={true}>
       <div className="protected-preview pb-16">
+        {fullscreenLayer}
+
         {isScreenShieldVisible && (
           <div className="fixed inset-0 z-[2147483647] flex items-center justify-center bg-black text-center text-lg font-bold text-white">
             Protected preview
           </div>
         )}
 
-        {!isFullscreen && <AdUnit placement="top" className="mb-6" />}
+        <AdUnit placement="top" className="mb-6" />
 
-        {!isFullscreen && (
-          <div className="mb-5 flex flex-col gap-4 rounded-lg border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <button
-                onClick={() => navigate(-1)}
-                className="mb-2 flex items-center gap-2 text-sm font-bold text-muted hover:text-accent"
-              >
-                <ArrowLeft size={16} />
-                Back
-              </button>
-              <div className="flex items-center gap-2 text-xs font-bold uppercase text-accent">
-                <Eye size={16} />
-                Preview only
-              </div>
-              <h1 className="truncate text-2xl font-bold text-foreground">{note?.title}</h1>
-              <p className="text-sm text-muted">
-                {note?.subject} | {note?.uploader?.name || 'Anonymous'}
-              </p>
+        <div className="mb-5 flex flex-col gap-4 rounded-lg border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <button
+              onClick={() => navigate(-1)}
+              className="mb-2 flex items-center gap-2 text-sm font-bold text-muted hover:text-accent"
+            >
+              <ArrowLeft size={16} />
+              Back
+            </button>
+            <div className="flex items-center gap-2 text-xs font-bold uppercase text-accent">
+              <Eye size={16} />
+              Preview only
             </div>
-
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <button
-                onClick={() => loadPreview()}
-                className="flex items-center justify-center gap-2 rounded-field bg-surface-secondary px-4 py-3 font-bold hover:bg-surface-tertiary"
-              >
-                <RefreshCw size={18} />
-                Refresh Preview
-              </button>
-              <button
-                onClick={toggleFullscreen}
-                className="flex items-center justify-center gap-2 rounded-field bg-accent px-4 py-3 font-bold text-accent-foreground hover:opacity-90"
-              >
-                <Maximize size={18} />
-                Fullscreen
-              </button>
-            </div>
+            <h1 className="truncate text-2xl font-bold text-foreground">{note?.title}</h1>
+            <p className="text-sm text-muted">
+              {note?.subject} | {note?.uploader?.name || 'Anonymous'}
+            </p>
           </div>
-        )}
 
-        <div className={isFullscreen ? '' : 'grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]'}>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button
+              onClick={() => loadPreview()}
+              className="flex items-center justify-center gap-2 rounded-field bg-surface-secondary px-4 py-3 font-bold hover:bg-surface-tertiary"
+            >
+              <RefreshCw size={18} />
+              Refresh Preview
+            </button>
+            <button
+              onClick={toggleFullscreen}
+              className="flex items-center justify-center gap-2 rounded-field bg-accent px-4 py-3 font-bold text-accent-foreground hover:opacity-90"
+            >
+              <Maximize size={18} />
+              Fullscreen
+            </button>
+          </div>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
           <section
-            ref={previewFrameRef}
-            tabIndex={-1}
-            className={`preview-fullscreen-shell relative overflow-hidden rounded-lg border border-border bg-surface outline-none ${
-              isFullscreen
-                ? 'fixed inset-0 z-[999999] flex h-[100dvh] w-screen flex-col rounded-none border-0 bg-background'
-                : 'min-h-[75vh]'
-            }`}
+            className="preview-fullscreen-shell relative min-h-[75vh] overflow-hidden rounded-lg border border-border bg-surface"
             onContextMenu={(e) => e.preventDefault()}
           >
-            {isFullscreen && (
-              <div className="relative z-30 grid h-20 shrink-0 grid-cols-[minmax(0,1fr)_minmax(220px,520px)_auto] items-center gap-3 border-b border-border bg-surface px-4">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase text-accent">
-                    <Eye size={16} />
-                    Preview only
-                  </div>
-                  <p className="truncate text-sm font-bold text-foreground">{note?.title}</p>
-                </div>
-
-                <AdUnit
-                  placement="fullscreen"
-                  compact
-                  className="h-14 max-h-14 w-full"
-                />
-
-                <button
-                  onClick={toggleFullscreen}
-                  className="flex shrink-0 items-center justify-center gap-2 rounded-field bg-accent px-4 py-3 font-bold text-accent-foreground shadow-lg hover:opacity-90"
-                >
-                  <Minimize size={18} />
-                  Exit
-                </button>
-              </div>
-            )}
-
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 top-20 z-10 select-none opacity-70">
+            <div className="pointer-events-none absolute inset-0 z-10 select-none opacity-70">
               <div
                 className="preview-watermark-grid h-full w-full"
                 style={{ '--watermark-text': `"${watermark}"` }}
@@ -331,23 +365,19 @@ const NotePreview = () => {
               </div>
             </div>
 
-            <div className={isFullscreen ? 'min-h-0 flex-1' : ''}>
-              <ProtectedPdfViewer
-                fileUrl={previewUrl}
-                title={note?.title || 'Protected note preview'}
-                isFullscreen={isFullscreen}
-              />
-            </div>
+            <ProtectedPdfViewer
+              fileUrl={previewUrl}
+              title={note?.title || 'Protected note preview'}
+              isFullscreen={false}
+            />
           </section>
 
-          {!isFullscreen && (
-            <div className="space-y-6">
-              <AdUnit placement="sidebar" className="hidden lg:block" />
-            </div>
-          )}
+          <div className="space-y-6">
+            <AdUnit placement="sidebar" className="hidden lg:block" />
+          </div>
         </div>
 
-        {!isFullscreen && <AdUnit placement="footer" className="mt-8" />}
+        <AdUnit placement="footer" className="mt-8" />
       </div>
 
       <PasswordModal

@@ -18,7 +18,6 @@ const AdUnit = ({ placement = 'top', className = '', compact = false }) => {
   const client = import.meta.env.VITE_ADSENSE_CLIENT;
   const slot = slotMap[placement];
   const enabled = Boolean(client && slot);
-  const adMinHeight = compact ? 'min-h-10' : 'min-h-24';
 
   useEffect(() => {
     if (!enabled || document.querySelector(`script[data-adsense-client="${client}"]`)) return;
@@ -43,7 +42,11 @@ const AdUnit = ({ placement = 'top', className = '', compact = false }) => {
   }, [enabled, placement, slot]);
 
   return (
-    <aside className={`overflow-hidden rounded-lg border border-border bg-surface/80 ${className}`}>
+    <aside
+      className={`overflow-hidden rounded-lg border border-border bg-surface/80 ${
+        compact ? 'h-full min-h-0' : ''
+      } ${className}`}
+    >
       {!compact && (
         <div className="border-b border-border px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted">
           {labels[placement] || 'Sponsored'}
@@ -52,15 +55,23 @@ const AdUnit = ({ placement = 'top', className = '', compact = false }) => {
 
       {enabled ? (
         <ins
-          className={`adsbygoogle block ${adMinHeight}`}
-          style={{ display: 'block' }}
+          className={`adsbygoogle block ${compact ? 'h-full min-h-0' : 'min-h-24'}`}
+          style={{
+            display: 'block',
+            height: compact ? '100%' : undefined,
+            minHeight: compact ? 0 : undefined,
+          }}
           data-ad-client={client}
           data-ad-slot={slot}
-          data-ad-format="auto"
+          data-ad-format={compact ? 'horizontal' : 'auto'}
           data-full-width-responsive="true"
         />
       ) : (
-        <div className={`flex ${adMinHeight} items-center justify-center px-4 text-center text-xs font-medium text-muted`}>
+        <div
+          className={`flex items-center justify-center px-4 text-center text-xs font-medium text-muted ${
+            compact ? 'h-full min-h-0' : 'min-h-24 py-6'
+          }`}
+        >
           Ad placement
         </div>
       )}
