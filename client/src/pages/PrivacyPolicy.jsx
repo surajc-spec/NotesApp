@@ -5,7 +5,7 @@ import AdUnit from '../components/AdUnit';
 const PrivacyPolicy = () => {
   return (
     <div className="max-w-4xl mx-auto pb-20 px-4 animate-in fade-in duration-500">
-      {/* <AdUnit placement="top" className="mb-10" /> */}
+      <AdUnit placement="top" className="mb-10" />
 
       {/* Header */}
       <div className="text-center mb-16">
@@ -114,7 +114,7 @@ const PrivacyPolicy = () => {
 
       </div>
 
-      {/* <AdUnit placement="footer" className="mt-12" /> */}
+      <AdUnit placement="footer" className="mt-12" />
     </div>
   );
 };
