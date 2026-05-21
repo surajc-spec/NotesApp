@@ -128,20 +128,6 @@ const NotePreview = () => {
   }, [id]);
 
   useEffect(() => {
-    const handleFullscreenChange = () => {
-      const isPreviewFullscreen = document.fullscreenElement === previewFrameRef.current;
-      setIsFullscreen(isPreviewFullscreen);
-
-      if (isPreviewFullscreen) {
-        previewFrameRef.current?.focus();
-      }
-    };
-
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, []);
-
-  useEffect(() => {
     const blockEvent = (event) => {
       event.preventDefault();
       event.stopPropagation();
@@ -152,8 +138,6 @@ const NotePreview = () => {
     const blockProtectedShortcuts = (event) => {
       const key = event.key?.toLowerCase();
       const code = event.code?.toLowerCase();
-
-      const hasModifier = event.ctrlKey || event.metaKey || event.altKey || event.shiftKey;
 
       const isPrintScreen =
         key === 'printscreen' ||
@@ -221,16 +205,32 @@ const NotePreview = () => {
     };
   }, []);
 
-  const toggleFullscreen = async () => {
-    if (!previewFrameRef.current) return;
+  useEffect(() => {
+    if (!isFullscreen) return;
 
-    if (document.fullscreenElement === previewFrameRef.current) {
-      await document.exitFullscreen();
-      return;
-    }
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setIsFullscreen(false);
+      }
+    };
 
-    await previewFrameRef.current.requestFullscreen();
-    previewFrameRef.current.focus();
+    document.body.style.overflow = 'hidden';
+    previewFrameRef.current?.focus();
+
+    window.addEventListener('keydown', handleEscape, true);
+
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleEscape, true);
+    };
+  }, [isFullscreen]);
+
+  const toggleFullscreen = () => {
+    setIsFullscreen((prev) => !prev);
+
+    requestAnimationFrame(() => {
+      previewFrameRef.current?.focus();
+    });
   };
 
   if (loading) {
@@ -308,11 +308,15 @@ const NotePreview = () => {
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
+        <div className={isFullscreen ? '' : 'grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]'}>
           <section
             ref={previewFrameRef}
             tabIndex={-1}
-            className="preview-fullscreen-shell relative min-h-[75vh] overflow-hidden rounded-lg border border-border bg-surface outline-none"
+            className={`preview-fullscreen-shell relative min-h-[75vh] overflow-hidden rounded-lg border border-border bg-surface outline-none ${
+              isFullscreen
+                ? 'fixed inset-0 z-[9999] min-h-screen rounded-none border-0'
+                : ''
+            }`}
             onContextMenu={(e) => e.preventDefault()}
           >
             <FullscreenGuard isEnabled={true}>
@@ -326,19 +330,33 @@ const NotePreview = () => {
                 </div>
               </div>
 
-              <ProtectedPdfViewer
-                fileUrl={previewUrl}
-                title={note?.title || 'Protected note preview'}
-              />
+              <div className={isFullscreen ? 'h-screen' : ''}>
+                <ProtectedPdfViewer
+                  fileUrl={previewUrl}
+                  title={note?.title || 'Protected note preview'}
+                />
+              </div>
+
+              {isFullscreen && (
+                <button
+                  onClick={toggleFullscreen}
+                  className="absolute right-4 top-4 z-20 flex items-center justify-center gap-2 rounded-field bg-accent px-4 py-3 font-bold text-accent-foreground shadow-lg hover:opacity-90"
+                >
+                  <Minimize size={18} />
+                  Exit Fullscreen
+                </button>
+              )}
             </FullscreenGuard>
           </section>
 
-          <div className="space-y-6">
-            <AdUnit placement="sidebar" className="hidden lg:block" />
-          </div>
+          {!isFullscreen && (
+            <div className="space-y-6">
+              <AdUnit placement="sidebar" className="hidden lg:block" />
+            </div>
+          )}
         </div>
 
-        <AdUnit placement="footer" className="mt-8" />
+        {!isFullscreen && <AdUnit placement="footer" className="mt-8" />}
       </div>
 
       <PasswordModal
