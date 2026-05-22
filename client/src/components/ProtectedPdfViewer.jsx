@@ -1,368 +1,780 @@
 import { useEffect, useRef, useState } from "react";
+import { Search } from "lucide-react";
+
 import * as pdfjs from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
 
-pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
+pdfjs.GlobalWorkerOptions.workerSrc =
+pdfWorker;
 
 const ProtectedPdfViewer = ({
-  fileUrl,
-  title,
-  isFullscreen = false,
-}) => {
-  const containerRef = useRef(null);
-  const canvasRefs = useRef([]);
+fileUrl,
+title,
+isFullscreen=false,
+})=>{
 
-  const [pages, setPages] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [jumpPage, setJumpPage] = useState("");
-  const [error, setError] = useState("");
+const containerRef=
+useRef(null);
 
-  const scrollToPage = (pageNumber) => {
-    const canvas = canvasRefs.current[pageNumber - 1];
+const canvasRefs=
+useRef([]);
 
-    if (!canvas) return;
+const [pages,setPages]=
+useState([]);
 
-    canvas.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
+const [currentPage,setCurrentPage]=
+useState(1);
 
-    setCurrentPage(pageNumber);
-  };
+const [jumpPage,setJumpPage]=
+useState("");
 
-  useEffect(() => {
-    let cancelled = false;
-    let loadingTask;
+const [error,setError]=
+useState("");
 
-    const renderPdf = async () => {
-      setError("");
-      setPages([]);
-      canvasRefs.current = [];
+const [searchText,setSearchText]=
+useState("");
 
-      try {
-        loadingTask = pdfjs.getDocument(fileUrl);
+const [showSearch,setShowSearch]=
+useState(false);
 
-        const pdf = await loadingTask.promise;
 
-        if (cancelled) return;
 
-        const pageList = Array.from(
-          { length: pdf.numPages },
-          (_, i) => i + 1
-        );
+const scrollToPage=
+(pageNumber)=>{
 
-        setPages(pageList);
+const canvas=
+canvasRefs.current[
+pageNumber-1
+];
 
-        requestAnimationFrame(async () => {
-          const width =
-            Math.min(
-              (containerRef.current?.clientWidth || 900) - 24,
-              980
-            );
+if(!canvas)
+return;
 
-          for (const pageNumber of pageList) {
-            if (cancelled) return;
+canvas.scrollIntoView({
 
-            const page =
-              await pdf.getPage(pageNumber);
+behavior:
+"smooth",
 
-            const viewport =
-              page.getViewport({
-                scale: 1,
-              });
+block:
+"start"
 
-            const scale =
-              width / viewport.width;
+});
 
-            const scaled =
-              page.getViewport({
-                scale,
-              });
+setCurrentPage(
+pageNumber
+);
 
-            const canvas =
-              canvasRefs.current[
-                pageNumber - 1
-              ];
+};
 
-            if (!canvas) continue;
 
-            const context =
-              canvas.getContext("2d");
 
-            const ratio =
-              window.devicePixelRatio || 1;
+useEffect(()=>{
 
-            canvas.width =
-              scaled.width * ratio;
+let cancelled=
+false;
 
-            canvas.height =
-              scaled.height * ratio;
+let loadingTask;
 
-            canvas.style.width =
-              `${scaled.width}px`;
+const renderPdf=
+async()=>{
 
-            canvas.style.height =
-              `${scaled.height}px`;
+setError("");
 
-            await page.render({
-              canvasContext: context,
-              viewport: scaled,
-              transform:
-                ratio !== 1
-                  ? [
-                      ratio,
-                      0,
-                      0,
-                      ratio,
-                      0,
-                      0,
-                    ]
-                  : null,
-            }).promise;
-          }
-        });
-      } catch (err) {
-        if (!cancelled)
-          setError(
-            err.message ||
-              "Unable to render PDF"
-          );
-      }
-    };
+setPages([]);
 
-    if (fileUrl) renderPdf();
+canvasRefs.current=
+[];
 
-    return () => {
-      cancelled = true;
-      loadingTask?.destroy();
-    };
-  }, [fileUrl]);
+try{
 
-  return (
-    <div
-      ref={containerRef}
-      title={title}
-      className={`
+loadingTask=
+pdfjs.getDocument(
+fileUrl
+);
+
+const pdf=
+await loadingTask.promise;
+
+if(cancelled)
+return;
+
+const pageList=
+Array.from(
+
+{
+length:
+pdf.numPages
+},
+
+(_,i)=>
+i+1
+
+);
+
+setPages(
+pageList
+);
+
+requestAnimationFrame(
+
+async()=>{
+
+const width=
+
+Math.min(
+
+(
+containerRef
+.current
+?.clientWidth
+||
+900
+)-24,
+
+980
+
+);
+
+for(
+
+const pageNumber
+
+of
+
+pageList
+
+){
+
+if(cancelled)
+return;
+
+const page=
+await pdf.getPage(
+pageNumber
+);
+
+const viewport=
+page.getViewport({
+
+scale:
+1
+
+});
+
+const scale=
+width/
+viewport.width;
+
+const scaled=
+page.getViewport({
+
+scale
+
+});
+
+const canvas=
+
+canvasRefs.current[
+pageNumber-1
+];
+
+if(!canvas)
+continue;
+
+const context=
+canvas.getContext(
+"2d"
+);
+
+const ratio=
+window.devicePixelRatio
+||
+1;
+
+canvas.width=
+scaled.width*
+ratio;
+
+canvas.height=
+scaled.height*
+ratio;
+
+canvas.style.width=
+`${scaled.width}px`;
+
+canvas.style.height=
+`${scaled.height}px`;
+
+await page.render({
+
+canvasContext:
+context,
+
+viewport:
+scaled,
+
+transform:
+
+ratio!==1
+
+?
+
+[
+ratio,
+0,
+0,
+ratio,
+0,
+0
+]
+
+:
+
+null
+
+}).promise;
+
+}
+
+}
+
+);
+
+}
+
+catch(err){
+
+if(!cancelled){
+
+setError(
+
+err.message||
+
+"Unable to render PDF"
+
+);
+
+}
+
+}
+
+};
+
+if(fileUrl)
+renderPdf();
+
+return()=>{
+
+cancelled=
+true;
+
+loadingTask
+?.destroy();
+
+};
+
+},[
+fileUrl
+]);
+
+
+
+return(
+
+<div
+
+ref={
+containerRef
+}
+
+title={
+title
+}
+
+className={`
+
 overflow-y-auto
+
 bg-surface-secondary
+
 px-3
+
 pt-0
+
 pb-5
-${isFullscreen ? "h-full" : "h-[78vh]"}
+
+${
+
+isFullscreen
+
+?
+
+"h-full"
+
+:
+
+"h-[78vh]"
+
+}
+
 `}
-      onContextMenu={(e) =>
-        e.preventDefault()
-      }
-    >
-      {/* TOP TOOLBAR */}
 
-      <div
-        className="
+>
+
+<div
+
+className="
+
 sticky
+
 top-0
+
 z-50
+
 bg-surface-secondary
-py-3
+
+pt-0
+
+pb-3
+
 "
-      >
-        <div
-          className="
+
+>
+
+<div
+
+className="
+
 flex
+
 items-center
+
 justify-center
+
 gap-3
+
 rounded-b-xl
+
 border
+
 border-border
+
 bg-surface
+
 p-3
-text-foreground
+
 "
-        >
-          <button
-            onClick={() =>
-              scrollToPage(
-                Math.max(
-                  currentPage - 1,
-                  1
-                )
-              )
-            }
-            className="
-px-3
-py-1
+
+>
+
+<button
+
+onClick={()=>
+
+scrollToPage(
+
+Math.max(
+
+1,
+
+currentPage-1
+
+)
+
+)
+
+}
+
+className="
+
 rounded
+
 bg-gray-700
-text-white
-"
-          >
-            ←
-          </button>
 
-          <span>
-            Page
-          </span>
+px-3
 
-         <input
-  type="number"
-
-  value={jumpPage}
-
-  onChange={(e) =>
-    setJumpPage(
-      e.target.value
-    )
-  }
-
-  onKeyDown={(e) => {
-
-    if (
-      e.key === "Enter"
-    ) {
-
-      const p =
-        Number(
-          jumpPage
-        );
-
-      if (
-        p >= 1 &&
-        p <= pages.length
-      ) {
-
-        scrollToPage(
-          p
-        );
-
-        setCurrentPage(
-          p
-        );
-
-      }
-
-    }
-
-  }}
-
-  className="
-w-20
-rounded
-border
-bg-black
-text-white
-dark:bg-white
-dark:text-black
-px-2
 py-1
-text-center
+
+text-white
+
 "
+
+>
+
+←
+
+</button>
+
+<span>
+
+Page
+
+</span>
+
+<input
+
+type="number"
+
+value={
+jumpPage
+}
+
+onChange={(e)=>
+
+setJumpPage(
+
+e.target.value
+
+)
+
+}
+
+onKeyDown={(e)=>{
+
+if(
+
+e.key===
+
+"Enter"
+
+){
+
+const p=
+Number(
+jumpPage
+);
+
+if(
+
+p>=1&&
+
+p<=pages.length
+
+){
+
+scrollToPage(
+p
+);
+
+}
+
+}
+
+}}
+
+className="
+
+w-20
+
+rounded
+
+border
+
+bg-white
+
+text-black
+
+dark:bg-[#171717]
+
+dark:text-white
+
+px-2
+
+py-1
+
+text-center
+
+"
+
 />
 
-          <button
-            onClick={() => {
-              const p =
-                Number(jumpPage);
+<button
 
-              if (
-                p >= 1 &&
-                p <= pages.length
-              ) {
-                scrollToPage(p);
-              }
-            }}
-            className="
+onClick={()=>{
+
+const p=
+Number(
+jumpPage
+);
+
+if(
+
+p>=1&&
+
+p<=pages.length
+
+){
+
+scrollToPage(
+p
+);
+
+}
+
+}}
+
+className="
+
 rounded
+
 bg-green-500
+
 px-4
+
 py-1
+
 text-white
+
 "
-          >
-            Go
-          </button>
 
-          <span>
-            / {pages.length}
-          </span>
+>
 
-          <button
-            onClick={() =>
-              scrollToPage(
-                Math.min(
-                  currentPage + 1,
-                  pages.length
-                )
-              )
-            }
-            className="
-px-3
-py-1
+Go
+
+</button>
+
+<button
+
+onClick={()=>
+
+setShowSearch(
+
+!showSearch
+
+)
+
+}
+
+className="
+
 rounded
-bg-gray-700
+
+bg-red-500
+
+px-3
+
+py-1
+
 text-white
+
 "
-          >
-            →
-          </button>
-        </div>
-      </div>
 
-      {/* PDF */}
+>
 
-      {error ? (
-        <div className="text-red-500">
-          {error}
-        </div>
-      ) : (
-        <div className="mx-auto flex flex-col items-center gap-5">
+<Search
+size={18}
+/>
 
-          {pages.map(
-            (pageNumber) => (
-              <div
-                key={
-                  pageNumber
-                }
-                className="
+</button>
+
+<span>
+
+/ {pages.length}</span>
+
+<button
+
+onClick={()=>
+
+scrollToPage(
+
+Math.min(
+
+pages.length,
+
+currentPage+1
+
+)
+
+)
+
+}
+
+className="
+
+rounded
+
+bg-gray-700
+
+px-3
+
+py-1
+
+text-white
+
+"
+
+>
+
+→
+
+</button>
+
+</div>
+
+</div>
+
+
+
+{
+
+showSearch&&(
+
+<div
+className="
+mb-4
+flex
+justify-center
+"
+>
+
+<input
+
+placeholder="Search"
+
+value={
+searchText
+}
+
+onChange={(e)=>
+
+setSearchText(
+
+e.target.value
+
+)
+
+}
+
+className="
+
+w-72
+
+rounded
+
+border
+
+bg-surface
+
+px-3
+
+py-2
+
+text-foreground
+
+"
+
+/>
+
+</div>
+
+)
+
+}
+
+
+
+{
+
+error
+
+?
+
+<div
+className="
+text-red-500
+"
+>
+
+{error}
+
+</div>
+
+:
+
+<div
+className="
+mx-auto
+flex
+flex-col
+items-center
+gap-5
+"
+>
+
+{
+
+pages.map(
+
+(pageNumber)=>(
+
+<div
+key={
+pageNumber
+}
+className="
 relative
 "
-              >
-                <div
-                  className="
+>
+
+<div
+className="
 absolute
 left-3
 top-3
 z-10
 rounded
-bg-black
+bg-red-600
 px-2
 py-1
 text-sm
 text-white
 "
-                >
-                  {pageNumber}
-                </div>
+>
 
-                <canvas
-                  ref={(node) =>
-                    (canvasRefs.current[
-                      pageNumber - 1
-                    ] = node)
-                  }
-                  className="
+{pageNumber}
+
+</div>
+
+<canvas
+
+ref={(node)=>
+
+canvasRefs.current[
+pageNumber-1
+]=node
+
+}
+
+className="
+
 shadow-xl
-dark:invert
-"
-                  draggable="false"
-                />
-              </div>
-            )
-          )}
 
-        </div>
-      )}
-    </div>
-  );
+dark:invert-[0.92]
+
+"
+
+draggable={
+false
+}
+
+/>
+
+</div>
+
+)
+
+)
+
+}
+
+</div>
+
+}
+
+</div>
+
+);
+
 };
 
 export default ProtectedPdfViewer;

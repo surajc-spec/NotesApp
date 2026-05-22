@@ -1,309 +1,632 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { ShieldAlert, EyeOff } from 'lucide-react';
+import React,
+{
+useEffect,
+useState,
+useRef
+}
+from
+'react';
 
-/*
-  =============================================================================
-  REALITY HANDLING DISCLAIMER (Requirement 11)
-  -----------------------------------------------------------------------------
-  Browser-based protection cannot fully stop external camera photos or
-  OS-level screenshots, but should strongly discourage copying and casual sharing.
-  =============================================================================
-*/
+import {
+ShieldAlert,
+EyeOff
+}
+from
+'lucide-react';
 
-const ScreenshotGuard = ({ children, isEnabled = true }) => {
-  const [isAlertActive, setIsAlertActive] = useState(false);
-  const [alertMessage, setAlertMessage] = useState('');
-  const [isBlurred, setIsBlurred] = useState(false);
-  const dummyRef = useRef(null);
+const ScreenshotGuard=({
 
-  useEffect(() => {
-    if (!isEnabled) return;
+children,
 
-    const checkFocus = () => {
-      if (document.activeElement && document.activeElement.tagName === 'IFRAME') {
-        try {
-          navigator.clipboard.writeText('');
-        } catch (_) {}
-        dummyRef.current?.focus();
-      }
-    };
+isEnabled=true
 
-    const interval = setInterval(checkFocus, 100);
-    window.addEventListener('blur', checkFocus);
+})=>{
 
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('blur', checkFocus);
-    };
-  }, [isEnabled]);
+const [
+isAlertActive,
+setIsAlertActive
+]=
+useState(false);
+
+const [
+alertMessage,
+setAlertMessage
+]=
+useState('');
+
+const [
+isBlurred,
+setIsBlurred
+]=
+useState(false);
+
+const dummyRef=
+useRef(null);
 
 
 
-  // 2. Inject Dynamic CSS Mobile Protections (Requirement 5, 6, 9)
-  useEffect(() => {
-    const styleId = 'screenshot-guard-advanced-styles';
-    if (!document.getElementById(styleId)) {
-      const style = document.createElement('style');
-      style.id = styleId;
-      style.textContent = `
-        /* Mobile long-press and selection protection */
-        .protected-preview, .protected-preview * {
-          -webkit-touch-callout: none !important; /* iOS long-press menu */
-          -webkit-user-select: none !important;   /* Safari */
-          -khtml-user-select: none !important;     /* Konqueror HTML */
-          -moz-user-select: none !important;      /* Firefox */
-          -ms-user-select: none !important;       /* IE/Edge */
-          user-select: none !important;           /* Standard */
-          -webkit-user-drag: none !important;     /* Disable dragging */
-        }
-      `;
-      document.head.appendChild(style);
-    }
-  }, []);
+useEffect(()=>{
 
-  useEffect(() => {
-    if (!isEnabled) return;
+if(
+!isEnabled
+)
+return;
 
-    let alertTimeout;
+const styleId=
+'preview-guard-style';
 
-    const triggerTemporaryAlert = (msg) => {
-      setAlertMessage(msg);
-      setIsAlertActive(true);
-      if (alertTimeout) clearTimeout(alertTimeout);
-      // Remove blur after exactly 3 seconds (Requirement 2)
-      alertTimeout = setTimeout(() => {
-        setIsAlertActive(false);
-      }, 3000);
-    };
+if(
+!document.getElementById(
+styleId
+)
+){
 
-    // Keyboard Shortcuts Prevention (Requirement 1, 6)
-    const handleKeyDown = (e) => {
-      const key = e.key ? e.key.toLowerCase() : '';
-      const keyCode = e.keyCode;
+const style=
+document.createElement(
+'style'
+);
 
-      // --- SCREENSHOT / SNIPPING KEYBOARD ATTEMPTS ---
-      // A. Windows & Linux PrintScreen (keyCode 44) and standard modifier variants
-      const isPrintScreen = e.key === 'PrintScreen' || keyCode === 44;
-      const isAltPrintScreen = e.altKey && isPrintScreen;
-      const isWinPrintScreen = e.metaKey && isPrintScreen;
-      const isWinAltPrintScreen = e.metaKey && e.altKey && isPrintScreen;
-      const isShiftPrintScreen = e.shiftKey && isPrintScreen;
+style.id=
+styleId;
 
-      // B. Custom Fullscreen / Laptop Screenshot Key (F11)
-      const isF11 = e.key === 'F11' || keyCode === 122;
+style.textContent=`
 
-      // C. macOS Native Capture Shortcuts (Cmd + Shift + 3 / 4 / 5)
-      const isMacCapture =
-        e.metaKey &&
-        e.shiftKey &&
-        (key === '3' || key === '4' || key === '5' || keyCode === 51 || keyCode === 52 || keyCode === 53);
+.protected-preview,
+.protected-preview *{
 
-      // D. Windows Snipping Shortcut (Win + Shift + S)
-      const isWinSnipping = (e.metaKey || e.ctrlKey) && e.shiftKey && (key === 's' || keyCode === 83);
+user-select:none!important;
 
-      // E. All Function Keys (F1 - F12)
-      const isFKey = (keyCode >= 112 && keyCode <= 123) || /^f(1[0-2]|\d)$/i.test(e.key);
+-webkit-user-select:none!important;
 
-      // F. Ctrl + Shift + S Shortcut
-      const isCtrlShiftS = (e.ctrlKey || e.metaKey) && e.shiftKey && (key === 's' || keyCode === 83);
+-webkit-touch-callout:none!important;
 
-      if (
-        isPrintScreen || 
-        isAltPrintScreen || 
-        isWinPrintScreen || 
-        isWinAltPrintScreen || 
-        isShiftPrintScreen || 
-        isMacCapture || 
-        isWinSnipping || 
-        isF11 ||
-        isFKey ||
-        isCtrlShiftS
-      ) {
-        e.preventDefault();
-        e.stopPropagation();
-        try {
-          navigator.clipboard.writeText(''); 
-        } catch (_) {}
-        triggerTemporaryAlert('Screenshots and copying are disabled for protected notes.');
-        return;
-      }
+-webkit-user-drag:none!important;
 
-      // --- BROWSER / COPY PROTECTIONS ---
-      const isModifier = e.ctrlKey || e.metaKey; // Windows Ctrl or macOS Cmd
-      
-      const isCopy = isModifier && (key === 'c' || keyCode === 67);
-      const isPaste = isModifier && (key === 'v' || keyCode === 86);
-      const isCut = isModifier && (key === 'x' || keyCode === 88);
-      const isSave = isModifier && (key === 's' || keyCode === 83);
-      const isPrint = isModifier && (key === 'p' || keyCode === 80);
-      const isViewSource = isModifier && (key === 'u' || keyCode === 85);
-      
-      // Devtools (F12 or Ctrl+Shift+I)
-      const isDevTools = keyCode === 123 || (isModifier && e.shiftKey && (key === 'i' || keyCode === 73));
-      
-      // Inspect element (Ctrl+Shift+C)
-      const isInspectElement = isModifier && e.shiftKey && (key === 'c' || keyCode === 67);
-      
-      // Console (Ctrl+Shift+J)
-      const isConsole = isModifier && e.shiftKey && (key === 'j' || keyCode === 74);
+}
 
-      if (isCopy || isPaste || isCut || isSave || isPrint || isViewSource || isDevTools || isInspectElement || isConsole) {
-        e.preventDefault();
-        e.stopPropagation();
-        try {
-          navigator.clipboard.writeText(''); 
-        } catch (_) {}
-        triggerTemporaryAlert('Screenshots and copying are disabled for protected notes.');
-        return;
-      }
-    };
+`;
 
-    const handleKeyUp = (e) => {
-      const key = e.key ? e.key.toLowerCase() : '';
-      const keyCode = e.keyCode;
-      const isPrintScreen = e.key === 'PrintScreen' || keyCode === 44;
-      const isWinSnipping = (e.metaKey || e.ctrlKey) && e.shiftKey && (key === 's' || keyCode === 83);
-      const isFKey = (keyCode >= 112 && keyCode <= 123) || /^f(1[0-2]|\d)$/i.test(e.key);
-      const isCtrlShiftS = (e.ctrlKey || e.metaKey) && e.shiftKey && (key === 's' || keyCode === 83);
-      
-      const isModifier = e.ctrlKey || e.metaKey;
-      const isCopyPasteCut = isModifier && (['c', 'v', 'x'].includes(key) || [67, 86, 88].includes(keyCode));
+document.head.appendChild(
+style
+);
 
-      // Clear clipboard on keyup if screenshot/copy-paste hotkey fired
-      if (
-        isPrintScreen || 
-        isWinSnipping ||
-        isFKey ||
-        isCtrlShiftS ||
-        isCopyPasteCut
-      ) {
-        try {
-          navigator.clipboard.writeText(''); 
-        } catch (_) {}
-        triggerTemporaryAlert('Screenshots and copying are disabled for protected notes.');
-      }
-    };
+}
 
-    // Tab Switch & Visibility Change Protections (Requirement 7, 9)
-    const handleFocusLoss = () => {
-      setTimeout(() => {
-        if (!document.hasFocus()) {
-          setIsBlurred(true);
-        }
-      }, 10);
-    };
+},[
+isEnabled
+]);
 
-    const handleFocusGain = () => {
-      if (document.hasFocus()) {
-        setIsBlurred(false);
-      }
-    };
 
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        setIsBlurred(true);
-      } else {
-        setIsBlurred(false);
-      }
-    };
 
-    // Right-Click Context Menu Blocking (Requirement 6)
-    const handleContextMenu = (e) => {
-      e.preventDefault();
-      triggerTemporaryAlert('Right-click context menu is disabled');
-    };
+useEffect(()=>{
 
-    // Clipboard copy/cut/paste event blocking (Requirement 6)
-    const handleClipboardEvent = (e) => {
-      e.preventDefault();
-      triggerTemporaryAlert('Screenshots and copying are disabled for protected notes.');
-    };
+if(
+!isEnabled
+)
+return;
 
-    // Drag & Drop Prevention (Requirement 6)
-    const handleDragStart = (e) => {
-      e.preventDefault();
-    };
+let timer;
 
-    // Add comprehensive listeners
-    window.addEventListener('keydown', handleKeyDown, true);
-    window.addEventListener('keyup', handleKeyUp, true);
-    window.addEventListener('blur', handleFocusLoss);
-    window.addEventListener('focus', handleFocusGain);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    document.addEventListener('contextmenu', handleContextMenu);
-    document.addEventListener('copy', handleClipboardEvent, true);
-    document.addEventListener('cut', handleClipboardEvent, true);
-    document.addEventListener('paste', handleClipboardEvent, true);
-    document.addEventListener('dragstart', handleDragStart);
+const warn=
+(msg)=>{
 
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown, true);
-      window.removeEventListener('keyup', handleKeyUp, true);
-      window.removeEventListener('blur', handleFocusLoss);
-      window.removeEventListener('focus', handleFocusGain);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      document.removeEventListener('contextmenu', handleContextMenu);
-      document.removeEventListener('copy', handleClipboardEvent, true);
-      document.removeEventListener('cut', handleClipboardEvent, true);
-      document.removeEventListener('paste', handleClipboardEvent, true);
-      document.removeEventListener('dragstart', handleDragStart);
-      if (alertTimeout) clearTimeout(alertTimeout);
-    };
-  }, [isEnabled]);
+setAlertMessage(
+msg
+);
 
-  const guardClasses = isEnabled 
-    ? 'select-none pointer-events-auto protected-preview' 
-    : '';
+setIsAlertActive(
+true
+);
 
-  // CSS transition behaviors:
-  // Apply instantly (transition-none) when active to stop screen grabbers,
-  // but ease back smoothly (duration-500) when restoring (Requirement 2, 5)
-  const transitionClass = isAlertActive || isBlurred 
-    ? 'transition-none' 
-    : 'transition-all duration-500 ease-out';
+clearTimeout(
+timer
+);
 
-  return (
-    <div className={`relative ${guardClasses} w-full h-full`}>
-      <div ref={dummyRef} tabIndex={-1} className="sr-only outline-none" />
-      
-      {/* Target Content Wrapper */}
-      <div 
-        className={`w-full h-full ${transitionClass}`}
-        style={{
-          filter: isAlertActive || isBlurred ? 'blur(25px)' : 'none',
-          opacity: isAlertActive || isBlurred ? 0.08 : 1,
-        }}
-      >
-        {children}
-      </div>
+timer=
+setTimeout(()=>{
 
-      {/* Temporary Warning Alert Overlay (Requirement 2, 5) */}
-      {isEnabled && isAlertActive && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-[25px] transition-none">
-          <div className="text-center max-w-sm p-8 bg-surface border border-border rounded-3xl shadow-2xl flex flex-col items-center">
-            <div className="w-16 h-16 bg-danger/10 text-danger rounded-2xl flex items-center justify-center mb-4">
-              <ShieldAlert size={36} />
-            </div>
-            <h4 className="text-lg font-bold text-foreground">Action Blocked</h4>
-            <p className="text-sm text-muted mt-2 leading-relaxed">{alertMessage}</p>
-          </div>
-        </div>
-      )}
+setIsAlertActive(
+false
+);
 
-      {/* Focus/Tab Blur Overlay (Requirement 7) */}
-      {isEnabled && isBlurred && !isAlertActive && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-[25px] transition-none">
-          <div className="text-center max-w-sm p-8 bg-surface border border-border rounded-3xl shadow-2xl flex flex-col items-center">
-            <div className="w-16 h-16 bg-accent/10 text-accent rounded-2xl flex items-center justify-center mb-4">
-              <EyeOff size={36} className="animate-pulse" />
-            </div>
-            <h4 className="text-lg font-bold text-foreground">View Paused</h4>
-            <p className="text-sm text-muted mt-2 leading-relaxed">Focus was lost. Click back into the window to resume viewing.</p>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+},2500);
+
+};
+
+
+
+const clearClipboard=
+()=>{
+
+try{
+
+navigator
+.clipboard
+.writeText(
+''
+);
+
+}
+
+catch{}
+
+};
+
+
+
+const block=
+(
+e,
+msg
+)=>{
+
+e.preventDefault();
+
+e.stopPropagation();
+
+clearClipboard();
+
+warn(
+msg
+);
+
+};
+
+
+
+const keyDown=
+(e)=>{
+
+const key=
+(
+e.key||
+''
+)
+.toLowerCase();
+
+const mod=
+e.ctrlKey||
+e.metaKey;
+
+const forbidden=
+
+e.key==='PrintScreen'
+
+||
+
+(mod&&key==='c')
+
+||
+
+(mod&&key==='v')
+
+||
+
+(mod&&key==='x')
+
+||
+
+(mod&&key==='u')
+
+||
+
+(mod&&key==='s')
+
+||
+
+(mod&&key==='p')
+
+||
+
+(mod&&
+e.shiftKey&&
+key==='i')
+
+||
+
+(mod&&
+e.shiftKey&&
+key==='j')
+
+||
+
+(mod&&
+e.shiftKey&&
+key==='c')
+
+||
+
+(mod&&
+e.shiftKey&&
+key==='s')
+
+||
+
+e.key==='F11'
+
+||
+
+e.key==='F12';
+
+
+
+if(
+forbidden
+){
+
+block(
+
+e,
+
+'Protected preview'
+
+);
+
+}
+
+};
+
+
+
+const context=
+(e)=>{
+
+block(
+
+e,
+
+'Right click disabled'
+
+);
+
+};
+
+
+
+const clip=
+(e)=>{
+
+block(
+
+e,
+
+'Copy disabled'
+
+);
+
+};
+
+
+
+const drag=
+(e)=>{
+
+e.preventDefault();
+
+};
+
+
+
+const visibility=
+()=>{
+
+setIsBlurred(
+
+document.hidden
+
+);
+
+};
+
+
+
+const focus=()=>{
+
+setIsBlurred(
+false
+);
+
+};
+
+
+
+const blur=()=>{
+
+setIsBlurred(
+true
+);
+
+};
+
+
+
+window.addEventListener(
+'keydown',
+keyDown,
+true
+);
+
+window.addEventListener(
+'focus',
+focus
+);
+
+window.addEventListener(
+'blur',
+blur
+);
+
+document.addEventListener(
+'visibilitychange',
+visibility
+);
+
+document.addEventListener(
+'copy',
+clip,
+true
+);
+
+document.addEventListener(
+'cut',
+clip,
+true
+);
+
+document.addEventListener(
+'paste',
+clip,
+true
+);
+
+document.addEventListener(
+'contextmenu',
+context
+);
+
+document.addEventListener(
+'dragstart',
+drag
+);
+
+
+
+return()=>{
+
+window.removeEventListener(
+'keydown',
+keyDown,
+true
+);
+
+window.removeEventListener(
+'focus',
+focus
+);
+
+window.removeEventListener(
+'blur',
+blur
+);
+
+document.removeEventListener(
+'visibilitychange',
+visibility
+);
+
+document.removeEventListener(
+'copy',
+clip,
+true
+);
+
+document.removeEventListener(
+'cut',
+clip,
+true
+);
+
+document.removeEventListener(
+'paste',
+clip,
+true
+);
+
+document.removeEventListener(
+'contextmenu',
+context
+);
+
+document.removeEventListener(
+'dragstart',
+drag
+);
+
+clearTimeout(
+timer
+);
+
+};
+
+},[
+isEnabled
+]);
+
+
+
+return(
+
+<div
+className="
+relative
+w-full
+h-full
+protected-preview
+"
+>
+
+<div
+ref={
+dummyRef
+}
+tabIndex={
+-1
+}
+/>
+
+<div
+
+style={{
+
+filter:
+
+isBlurred||
+
+isAlertActive
+
+?
+
+'blur(22px)'
+
+:
+
+'none',
+
+opacity:
+
+isBlurred||
+
+isAlertActive
+
+?
+
+0.08
+
+:
+
+1
+
+}}
+
+className="
+
+w-full
+
+h-full
+
+transition-all
+
+duration-300
+
+"
+
+>
+
+{children}
+
+</div>
+
+
+
+{
+
+isAlertActive&&(
+
+<div
+className="
+absolute
+inset-0
+z-50
+flex
+items-center
+justify-center
+bg-black/70
+"
+>
+
+<div
+className="
+rounded-3xl
+bg-surface
+p-8
+text-center
+"
+>
+
+<ShieldAlert
+size={
+36
+}
+/>
+
+<p>
+
+{
+alertMessage
+}
+
+</p>
+
+</div>
+
+</div>
+
+)
+
+}
+
+
+
+{
+
+isBlurred&&
+!isAlertActive&&(
+
+<div
+className="
+absolute
+inset-0
+z-50
+flex
+items-center
+justify-center
+bg-black/70
+"
+>
+
+<div
+className="
+rounded-3xl
+bg-surface
+p-8
+text-center
+"
+>
+
+<EyeOff
+size={
+36
+}
+/>
+
+<p>
+
+View paused
+
+</p>
+
+</div>
+
+</div>
+
+)
+
+}
+
+</div>
+
+);
+
 };
 
 export default ScreenshotGuard;
