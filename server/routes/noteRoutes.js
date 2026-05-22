@@ -25,6 +25,10 @@ clearCache
 } =
 require('../services/cacheService');
 
+const CACHE_DEBUG =
+process.env.CACHE_DEBUG ===
+'true';
+
 
 // =======================
 // UPLOAD
@@ -205,10 +209,14 @@ await getCache(key);
 
 if(cached){
 
+if(
+CACHE_DEBUG
+){
 console.log(
 'Cache HIT',
 key
 );
+}
 
 return res.json(
 cached
@@ -216,10 +224,14 @@ cached
 
 }
 
+if(
+CACHE_DEBUG
+){
 console.log(
 'Cache MISS',
 key
 );
+}
 
 const query={
 
