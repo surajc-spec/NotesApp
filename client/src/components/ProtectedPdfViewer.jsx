@@ -203,15 +203,48 @@ text-white
             Page
           </span>
 
-          <input
-            type="number"
-            value={jumpPage}
-            onChange={(e) =>
-              setJumpPage(
-                e.target.value
-              )
-            }
-            className="
+         <input
+  type="number"
+
+  value={jumpPage}
+
+  onChange={(e) =>
+    setJumpPage(
+      e.target.value
+    )
+  }
+
+  onKeyDown={(e) => {
+
+    if (
+      e.key === "Enter"
+    ) {
+
+      const p =
+        Number(
+          jumpPage
+        );
+
+      if (
+        p >= 1 &&
+        p <= pages.length
+      ) {
+
+        scrollToPage(
+          p
+        );
+
+        setCurrentPage(
+          p
+        );
+
+      }
+
+    }
+
+  }}
+
+  className="
 w-20
 rounded
 border
@@ -223,7 +256,7 @@ px-2
 py-1
 text-center
 "
-          />
+/>
 
           <button
             onClick={() => {
