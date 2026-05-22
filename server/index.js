@@ -96,19 +96,47 @@ res
 })
 );
 
+const jsonParser =
+express.json();
 
-app.use(
-express.json()
-);
-
-
-app.use(
+const urlencodedParser =
 express.urlencoded({
 
 extended:
 true
 
-})
+});
+
+const skipBodyParserForGet =
+(parser)=>
+(req,res,next)=>{
+
+if(
+req.method ===
+'GET'
+){
+return next();
+}
+
+return parser(
+req,
+res,
+next
+);
+
+};
+
+app.use(
+skipBodyParserForGet(
+jsonParser
+)
+);
+
+
+app.use(
+skipBodyParserForGet(
+urlencodedParser
+)
 );
 
 
