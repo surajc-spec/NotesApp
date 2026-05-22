@@ -43,41 +43,54 @@ const getRedisClient = async () => {
 };
 
 const getCache = async (key) => {
+  const memoryValue = cache.get(key);
+
+  if (memoryValue !== undefined) {
+    return memoryValue;
+  }
+
   const redis = await getRedisClient();
 
   if (redis && (redisReady || redis.isReady)) {
     const value = await redis.get(key);
-    return value ? JSON.parse(value) : undefined;
+
+    if (!value) {
+      return undefined;
+    }
+
+    const parsed = JSON.parse(value);
+    cache.set(key, parsed, DEFAULT_TTL_SECONDS);
+    return parsed;
   }
 
-  return cache.get(key);
+  return undefined;
 };
 
 const setCache = async (key, value, ttlSeconds = DEFAULT_TTL_SECONDS) => {
+  cache.set(key, value, ttlSeconds);
+
   const redis = await getRedisClient();
 
   if (redis && (redisReady || redis.isReady)) {
     await redis.set(key, JSON.stringify(value), {
       EX: ttlSeconds,
     });
-    return;
   }
-
-  cache.set(key, value, ttlSeconds);
 };
 
 const deleteCache = async (key) => {
+  cache.del(key);
+
   const redis = await getRedisClient();
 
   if (redis && (redisReady || redis.isReady)) {
     await redis.del(key);
-    return;
   }
-
-  cache.del(key);
 };
 
 const clearCache = async () => {
+  cache.flushAll();
+
   const redis = await getRedisClient();
 
   if (redis && (redisReady || redis.isReady)) {
@@ -89,8 +102,6 @@ const clearCache = async () => {
 
     return;
   }
-
-  cache.flushAll();
 };
 
 module.exports = {
