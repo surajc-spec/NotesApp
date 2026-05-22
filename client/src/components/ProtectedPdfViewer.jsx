@@ -81,12 +81,13 @@ const ProtectedPdfViewer = ({ fileUrl, title, isFullscreen = false }) => {
       const pdf = pdfRef.current;
       const container = containerRef.current;
       const toolbarHeight = isFullscreen ? 76 : 72;
-      const containerWidth = Math.max((container?.clientWidth || 900) - 24, 320);
+      const horizontalPadding = isFullscreen ? 12 : 24;
+      const containerWidth = Math.max((container?.clientWidth || 900) - horizontalPadding, 320);
       const containerHeight = Math.max(
         (container?.clientHeight || window.innerHeight) - toolbarHeight - 20,
         320
       );
-      const maxWidth = isFullscreen && fitMode === 'page' ? containerWidth : Math.min(containerWidth, 980);
+      const maxWidth = isFullscreen ? containerWidth : Math.min(containerWidth, 980);
 
       for (const pageNumber of pages) {
         if (cancelled || renderTokenRef.current !== token) return;
@@ -136,7 +137,7 @@ const ProtectedPdfViewer = ({ fileUrl, title, isFullscreen = false }) => {
       ref={containerRef}
       title={title}
       className={`protected-pdf-viewer overflow-y-auto bg-surface-secondary px-3 pt-0 pb-5 ${
-        isFullscreen ? 'h-full' : 'h-[78vh]'
+        isFullscreen ? 'h-full px-1' : 'h-[78vh]'
       }`}
       onContextMenu={(e) => e.preventDefault()}
     >
@@ -189,14 +190,14 @@ const ProtectedPdfViewer = ({ fileUrl, title, isFullscreen = false }) => {
           {isFullscreen && (
             <button
               onClick={() => {
-                setFitMode((mode) => (mode === 'page' ? 'width' : 'page'));
+                setFitMode((mode) => (mode === 'width' ? 'page' : 'width'));
                 setZoom(1);
               }}
               className="flex h-8 w-8 items-center justify-center rounded bg-gray-700 text-white"
               type="button"
-              title={fitMode === 'page' ? 'Fit to width' : 'Fit page to screen'}
+              title={fitMode === 'width' ? 'Fit full page' : 'Fill width'}
             >
-              {fitMode === 'page' ? <MoveHorizontal size={17} /> : <Maximize2 size={17} />}
+              {fitMode === 'width' ? <Maximize2 size={17} /> : <MoveHorizontal size={17} />}
             </button>
           )}
 
@@ -221,7 +222,11 @@ const ProtectedPdfViewer = ({ fileUrl, title, isFullscreen = false }) => {
       {error ? (
         <div className="text-red-500">{error}</div>
       ) : (
-        <div className="mx-auto flex max-w-[980px] flex-col items-center gap-5">
+        <div
+          className={`mx-auto flex flex-col items-center gap-5 ${
+            isFullscreen ? 'max-w-none' : 'max-w-[980px]'
+          }`}
+        >
           {pages.map((page) => (
             <div key={page} className="relative">
               <div className="absolute left-3 top-3 z-10 rounded bg-red-600 px-2 py-1 text-sm text-white">
