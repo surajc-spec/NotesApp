@@ -54,6 +54,24 @@ const NotePreview = () => {
     }
   };
 
+  const getFirstSuccessful = async (requests) => {
+    let lastError;
+
+    for (const request of requests) {
+      try {
+        return await request();
+      } catch (err) {
+        lastError = err;
+
+        if (err.response?.status && err.response.status !== 404) {
+          throw err;
+        }
+      }
+    }
+
+    throw lastError;
+  };
+
   const watermark = useMemo(() => {
     const stamp = new Date().toLocaleString('en-IN', {
       year: 'numeric',
@@ -82,16 +100,37 @@ const NotePreview = () => {
         config.headers['x-note-password'] = pwd;
       }
 
-      const info = await api.get(`/notes/${id}/preview-info`, config);
+      const passwordParams = pwd ? { password: pwd } : {};
+      const requestConfig = {
+        ...config,
+        params: passwordParams,
+      };
+
+      const info = await getFirstSuccessful([
+        () => api.get(`/notes/${id}/preview-info`, requestConfig),
+        () => api.get(`/notes/preview-info/${id}`, requestConfig),
+      ]);
+
       setNote(info.data);
 
-      const file = await api.get(`/notes/${id}/preview`, {
-        responseType: 'blob',
-        ...config,
-        headers: {
-          ...config.headers,
-        },
-      });
+      const file = await getFirstSuccessful([
+        () =>
+          api.get(`/notes/${id}/preview`, {
+            responseType: 'blob',
+            ...requestConfig,
+            headers: {
+              ...requestConfig.headers,
+            },
+          }),
+        () =>
+          api.get(`/notes/preview/${id}`, {
+            responseType: 'blob',
+            ...requestConfig,
+            headers: {
+              ...requestConfig.headers,
+            },
+          }),
+      ]);
 
       const url = URL.createObjectURL(file.data);
       previewUrlRef.current = url;
@@ -111,9 +150,16 @@ const NotePreview = () => {
   };
 
   const handlePasswordSubmit = async (password) => {
-    await api.post(`/notes/${id}/verify-password`, {
-      password,
-    });
+    await getFirstSuccessful([
+      () =>
+        api.post(`/notes/${id}/verify-password`, {
+          password,
+        }),
+      () =>
+        api.post(`/notes/verify-password/${id}`, {
+          password,
+        }),
+    ]);
 
     setEnteredPassword(password);
     await loadPreview(password);
@@ -210,6 +256,12 @@ const NotePreview = () => {
         </div>
 
         <div className="relative min-h-0 flex-1 overflow-hidden bg-black/85 backdrop-blur-md">
+          {isScreenShieldVisible && (
+            <div className="absolute inset-0 z-[2147483647] flex items-center justify-center bg-black text-center text-lg font-bold text-white">
+              Protected preview
+            </div>
+          )}
+
           {watermarkLayer}
           <ProtectedPdfViewer
             fileUrl={previewUrl}

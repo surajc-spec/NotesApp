@@ -126,7 +126,12 @@ const ScreenshotGuard = ({ children, isEnabled = true, onBlock }) => {
     };
 
     const visibility = () => {
-      setIsBlurred(document.hidden);
+      const hidden = document.hidden;
+      setIsBlurred(hidden);
+
+      if (hidden) {
+        onBlock?.();
+      }
     };
 
     const focus = () => {
@@ -135,6 +140,7 @@ const ScreenshotGuard = ({ children, isEnabled = true, onBlock }) => {
 
     const blur = () => {
       setIsBlurred(true);
+      onBlock?.();
     };
 
     window.addEventListener('keydown', keyDown, true);
