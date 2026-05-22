@@ -4,325 +4,187 @@ const bcrypt = require('bcryptjs');
 
 const Note = require('../models/Note');
 
-const { protect } = require('../middleware/authMiddleware');
-const upload = require('../middleware/uploadMiddleware');
+const { protect } =
+require('../middleware/authMiddleware');
+
+const upload =
+require('../middleware/uploadMiddleware');
 
 const {
-  canAccessNote,
-  verifyNotePassword,
-  streamPreviewFile,
-  toSafeNote,
-} = require('../services/notePreviewService');
+canAccessNote,
+verifyNotePassword,
+streamPreviewFile,
+toSafeNote
+} =
+require('../services/notePreviewService');
 
 const {
-  getCache,
-  setCache,
-  clearCache,
-} = require('../services/cacheService');
+getCache,
+setCache,
+clearCache
+} =
+require('../services/cacheService');
 
 
 // =======================
 // UPLOAD
 // =======================
 
-router.post('/upload', protect, (req, res) => {
-  upload.single('file')(req, res, async (err) => {
+router.post(
+'/upload',
+protect,
 
-    if (err) {
-      return res.status(400).json({
-        message:
-          typeof err === 'string'
-            ? err
-            : err.message
-      });
-    }
+(req,res)=>{
 
-    try {
+upload.single('file')(
+req,
+res,
 
-      const {
-        title,
-        subject,
-        description,
-        isPublic,
-        password
-      } = req.body;
+async(err)=>{
 
-      if (!req.file) {
-        return res.status(400).json({
-          message: 'Please upload file'
-        });
-      }
+try{
 
-      let hashedPassword;
+if(err){
 
-      if (password?.trim()) {
-        hashedPassword =
-          await bcrypt.hash(
-            password,
-            10
-          );
-      }
-
-      const note =
-        await Note.create({
-
-          title,
-          subject,
-          description,
-
-          branch:
-            req.user.branch,
-
-          year:
-            req.user.year,
-
-          uploader:
-            req.user.id,
-
-          isPublic:
-            isPublic === 'true',
-
-          password:
-            hashedPassword,
-
-          fileUrl:
-            req.file.path,
-
-          filePublicId:
-            req.file.filename ||
-            req.file.public_id,
-
-          fileResourceType:
-            req.file.resource_type ||
-            'raw',
-
-          fileStorageType:
-            'authenticated',
-
-        });
-
-      await clearCache();
-
-      const populated =
-        await note.populate(
-          'uploader',
-          'name email year branch'
-        );
-
-      res
-        .status(201)
-        .json(
-          toSafeNote(populated)
-        );
-
-    }
-
-    catch (error) {
-
-      res.status(500).json({
-        message:
-          error.message
-      });
-
-    }
-
-  });
+return res
+.status(400)
+.json({
+message:
+err.message
 });
 
+}
+
+if(!req.file){
+
+return res
+.status(400)
+.json({
+message:
+'Please upload file'
+});
+
+}
+
+let hashedPassword;
+
+if(
+req.body.password?.trim()
+){
+
+hashedPassword=
+await bcrypt.hash(
+req.body.password,
+10
+);
+
+}
+
+const note=
+await Note.create({
+
+title:
+req.body.title,
+
+subject:
+req.body.subject,
+
+description:
+req.body.description,
+
+branch:
+req.user.branch,
+
+year:
+req.user.year,
+
+uploader:
+req.user.id,
+
+isPublic:
+req.body.isPublic==='true',
+
+password:
+hashedPassword,
+
+fileUrl:
+req.file.path,
+
+filePublicId:
+req.file.filename||
+req.file.public_id,
+
+fileResourceType:
+req.file.resource_type||
+'raw',
+
+fileStorageType:
+'authenticated'
+
+});
+
+await clearCache();
+
+const populated=
+await note.populate(
+'uploader',
+'name email year branch'
+);
+
+res
+.status(201)
+.json(
+toSafeNote(
+populated
+)
+);
+
+}
+
+catch(error){
+
+res
+.status(500)
+.json({
+message:
+error.message
+});
+
+}
+
+}
+
+);
+
+}
+);
+
 
 // =======================
-// NOTES LIST (CACHE)
+// GET NOTES
 // =======================
 
-router.get('/', protect, async (req, res) => {
+router.get(
+'/',
+protect,
+
+async(req,res)=>{
 
 try{
 
 const key=
-`notes_${req.user.id}_${req.query.subject}`;
+`notes_${req.user.id}`;
 
 const cached=
 getCache(key);
 
 if(cached){
 
-return res.json(cached);
-
-}
-
-let query={
-$and:[
-{
-branch:req.user.branch,
-year:req.user.year
-},
-{
-$or:[
-{isPublic:true},
-{uploader:req.user.id}
-]
-}
-]
-};
-
-if(
-req.query.subject &&
-req.query.subject!=='All'
-){
-
-query.$and.push({
-
-subject:
-new RegExp(
-`^${req.query.subject}$`,
-'i'
-)
-
-});
-
-}
-
-const notes=
-await Note
-.find(query)
-.populate(
-'uploader',
-'name email year branch'
-)
-.sort({
-createdAt:-1
-});
-
-const grouped=
-notes.reduce((a,n)=>{
-
-const s=
-n.subject||
-'Other';
-
-if(!a[s])
-a[s]=[];
-
-a[s].push(
-toSafeNote(n)
-);
-
-return a;
-
-},{});
-
-setCache(
-key,
-grouped
-);
-
-res.json(
-grouped
+return res.json(
+cached
 );
 
 }
-
-catch(error){
-
-res.status(500).json({
-message:
-error.message
-});
-
-}
-
-});
-
-
-// =======================
-// MY NOTES CACHE
-// =======================
-
-router.get(
-'/mine',
-protect,
-
-async(req,res)=>{
-
-try{
-
-const key=
-`mine_${req.user.id}`;
-
-const cached=
-getCache(key);
-
-if(cached)
-return res.json(cached);
-
-const notes=
-await Note
-.find({
-uploader:
-req.user.id
-})
-.populate(
-'uploader',
-'name email'
-)
-.sort({
-createdAt:-1
-});
-
-const data=
-notes.map(
-toSafeNote
-);
-
-setCache(
-key,
-data
-);
-
-res.json(
-data
-);
-
-}
-
-catch(error){
-
-res.status(500).json({
-message:
-error.message
-});
-
-}
-
-});
-
-
-// =======================
-// SEARCH CACHE
-// =======================
-
-router.get(
-'/search',
-protect,
-
-async(req,res)=>{
-
-try{
-
-const key=
-`search_${req.user.id}_${req.query.q}`;
-
-const cached=
-getCache(key);
-
-if(cached)
-return res.json(cached);
-
-const regex=
-new RegExp(
-req.query.q,
-'i'
-);
 
 const notes=
 await Note
@@ -336,53 +198,301 @@ req.user.year,
 
 $or:[
 {
-title:regex
+isPublic:true
 },
 {
-subject:regex
-},
-{
-description:regex
+uploader:
+req.user.id
 }
 ]
 
 })
+
 .populate(
 'uploader',
-'name email'
+'name email year branch'
+)
+
+.sort({
+createdAt:-1
+});
+
+const grouped=
+notes.reduce(
+(acc,n)=>{
+
+const s=
+n.subject||
+'Other';
+
+if(
+!acc[s]
+)
+acc[s]=[];
+
+acc[s]
+.push(
+toSafeNote(n)
 );
 
-const data=
-notes.map(
-toSafeNote
+return acc;
+
+},
+{}
 );
 
 setCache(
-key,data);
+key,
+grouped
+);
 
 res.json(
-data
+grouped
 );
 
 }
 
 catch(error){
 
-res.status(500).json({
+res
+.status(500)
+.json({
 message:
 error.message
 });
 
 }
 
+}
+);
+
+
+// =======================
+// PREVIEW INFO
+// =======================
+
+router.get(
+'/:id/preview-info',
+protect,
+
+async(req,res)=>{
+
+try{
+
+const note=
+await Note
+.findById(
+req.params.id
+);
+
+if(
+!note
+){
+
+return res
+.status(404)
+.json({
+message:
+'Note not found'
 });
 
+}
 
-// KEEP EXISTING ROUTES
-// preview
-// preview-info
-// verify-password
+if(
+!canAccessNote(
+note,
+req.user
+)
+){
 
+return res
+.status(403)
+.json({
+message:
+'Access denied'
+});
+
+}
+
+res.json({
+
+requiresPassword:
+!!note.password
+
+});
+
+}
+
+catch(error){
+
+res
+.status(500)
+.json({
+message:
+error.message
+});
+
+}
+
+}
+);
+
+
+// =======================
+// VERIFY PASSWORD
+// =======================
+
+router.post(
+'/:id/verify-password',
+protect,
+
+async(req,res)=>{
+
+try{
+
+const note=
+await Note.findById(
+req.params.id
+);
+
+if(
+!note
+){
+
+return res
+.status(404)
+.json({
+message:
+'Not found'
+});
+
+}
+
+const ok=
+await verifyNotePassword(
+
+note,
+req.user,
+req.body.password
+
+);
+
+if(!ok){
+
+return res
+.status(401)
+.json({
+message:
+'Wrong password'
+});
+
+}
+
+res.json({
+
+success:true
+
+});
+
+}
+
+catch(error){
+
+res
+.status(500)
+.json({
+message:
+error.message
+});
+
+}
+
+}
+);
+
+
+// =======================
+// PREVIEW PDF
+// =======================
+
+router.get(
+'/:id/preview',
+protect,
+
+async(req,res)=>{
+
+try{
+
+const note=
+await Note
+.findById(
+req.params.id
+);
+
+if(
+!note
+){
+
+return res
+.status(404)
+.json({
+message:
+'Note not found'
+});
+
+}
+
+const allowed=
+await verifyNotePassword(
+
+note,
+req.user,
+req.query.password
+
+);
+
+if(
+!allowed
+){
+
+return res
+.status(401)
+.json({
+message:
+'Password required'
+});
+
+}
+
+await streamPreviewFile(
+note,
+res
+);
+
+}
+
+catch(error){
+
+console.log(error);
+
+res
+.status(404)
+.json({
+
+message:
+'Preview failed'
+
+});
+
+}
+
+}
+);
+
+
+// =======================
+// DELETE
+// =======================
 
 router.delete(
 '/:id',
@@ -401,7 +511,9 @@ if(
 !note
 ){
 
-return res.status(404).json({
+return res
+.status(404)
+.json({
 message:
 'Not found'
 });
@@ -409,11 +521,17 @@ message:
 }
 
 if(
-note.uploader.toString()
-!==req.user.id
+String(
+note.uploader
+)!==
+String(
+req.user.id
+)
 ){
 
-return res.status(401).json({
+return res
+.status(401)
+.json({
 message:
 'Unauthorized'
 });
@@ -435,14 +553,17 @@ message:
 
 catch(error){
 
-res.status(500).json({
+res
+.status(500)
+.json({
 message:
 error.message
 });
 
 }
 
-});
+}
+);
 
 module.exports=
 router;
