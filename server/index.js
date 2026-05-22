@@ -71,6 +71,11 @@ app.use(
 cors()
 );
 
+app.get(
+'/api/notes',
+noteRoutes.getNotesMiddleware
+);
+
 
 // ENABLE GZIP COMPRESSION
 

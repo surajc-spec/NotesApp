@@ -176,6 +176,7 @@ error.message
 );
 
 }
+
 );
 
 
@@ -183,10 +184,7 @@ error.message
 // GET NOTES
 // =======================
 
-router.get(
-'/',
-protectCached,
-
+const getNotesHandler =
 async(req,res)=>{
 
 try{
@@ -570,7 +568,12 @@ error.message
 
 }
 
-}
+};
+
+router.get(
+'/',
+protectCached,
+getNotesHandler
 );
 
 
@@ -874,3 +877,8 @@ error.message
 
 module.exports=
 router;
+
+module.exports.getNotesMiddleware=[
+protectCached,
+getNotesHandler
+];
