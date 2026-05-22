@@ -53,11 +53,27 @@ const protectCached = async (req, res, next) => {
     try {
       token = req.headers.authorization.split(' ')[1];
 
+      const tokenCacheKey = `noteshare:auth:token:${token}`;
+      const cachedTokenUser = await getCache(tokenCacheKey);
+
+      if (cachedTokenUser) {
+        req.user = cachedTokenUser;
+        if (PERF_DEBUG) {
+          req.perfAuthMs = getMs(authStart);
+        }
+        return next();
+      }
+
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const key = `noteshare:auth:user:${decoded.id}`;
       const cachedUser = await getCache(key);
 
       if (cachedUser) {
+        const tokenTtl = decoded.exp
+          ? Math.max(1, Math.min(AUTH_CACHE_TTL_SECONDS, decoded.exp - Math.floor(Date.now() / 1000)))
+          : AUTH_CACHE_TTL_SECONDS;
+
+        await setCache(tokenCacheKey, cachedUser, tokenTtl);
         req.user = cachedUser;
         if (PERF_DEBUG) {
           req.perfAuthMs = getMs(authStart);
@@ -81,6 +97,12 @@ const protectCached = async (req, res, next) => {
       };
 
       await setCache(key, safeUser, AUTH_CACHE_TTL_SECONDS);
+
+      const tokenTtl = decoded.exp
+        ? Math.max(1, Math.min(AUTH_CACHE_TTL_SECONDS, decoded.exp - Math.floor(Date.now() / 1000)))
+        : AUTH_CACHE_TTL_SECONDS;
+
+      await setCache(tokenCacheKey, safeUser, tokenTtl);
 
       req.user = safeUser;
       if (PERF_DEBUG) {
