@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 import Navbar from './components/Navbar';
@@ -23,36 +23,12 @@ import ContactUs from './pages/ContactUs';
 import TermsConditions from './pages/TermsConditions';
 
 function App() {
-  const [allowAccess, setAllowAccess] = useState(true);
 
-  useEffect(() => {
-    const checkDevice = () => {
-      const ua = navigator.userAgent;
+  const isMobile =
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i
+      .test(navigator.userAgent);
 
-      const isMobile =
-        /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|Mobile/i.test(
-          ua
-        );
-
-      const desktopMode =
-        window.innerWidth >= 1000;
-
-      if (isMobile && !desktopMode) {
-        setAllowAccess(false);
-      } else {
-        setAllowAccess(true);
-      }
-    };
-
-    checkDevice();
-
-    window.addEventListener("resize", checkDevice);
-
-    return () =>
-      window.removeEventListener("resize", checkDevice);
-  }, []);
-
-  if (!allowAccess) {
+  if (isMobile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black text-white px-6">
         <div className="text-center max-w-lg">
@@ -62,11 +38,7 @@ function App() {
           </h1>
 
           <p className="text-gray-400 text-lg">
-            NoteShare currently supports desktop experience only.
-          </p>
-
-          <p className="text-green-400 mt-6">
-            Or enable <b>Desktop Site</b> in your browser.
+            NoteShare is currently available only on desktop devices.
           </p>
 
         </div>
@@ -87,62 +59,37 @@ function App() {
           <Routes>
 
             <Route path="/" element={<Landing />} />
-
             <Route path="/login" element={<Login />} />
-
             <Route path="/register" element={<Register />} />
 
             <Route
               path="/notes"
-              element={
-                <ProtectedRoute>
-                  <Home />
-                </ProtectedRoute>
-              }
+              element={<ProtectedRoute><Home /></ProtectedRoute>}
             />
 
             <Route
               path="/notes/:id/preview"
-              element={
-                <ProtectedRoute>
-                  <NotePreview />
-                </ProtectedRoute>
-              }
+              element={<ProtectedRoute><NotePreview /></ProtectedRoute>}
             />
 
             <Route
               path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
+              element={<ProtectedRoute><Dashboard /></ProtectedRoute>}
             />
 
             <Route
               path="/upload"
-              element={
-                <ProtectedRoute>
-                  <UploadNote />
-                </ProtectedRoute>
-              }
+              element={<ProtectedRoute><UploadNote /></ProtectedRoute>}
             />
 
             <Route
               path="/profile"
-              element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              }
+              element={<ProtectedRoute><Profile /></ProtectedRoute>}
             />
 
             <Route path="/privacy" element={<PrivacyPolicy />} />
-
             <Route path="/about" element={<AboutUs />} />
-
             <Route path="/contact" element={<ContactUs />} />
-
             <Route path="/terms" element={<TermsConditions />} />
 
           </Routes>
