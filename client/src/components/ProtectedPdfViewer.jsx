@@ -9,6 +9,7 @@ const ProtectedPdfViewer = ({
   title,
   isFullscreen = false,
 }) => {
+
   const containerRef = useRef(null);
 
   const canvasRefs = useRef([]);
@@ -17,147 +18,192 @@ const ProtectedPdfViewer = ({
 
   const [error, setError] = useState('');
 
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] =
+    useState(1);
 
-  const [jumpPage, setJumpPage] = useState('');
+  const [jumpPage, setJumpPage] =
+    useState('');
 
   useEffect(() => {
+
     let cancelled = false;
 
     let loadingTask;
 
-    const renderPdf = async () => {
-      setError('');
+    const renderPdf =
+      async () => {
 
-      setPages([]);
+        setError('');
 
-      canvasRefs.current = [];
+        setPages([]);
 
-      try {
-        loadingTask = pdfjs.getDocument(fileUrl);
+        canvasRefs.current = [];
 
-        const pdf =
-          await loadingTask.promise;
+        try {
 
-        if (cancelled) return;
+          loadingTask =
+            pdfjs.getDocument(
+              fileUrl
+            );
 
-        const pageNumbers =
-          Array.from(
-            { length: pdf.numPages },
-            (_, i) => i + 1
+          const pdf =
+            await loadingTask.promise;
+
+          if (cancelled)
+            return;
+
+          const pageNumbers =
+            Array.from(
+              {
+                length:
+                  pdf.numPages,
+              },
+              (_, i) =>
+                i + 1
+            );
+
+          setPages(
+            pageNumbers
           );
 
-        setPages(pageNumbers);
+          requestAnimationFrame(
+            async () => {
 
-        requestAnimationFrame(
-          async () => {
-
-            const width =
-              Math.min(
-                (
-                  containerRef.current
-                    ?.clientWidth || 900
-                ) - 24,
-                980
-              );
-
-            for (
-              const pageNumber
-              of pageNumbers
-            ) {
-
-              if (cancelled)
-                return;
-
-              const page =
-                await pdf.getPage(
-                  pageNumber
+              const width =
+                Math.min(
+                  (
+                    containerRef
+                      .current
+                      ?.clientWidth ||
+                    900
+                  ) - 24,
+                  980
                 );
 
-              const viewport =
-                page.getViewport({
-                  scale: 1,
-                });
+              for (
+                const pageNumber of pageNumbers
+              ) {
 
-              const scale =
-                width /
-                viewport.width;
+                if (
+                  cancelled
+                )
+                  return;
 
-              const scaled =
-                page.getViewport({
-                  scale,
-                });
+                const page =
+                  await pdf.getPage(
+                    pageNumber
+                  );
 
-              const canvas =
-                canvasRefs.current[
-                  pageNumber - 1
-                ];
+                const viewport =
+                  page.getViewport(
+                    {
+                      scale: 1,
+                    }
+                  );
 
-              if (!canvas)
-                continue;
+                const scale =
+                  width /
+                  viewport.width;
 
-              const ctx =
-                canvas.getContext(
-                  '2d'
-                );
+                const scaled =
+                  page.getViewport(
+                    {
+                      scale,
+                    }
+                  );
 
-              const ratio =
-                window
-                  .devicePixelRatio ||
-                1;
+                const canvas =
+                  canvasRefs.current[
+                    pageNumber -
+                      1
+                  ];
 
-              canvas.width =
-                scaled.width *
-                ratio;
+                if (
+                  !canvas
+                )
+                  continue;
 
-              canvas.height =
-                scaled.height *
-                ratio;
+                const ratio =
+                  window
+                    .devicePixelRatio ||
+                  1;
 
-              canvas.style.width =
-                `${scaled.width}px`;
+                const ctx =
+                  canvas.getContext(
+                    '2d'
+                  );
 
-              canvas.style.height =
-                `${scaled.height}px`;
+                canvas.width =
+                  scaled.width *
+                  ratio;
 
-              await page.render({
-                canvasContext:
-                  ctx,
+                canvas.height =
+                  scaled.height *
+                  ratio;
 
-                viewport:
-                  scaled,
+                canvas.style.width =
+                  `${scaled.width}px`;
 
-                transform:
-                  ratio !== 1
-                    ? [
-                        ratio,
-                        0,
-                        0,
-                        ratio,
-                        0,
-                        0,
-                      ]
-                    : null,
-              }).promise;
+                canvas.style.height =
+                  `${scaled.height}px`;
+
+                await page.render(
+                  {
+                    canvasContext:
+                      ctx,
+
+                    viewport:
+                      scaled,
+
+                    transform:
+                      ratio !==
+                      1
+                        ? [
+                            ratio,
+                            0,
+                            0,
+                            ratio,
+                            0,
+                            0,
+                          ]
+                        : null,
+                  }
+                ).promise;
+              }
+
             }
-          }
-        );
-      } catch (err) {
-        if (!cancelled)
-          setError(
-            err.message
           );
-      }
-    };
 
-    if (fileUrl)
+        } catch (
+          err
+        ) {
+
+          if (
+            !cancelled
+          ) {
+            setError(
+              err.message ||
+                'Could not render preview'
+            );
+          }
+
+        }
+
+      };
+
+    if (
+      fileUrl
+    ) {
       renderPdf();
+    }
 
     return () => {
-      cancelled = true;
+      cancelled =
+        true;
 
       loadingTask?.destroy();
     };
+
   }, [fileUrl]);
 
   const goToPage = (
@@ -165,7 +211,8 @@ const ProtectedPdfViewer = ({
   ) => {
 
     if (
-      page < 1 ||
+      page <
+        1 ||
       page >
         pages.length
     )
@@ -175,36 +222,72 @@ const ProtectedPdfViewer = ({
       page
     );
 
+    setJumpPage(
+      page
+    );
+
     canvasRefs.current[
       page - 1
-    ]?.scrollIntoView({
-      behavior:
-        'smooth',
+    ]?.scrollIntoView(
+      {
+        behavior:
+          'smooth',
 
-      block:
-        'start',
-    });
+        block:
+          'start',
+      }
+    );
+
   };
 
   return (
+
     <div
       ref={
         containerRef
       }
+
+      title={
+        title
+      }
+
       className={`overflow-y-auto bg-surface-secondary px-3 py-5 ${
         isFullscreen
           ? 'h-full'
           : 'h-[78vh]'
       }`}
-    >
 
-      {/* CONTROLS */}
+      onContextMenu={(
+        e
+      ) =>
+        e.preventDefault()
+      }
+
+      draggable="false"
+    >
 
       {!error &&
         pages.length >
           0 && (
 
-          <div className="sticky top-0 z-50 mb-5 flex items-center justify-center gap-3 bg-surface p-3 rounded">
+          <div
+            className="
+            sticky
+            top-0
+            z-50
+            mb-5
+            flex
+            items-center
+            justify-center
+            gap-3
+            rounded-lg
+            border
+            border-border
+            bg-surface
+            p-3
+            text-foreground
+            "
+          >
 
             <button
               onClick={() =>
@@ -213,19 +296,35 @@ const ProtectedPdfViewer = ({
                     1
                 )
               }
-              className="px-4 py-2 bg-accent rounded"
+
+              className="
+              px-4
+              py-2
+              rounded
+              bg-accent
+              text-white
+              "
             >
               Prev
             </button>
 
-            <div>
+            <span>
 
               Page
 
               <input
+                type="number"
+
+                min={1}
+
+                max={
+                  pages.length
+                }
+
                 value={
                   jumpPage
                 }
+
                 onChange={(
                   e
                 ) =>
@@ -235,19 +334,28 @@ const ProtectedPdfViewer = ({
                   )
                 }
 
-                className="mx-2 w-20 border text-center text-black"
-
-                placeholder={
-                  currentPage
-                }
+                className="
+                mx-2
+                w-20
+                rounded
+                border
+                border-border
+                bg-surface
+                text-foreground
+                px-2
+                py-1
+                text-center
+                outline-none
+                "
               />
 
               of
+
               {
                 pages.length
               }
 
-            </div>
+            </span>
 
             <button
               onClick={() =>
@@ -257,7 +365,14 @@ const ProtectedPdfViewer = ({
                   )
                 )
               }
-              className="px-4 py-2 bg-blue-600 rounded"
+
+              className="
+              px-4
+              py-2
+              rounded
+              bg-blue-600
+              text-white
+              "
             >
               Go
             </button>
@@ -269,7 +384,14 @@ const ProtectedPdfViewer = ({
                     1
                 )
               }
-              className="px-4 py-2 bg-accent rounded"
+
+              className="
+              px-4
+              py-2
+              rounded
+              bg-accent
+              text-white
+              "
             >
               Next
             </button>
@@ -278,12 +400,30 @@ const ProtectedPdfViewer = ({
         )}
 
       {error ? (
-        <div>
+
+        <div
+          className="
+          text-center
+          text-danger
+          font-bold
+          mt-10
+          "
+        >
           {error}
         </div>
+
       ) : (
 
-        <div className="flex flex-col items-center gap-5">
+        <div
+          className="
+          mx-auto
+          flex
+          max-w-5xl
+          flex-col
+          items-center
+          gap-5
+          "
+        >
 
           {pages.map(
             (
@@ -296,34 +436,52 @@ const ProtectedPdfViewer = ({
                 }
               >
 
-                <div className="mb-2 text-center text-sm">
-
+                <div
+                  className="
+                  mb-2
+                  text-center
+                  text-sm
+                  text-foreground
+                  "
+                >
                   Page{' '}
                   {
                     pageNumber
                   }
-
                 </div>
 
                 <canvas
                   ref={(
                     node
+                  ) => {
+                    canvasRefs.current[
+                      pageNumber -
+                        1
+                    ] =
+                      node;
+                  }}
+
+                  className="
+                  protected-pdf-page
+                  dark-invert-pdf
+                  "
+
+                  onContextMenu={(
+                    e
                   ) =>
-                    (
-                      canvasRefs.current[
-                        pageNumber -
-                          1
-                      ] =
-                        node
-                    )
+                    e.preventDefault()
                   }
+
+                  draggable="false"
                 />
 
               </div>
+
             )
           )}
 
         </div>
+
       )}
 
     </div>
