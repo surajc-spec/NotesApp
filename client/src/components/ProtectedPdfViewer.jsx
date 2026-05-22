@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
-import * as pdfjs from 'pdfjs-dist';
-import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
+import { useEffect, useRef, useState } from "react";
+import * as pdfjs from "pdfjs-dist";
+import pdfWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
@@ -9,481 +9,325 @@ const ProtectedPdfViewer = ({
   title,
   isFullscreen = false,
 }) => {
-
   const containerRef = useRef(null);
-
   const canvasRefs = useRef([]);
 
   const [pages, setPages] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [jumpPage, setJumpPage] = useState("");
+  const [error, setError] = useState("");
 
-  const [error, setError] = useState('');
+  const scrollToPage = (pageNumber) => {
+    const canvas = canvasRefs.current[pageNumber - 1];
 
-  const [currentPage, setCurrentPage] =
-    useState(1);
+    if (!canvas) return;
 
-  const [jumpPage, setJumpPage] =
-    useState('');
+    canvas.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
 
-  useEffect(() => {
-
-    let cancelled = false;
-
-    let loadingTask;
-
-    const renderPdf =
-      async () => {
-
-        setError('');
-
-        setPages([]);
-
-        canvasRefs.current = [];
-
-        try {
-
-          loadingTask =
-            pdfjs.getDocument(
-              fileUrl
-            );
-
-          const pdf =
-            await loadingTask.promise;
-
-          if (cancelled)
-            return;
-
-          const pageNumbers =
-            Array.from(
-              {
-                length:
-                  pdf.numPages,
-              },
-              (_, i) =>
-                i + 1
-            );
-
-          setPages(
-            pageNumbers
-          );
-
-          requestAnimationFrame(
-            async () => {
-
-              const width =
-                Math.min(
-                  (
-                    containerRef
-                      .current
-                      ?.clientWidth ||
-                    900
-                  ) - 24,
-                  980
-                );
-
-              for (
-                const pageNumber of pageNumbers
-              ) {
-
-                if (
-                  cancelled
-                )
-                  return;
-
-                const page =
-                  await pdf.getPage(
-                    pageNumber
-                  );
-
-                const viewport =
-                  page.getViewport(
-                    {
-                      scale: 1,
-                    }
-                  );
-
-                const scale =
-                  width /
-                  viewport.width;
-
-                const scaled =
-                  page.getViewport(
-                    {
-                      scale,
-                    }
-                  );
-
-                const canvas =
-                  canvasRefs.current[
-                    pageNumber -
-                      1
-                  ];
-
-                if (
-                  !canvas
-                )
-                  continue;
-
-                const ratio =
-                  window
-                    .devicePixelRatio ||
-                  1;
-
-                const ctx =
-                  canvas.getContext(
-                    '2d'
-                  );
-
-                canvas.width =
-                  scaled.width *
-                  ratio;
-
-                canvas.height =
-                  scaled.height *
-                  ratio;
-
-                canvas.style.width =
-                  `${scaled.width}px`;
-
-                canvas.style.height =
-                  `${scaled.height}px`;
-
-                await page.render(
-                  {
-                    canvasContext:
-                      ctx,
-
-                    viewport:
-                      scaled,
-
-                    transform:
-                      ratio !==
-                      1
-                        ? [
-                            ratio,
-                            0,
-                            0,
-                            ratio,
-                            0,
-                            0,
-                          ]
-                        : null,
-                  }
-                ).promise;
-              }
-
-            }
-          );
-
-        } catch (
-          err
-        ) {
-
-          if (
-            !cancelled
-          ) {
-            setError(
-              err.message ||
-                'Could not render preview'
-            );
-          }
-
-        }
-
-      };
-
-    if (
-      fileUrl
-    ) {
-      renderPdf();
-    }
-
-    return () => {
-      cancelled =
-        true;
-
-      loadingTask?.destroy();
-    };
-
-  }, [fileUrl]);
-
-  const goToPage = (
-    page
-  ) => {
-
-    if (
-      page <
-        1 ||
-      page >
-        pages.length
-    )
-      return;
-
-    setCurrentPage(
-      page
-    );
-
-    setJumpPage(
-      page
-    );
-
-    canvasRefs.current[
-      page - 1
-    ]?.scrollIntoView(
-      {
-        behavior:
-          'smooth',
-
-        block:
-          'start',
-      }
-    );
-
+    setCurrentPage(pageNumber);
   };
 
+  useEffect(() => {
+    let cancelled = false;
+    let loadingTask;
+
+    const renderPdf = async () => {
+      setError("");
+      setPages([]);
+      canvasRefs.current = [];
+
+      try {
+        loadingTask = pdfjs.getDocument(fileUrl);
+
+        const pdf = await loadingTask.promise;
+
+        if (cancelled) return;
+
+        const pageList = Array.from(
+          { length: pdf.numPages },
+          (_, i) => i + 1
+        );
+
+        setPages(pageList);
+
+        requestAnimationFrame(async () => {
+          const width =
+            Math.min(
+              (containerRef.current?.clientWidth || 900) - 24,
+              980
+            );
+
+          for (const pageNumber of pageList) {
+            if (cancelled) return;
+
+            const page =
+              await pdf.getPage(pageNumber);
+
+            const viewport =
+              page.getViewport({
+                scale: 1,
+              });
+
+            const scale =
+              width / viewport.width;
+
+            const scaled =
+              page.getViewport({
+                scale,
+              });
+
+            const canvas =
+              canvasRefs.current[
+                pageNumber - 1
+              ];
+
+            if (!canvas) continue;
+
+            const context =
+              canvas.getContext("2d");
+
+            const ratio =
+              window.devicePixelRatio || 1;
+
+            canvas.width =
+              scaled.width * ratio;
+
+            canvas.height =
+              scaled.height * ratio;
+
+            canvas.style.width =
+              `${scaled.width}px`;
+
+            canvas.style.height =
+              `${scaled.height}px`;
+
+            await page.render({
+              canvasContext: context,
+              viewport: scaled,
+              transform:
+                ratio !== 1
+                  ? [
+                      ratio,
+                      0,
+                      0,
+                      ratio,
+                      0,
+                      0,
+                    ]
+                  : null,
+            }).promise;
+          }
+        });
+      } catch (err) {
+        if (!cancelled)
+          setError(
+            err.message ||
+              "Unable to render PDF"
+          );
+      }
+    };
+
+    if (fileUrl) renderPdf();
+
+    return () => {
+      cancelled = true;
+      loadingTask?.destroy();
+    };
+  }, [fileUrl]);
+
   return (
-
     <div
-      ref={
-        containerRef
-      }
-
-      title={
-        title
-      }
-
-      className={`overflow-y-auto bg-surface-secondary px-3 py-5 ${
-        isFullscreen
-          ? 'h-full'
-          : 'h-[78vh]'
-      }`}
-
-      onContextMenu={(
-        e
-      ) =>
+      ref={containerRef}
+      title={title}
+      className={`
+overflow-y-auto
+bg-surface-secondary
+px-3
+pt-0
+pb-5
+${isFullscreen ? "h-full" : "h-[78vh]"}
+`}
+      onContextMenu={(e) =>
         e.preventDefault()
       }
-
-      draggable="false"
     >
+      {/* TOP TOOLBAR */}
 
-      {!error &&
-        pages.length >
-          0 && (
-
-          <div
+      <div
+        className="
+sticky
+top-0
+z-50
+bg-surface-secondary
+py-3
+"
+      >
+        <div
+          className="
+flex
+items-center
+justify-center
+gap-3
+rounded-b-xl
+border
+border-border
+bg-surface
+p-3
+text-foreground
+"
+        >
+          <button
+            onClick={() =>
+              scrollToPage(
+                Math.max(
+                  currentPage - 1,
+                  1
+                )
+              )
+            }
             className="
-            sticky
-            top-0
-            z-50
-            mb-5
-            flex
-            items-center
-            justify-center
-            gap-3
-            rounded-lg
-            border
-            border-border
-            bg-surface
-            p-3
-            text-foreground
-            "
+px-3
+py-1
+rounded
+bg-gray-700
+text-white
+"
           >
+            ←
+          </button>
 
-            <button
-              onClick={() =>
-                goToPage(
-                  currentPage -
-                    1
-                )
+          <span>
+            Page
+          </span>
+
+          <input
+            type="number"
+            value={jumpPage}
+            onChange={(e) =>
+              setJumpPage(
+                e.target.value
+              )
+            }
+            className="
+w-20
+rounded
+border
+bg-black
+text-white
+dark:bg-white
+dark:text-black
+px-2
+py-1
+text-center
+"
+          />
+
+          <button
+            onClick={() => {
+              const p =
+                Number(jumpPage);
+
+              if (
+                p >= 1 &&
+                p <= pages.length
+              ) {
+                scrollToPage(p);
               }
+            }}
+            className="
+rounded
+bg-green-500
+px-4
+py-1
+text-white
+"
+          >
+            Go
+          </button>
 
-              className="
-              px-4
-              py-2
-              rounded
-              bg-accent
-              text-white
-              "
-            >
-              Prev
-            </button>
+          <span>
+            / {pages.length}
+          </span>
 
-            <span>
-
-              Page
-
-              <input
-                type="number"
-
-                min={1}
-
-                max={
+          <button
+            onClick={() =>
+              scrollToPage(
+                Math.min(
+                  currentPage + 1,
                   pages.length
-                }
-
-                value={
-                  jumpPage
-                }
-
-                onChange={(
-                  e
-                ) =>
-                  setJumpPage(
-                    e.target
-                      .value
-                  )
-                }
-
-                className="
-                mx-2
-                w-20
-                rounded
-                border
-                border-border
-                bg-surface
-                text-foreground
-                px-2
-                py-1
-                text-center
-                outline-none
-                "
-              />
-
-              of
-
-              {
-                pages.length
-              }
-
-            </span>
-
-            <button
-              onClick={() =>
-                goToPage(
-                  Number(
-                    jumpPage
-                  )
                 )
-              }
+              )
+            }
+            className="
+px-3
+py-1
+rounded
+bg-gray-700
+text-white
+"
+          >
+            →
+          </button>
+        </div>
+      </div>
 
-              className="
-              px-4
-              py-2
-              rounded
-              bg-blue-600
-              text-white
-              "
-            >
-              Go
-            </button>
-
-            <button
-              onClick={() =>
-                goToPage(
-                  currentPage +
-                    1
-                )
-              }
-
-              className="
-              px-4
-              py-2
-              rounded
-              bg-accent
-              text-white
-              "
-            >
-              Next
-            </button>
-
-          </div>
-        )}
+      {/* PDF */}
 
       {error ? (
-
-        <div
-          className="
-          text-center
-          text-danger
-          font-bold
-          mt-10
-          "
-        >
+        <div className="text-red-500">
           {error}
         </div>
-
       ) : (
-
-        <div
-          className="
-          mx-auto
-          flex
-          max-w-5xl
-          flex-col
-          items-center
-          gap-5
-          "
-        >
+        <div className="mx-auto flex flex-col items-center gap-5">
 
           {pages.map(
-            (
-              pageNumber
-            ) => (
-
+            (pageNumber) => (
               <div
                 key={
                   pageNumber
                 }
+                className="
+relative
+"
               >
-
                 <div
                   className="
-                  mb-2
-                  text-center
-                  text-sm
-                  text-foreground
-                  "
+absolute
+left-3
+top-3
+z-10
+rounded
+bg-black
+px-2
+py-1
+text-sm
+text-white
+"
                 >
-                  Page{' '}
-                  {
-                    pageNumber
-                  }
+                  {pageNumber}
                 </div>
 
                 <canvas
-                  ref={(
-                    node
-                  ) => {
-                    canvasRefs.current[
-                      pageNumber -
-                        1
-                    ] =
-                      node;
-                  }}
-
-                  className="
-                  protected-pdf-page
-                  dark-invert-pdf
-                  "
-
-                  onContextMenu={(
-                    e
-                  ) =>
-                    e.preventDefault()
+                  ref={(node) =>
+                    (canvasRefs.current[
+                      pageNumber - 1
+                    ] = node)
                   }
-
+                  className="
+shadow-xl
+dark:invert
+"
                   draggable="false"
                 />
-
               </div>
-
             )
           )}
 
         </div>
-
       )}
-
     </div>
   );
 };
