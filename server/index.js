@@ -70,7 +70,25 @@ cors()
 // ENABLE GZIP COMPRESSION
 
 app.use(
-compression()
+compression({
+filter:(req,res)=>{
+
+if(
+req.method ===
+'GET' &&
+req.path ===
+'/api/notes'
+){
+return false;
+}
+
+return compression.filter(
+req,
+res
+);
+
+}
+})
 );
 
 

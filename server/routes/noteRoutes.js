@@ -22,8 +22,8 @@ toSafeNote
 require('../services/notePreviewService');
 
 const {
-getCache,
-setCache,
+getCacheRaw,
+setCacheRaw,
 clearCache
 } =
 require('../services/cacheService');
@@ -31,6 +31,18 @@ require('../services/cacheService');
 const CACHE_DEBUG =
 process.env.CACHE_DEBUG ===
 'true';
+
+const PERF_DEBUG =
+process.env.PERF_DEBUG ===
+'true';
+
+const getMs =
+(start)=>
+Number(
+process.hrtime.bigint()-
+start
+)/
+1000000;
 
 
 // =======================
@@ -179,6 +191,18 @@ async(req,res)=>{
 
 try{
 
+const routeStart =
+process.hrtime.bigint();
+
+let cacheMs =
+0;
+
+let mongoMs =
+0;
+
+let serializationMs =
+0;
+
 const page=
 Math.max(
 Number(req.query.page)||
@@ -207,8 +231,16 @@ String(req.query.subject)
 const key=
 `noteshare:notes:${req.user.id}:${subject}:${page}:${limit||'all'}`;
 
+const cacheStart =
+process.hrtime.bigint();
+
 const cached=
-await getCache(key);
+await getCacheRaw(key);
+
+cacheMs =
+getMs(
+cacheStart
+);
 
 if(cached){
 
@@ -221,7 +253,35 @@ key
 );
 }
 
-return res.json(
+if(
+PERF_DEBUG
+){
+console.log({
+route:
+'GET /api/notes',
+cache:
+'hit',
+authMs:
+req.perfAuthMs,
+cacheMs,
+mongoMs,
+serializationMs,
+responseBytes:
+Buffer.byteLength(
+cached
+),
+totalMs:
+getMs(
+routeStart
+)
+});
+}
+
+return res
+.type(
+'application/json'
+)
+.send(
 cached
 );
 
@@ -282,6 +342,9 @@ if(
 limit
 ){
 
+const mongoStart =
+process.hrtime.bigint();
+
 dbQuery
 .skip(
 (page-1)*limit
@@ -290,10 +353,21 @@ dbQuery
 limit
 );
 
-}
+const [
+notes,
+total
+]=
+await Promise.all([
+dbQuery.lean(),
+Note.countDocuments(
+query
+)
+]);
 
-const notes=
-await dbQuery.lean();
+mongoMs =
+getMs(
+mongoStart
+);
 
 const grouped=
 notes.reduce(
@@ -317,15 +391,6 @@ return acc;
 
 },
 {}
-);
-
-if(
-limit
-){
-
-const total=
-await Note.countDocuments(
-query
 );
 
 const payload={
@@ -355,24 +420,141 @@ total
 
 };
 
-await setCache(
-key,
+const serializationStart =
+process.hrtime.bigint();
+
+const serialized =
+JSON.stringify(
 payload
 );
 
-return res.json(
-payload
+serializationMs =
+getMs(
+serializationStart
+);
+
+await setCacheRaw(
+key,
+serialized
+);
+
+if(
+PERF_DEBUG
+){
+console.log({
+route:
+'GET /api/notes',
+cache:
+'miss',
+authMs:
+req.perfAuthMs,
+cacheMs,
+mongoMs,
+serializationMs,
+responseBytes:
+Buffer.byteLength(
+serialized
+),
+totalMs:
+getMs(
+routeStart
+)
+});
+}
+
+return res
+.type(
+'application/json'
+)
+.send(
+serialized
 );
 
 }
 
-await setCache(
-key,
+const mongoStart =
+process.hrtime.bigint();
+
+const notes=
+await dbQuery.lean();
+
+mongoMs =
+getMs(
+mongoStart
+);
+
+const grouped=
+notes.reduce(
+(acc,n)=>{
+
+const s=
+n.subject||
+'Other';
+
+if(
+!acc[s]
+)
+acc[s]=[];
+
+acc[s]
+.push(
+toSafeNote(n)
+);
+
+return acc;
+
+},
+{}
+);
+
+const serializationStart =
+process.hrtime.bigint();
+
+const serialized =
+JSON.stringify(
 grouped
 );
 
-res.json(
-grouped
+serializationMs =
+getMs(
+serializationStart
+);
+
+await setCacheRaw(
+key,
+serialized
+);
+
+if(
+PERF_DEBUG
+){
+console.log({
+route:
+'GET /api/notes',
+cache:
+'miss',
+authMs:
+req.perfAuthMs,
+cacheMs,
+mongoMs,
+serializationMs,
+responseBytes:
+Buffer.byteLength(
+serialized
+),
+totalMs:
+getMs(
+routeStart
+)
+});
+}
+
+res
+.type(
+'application/json'
+)
+.send(
+serialized
 );
 
 }

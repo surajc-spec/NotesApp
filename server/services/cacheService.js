@@ -66,6 +66,29 @@ const getCache = async (key) => {
   return undefined;
 };
 
+const getCacheRaw = async (key) => {
+  const memoryValue = cache.get(key);
+
+  if (typeof memoryValue === 'string') {
+    return memoryValue;
+  }
+
+  const redis = await getRedisClient();
+
+  if (redis && (redisReady || redis.isReady)) {
+    const value = await redis.get(key);
+
+    if (!value) {
+      return undefined;
+    }
+
+    cache.set(key, value, DEFAULT_TTL_SECONDS);
+    return value;
+  }
+
+  return undefined;
+};
+
 const setCache = async (key, value, ttlSeconds = DEFAULT_TTL_SECONDS) => {
   cache.set(key, value, ttlSeconds);
 
@@ -73,6 +96,18 @@ const setCache = async (key, value, ttlSeconds = DEFAULT_TTL_SECONDS) => {
 
   if (redis && (redisReady || redis.isReady)) {
     await redis.set(key, JSON.stringify(value), {
+      EX: ttlSeconds,
+    });
+  }
+};
+
+const setCacheRaw = async (key, value, ttlSeconds = DEFAULT_TTL_SECONDS) => {
+  cache.set(key, value, ttlSeconds);
+
+  const redis = await getRedisClient();
+
+  if (redis && (redisReady || redis.isReady)) {
+    await redis.set(key, value, {
       EX: ttlSeconds,
     });
   }
@@ -106,7 +141,9 @@ const clearCache = async () => {
 
 module.exports = {
   getCache,
+  getCacheRaw,
   setCache,
+  setCacheRaw,
   deleteCache,
   clearCache,
 };

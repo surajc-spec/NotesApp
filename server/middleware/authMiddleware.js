@@ -6,6 +6,8 @@ const {
 } = require('../services/cacheService');
 
 const AUTH_CACHE_TTL_SECONDS = Number(process.env.AUTH_CACHE_TTL_SECONDS || 300);
+const PERF_DEBUG = process.env.PERF_DEBUG === 'true';
+const getMs = (start) => Number(process.hrtime.bigint() - start) / 1000000;
 
 const protect = async (req, res, next) => {
   let token;
@@ -41,6 +43,7 @@ const protect = async (req, res, next) => {
 };
 
 const protectCached = async (req, res, next) => {
+  const authStart = process.hrtime.bigint();
   let token;
 
   if (
@@ -56,6 +59,9 @@ const protectCached = async (req, res, next) => {
 
       if (cachedUser) {
         req.user = cachedUser;
+        if (PERF_DEBUG) {
+          req.perfAuthMs = getMs(authStart);
+        }
         return next();
       }
 
@@ -77,6 +83,9 @@ const protectCached = async (req, res, next) => {
       await setCache(key, safeUser, AUTH_CACHE_TTL_SECONDS);
 
       req.user = safeUser;
+      if (PERF_DEBUG) {
+        req.perfAuthMs = getMs(authStart);
+      }
       return next();
     } catch (error) {
       return res.status(401).json({
