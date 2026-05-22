@@ -1,22 +1,38 @@
 import React, { useEffect, useState } from "react";
 
 function DesktopOnly({ children }) {
-  const [isMobile, setIsMobile] = useState(false);
+  const [allowAccess, setAllowAccess] = useState(true);
 
   useEffect(() => {
     const checkDevice = () => {
-      setIsMobile(window.innerWidth <= 768);
+      const ua = navigator.userAgent;
+
+      const isMobileDevice =
+        /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|Mobile/i.test(
+          ua
+        );
+
+      const isDesktopMode =
+        window.innerWidth >= 1000;
+
+      // Block only mobile in normal mode
+      if (isMobileDevice && !isDesktopMode) {
+        setAllowAccess(false);
+      } else {
+        setAllowAccess(true);
+      }
     };
 
     checkDevice();
 
     window.addEventListener("resize", checkDevice);
 
-    return () =>
+    return () => {
       window.removeEventListener("resize", checkDevice);
+    };
   }, []);
 
-  if (isMobile) {
+  if (!allowAccess) {
     return (
       <div
         style={{
@@ -31,11 +47,38 @@ function DesktopOnly({ children }) {
           padding: "20px",
         }}
       >
-        <h1>🖥 Open on Laptop / PC</h1>
+        <div
+          style={{
+            maxWidth: "500px",
+          }}
+        >
+          <h1
+            style={{
+              fontSize: "32px",
+              marginBottom: "20px",
+            }}
+          >
+            🖥 Open on Laptop / PC
+          </h1>
 
-        <p>
-          This website is currently available only for desktop users.
-        </p>
+          <p
+            style={{
+              fontSize: "18px",
+              color: "#aaa",
+            }}
+          >
+            NoteShare is currently optimized for desktop experience.
+          </p>
+
+          <p
+            style={{
+              marginTop: "20px",
+              color: "#00ffb7",
+            }}
+          >
+            Or enable <b>Desktop Site</b> in your browser.
+          </p>
+        </div>
       </div>
     );
   }
