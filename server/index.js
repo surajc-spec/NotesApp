@@ -24,6 +24,11 @@ require('./routes/noteRoutes');
 const app =
 express();
 
+app.set(
+'etag',
+false
+);
+
 
 
 // --------------------

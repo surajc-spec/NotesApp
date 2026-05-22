@@ -4,6 +4,7 @@ const DEFAULT_TTL_SECONDS = Number(process.env.CACHE_TTL_SECONDS || 600);
 const cache = new NodeCache({
   stdTTL: DEFAULT_TTL_SECONDS,
   checkperiod: 120,
+  useClones: false,
 });
 
 let redisClient = null;
