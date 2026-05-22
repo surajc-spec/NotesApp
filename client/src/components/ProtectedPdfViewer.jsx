@@ -6,9 +6,14 @@ import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
+const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
 const ProtectedPdfViewer = ({ fileUrl, title, isFullscreen = false }) => {
   const containerRef = useRef(null);
   const canvasRefs = useRef([]);
+  const pdfRef = useRef(null);
+  const renderTokenRef = useRef(0);
+  const zoomFrameRef = useRef(null);
 
   const [pages, setPages] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -34,10 +39,11 @@ const ProtectedPdfViewer = ({ fileUrl, title, isFullscreen = false }) => {
     let cancelled = false;
     let loadingTask;
 
-    const renderPdf = async () => {
+    const loadPdf = async () => {
       setError('');
       setPages([]);
       canvasRefs.current = [];
+      pdfRef.current = null;
 
       try {
         loadingTask = pdfjs.getDocument(fileUrl);
@@ -46,42 +52,9 @@ const ProtectedPdfViewer = ({ fileUrl, title, isFullscreen = false }) => {
 
         if (cancelled) return;
 
+        pdfRef.current = pdf;
         const pageNumbers = Array.from({ length: pdf.numPages }, (_, i) => i + 1);
         setPages(pageNumbers);
-
-        requestAnimationFrame(async () => {
-          const containerWidth = (containerRef.current?.clientWidth || 900) - 24;
-          const containerHeight = (containerRef.current?.clientHeight || window.innerHeight) - 92;
-
-          for (const pageNumber of pageNumbers) {
-            if (cancelled) return;
-
-            const page = await pdf.getPage(pageNumber);
-            const viewport = page.getViewport({ scale: 1 });
-            const fitWidth = Math.min(containerWidth, 980) / viewport.width;
-            const fitPage = Math.min(fitWidth, containerHeight / viewport.height);
-            const baseScale = isFullscreen && fitMode === 'page' ? fitPage : fitWidth;
-            const scale = baseScale * zoom;
-            const scaled = page.getViewport({ scale });
-            const canvas = canvasRefs.current[pageNumber - 1];
-
-            if (!canvas) continue;
-
-            const context = canvas.getContext('2d');
-            const ratio = window.devicePixelRatio || 1;
-
-            canvas.width = scaled.width * ratio;
-            canvas.height = scaled.height * ratio;
-            canvas.style.width = `${scaled.width}px`;
-            canvas.style.height = `${scaled.height}px`;
-
-            await page.render({
-              canvasContext: context,
-              viewport: scaled,
-              transform: ratio !== 1 ? [ratio, 0, 0, ratio, 0, 0] : null,
-            }).promise;
-          }
-        });
       } catch (err) {
         if (!cancelled) {
           setError(err.message || 'Unable to render PDF');
@@ -89,13 +62,74 @@ const ProtectedPdfViewer = ({ fileUrl, title, isFullscreen = false }) => {
       }
     };
 
-    if (fileUrl) renderPdf();
+    if (fileUrl) loadPdf();
 
     return () => {
       cancelled = true;
       loadingTask?.destroy();
     };
-  }, [fileUrl, fitMode, isFullscreen, zoom]);
+  }, [fileUrl]);
+
+  useEffect(() => {
+    if (!pdfRef.current || !pages.length) return;
+
+    let cancelled = false;
+    const token = renderTokenRef.current + 1;
+    renderTokenRef.current = token;
+
+    const renderPages = async () => {
+      const pdf = pdfRef.current;
+      const container = containerRef.current;
+      const toolbarHeight = isFullscreen ? 76 : 72;
+      const containerWidth = Math.max((container?.clientWidth || 900) - 24, 320);
+      const containerHeight = Math.max(
+        (container?.clientHeight || window.innerHeight) - toolbarHeight - 20,
+        320
+      );
+      const maxWidth = isFullscreen && fitMode === 'page' ? containerWidth : Math.min(containerWidth, 980);
+
+      for (const pageNumber of pages) {
+        if (cancelled || renderTokenRef.current !== token) return;
+
+        const page = await pdf.getPage(pageNumber);
+        const viewport = page.getViewport({ scale: 1 });
+        const fitWidth = maxWidth / viewport.width;
+        const fitPage = Math.min(containerWidth / viewport.width, containerHeight / viewport.height);
+        const baseScale = isFullscreen && fitMode === 'page' ? fitPage : fitWidth;
+        const scale = clamp(baseScale * zoom, 0.2, 4);
+        const scaled = page.getViewport({ scale });
+        const canvas = canvasRefs.current[pageNumber - 1];
+
+        if (!canvas) continue;
+
+        const context = canvas.getContext('2d');
+        const ratio = window.devicePixelRatio || 1;
+
+        canvas.width = scaled.width * ratio;
+        canvas.height = scaled.height * ratio;
+        canvas.style.width = `${scaled.width}px`;
+        canvas.style.height = `${scaled.height}px`;
+
+        context.setTransform(1, 0, 0, 1, 0, 0);
+        context.clearRect(0, 0, canvas.width, canvas.height);
+
+        await page.render({
+          canvasContext: context,
+          viewport: scaled,
+          transform: ratio !== 1 ? [ratio, 0, 0, ratio, 0, 0] : null,
+        }).promise;
+      }
+    };
+
+    zoomFrameRef.current = requestAnimationFrame(renderPages);
+
+    return () => {
+      cancelled = true;
+      if (zoomFrameRef.current) {
+        cancelAnimationFrame(zoomFrameRef.current);
+      }
+    };
+  }, [pages, fitMode, isFullscreen, zoom]);
 
   return (
     <div
@@ -154,7 +188,10 @@ const ProtectedPdfViewer = ({ fileUrl, title, isFullscreen = false }) => {
 
           {isFullscreen && (
             <button
-              onClick={() => setFitMode((mode) => (mode === 'page' ? 'width' : 'page'))}
+              onClick={() => {
+                setFitMode((mode) => (mode === 'page' ? 'width' : 'page'));
+                setZoom(1);
+              }}
               className="flex h-8 w-8 items-center justify-center rounded bg-gray-700 text-white"
               type="button"
               title={fitMode === 'page' ? 'Fit to width' : 'Fit page to screen'}
