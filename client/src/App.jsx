@@ -24,27 +24,21 @@ import TermsConditions from './pages/TermsConditions';
 
 function App() {
 
-  const isMobileUA =
-    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i
-      .test(navigator.userAgent);
+  const isMobile =
+    navigator.maxTouchPoints > 1 &&
+    window.innerWidth < 1024;
 
-  const isTouchDevice =
-    navigator.maxTouchPoints > 1;
-
-  const blockMobile =
-    isMobileUA || isTouchDevice;
-
-  if (blockMobile) {
+  if (isMobile) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black text-white px-6">
+      <div className="min-h-screen bg-black flex items-center justify-center">
 
-        <div className="text-center max-w-lg">
+        <div className="text-center">
 
-          <h1 className="text-4xl font-bold mb-6">
+          <h1 className="text-white text-5xl mb-5">
             🖥 Open on Laptop / PC
           </h1>
 
-          <p className="text-gray-400 text-lg">
+          <p className="text-gray-400">
             NoteShare is available only on desktop devices.
           </p>
 
@@ -58,67 +52,54 @@ function App() {
     <Router>
 
       <SecurityDeterrents />
+
       <RegistrationPopup />
+
       <Navbar />
 
       <div className="pt-24 min-h-screen flex flex-col justify-between">
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex-1 w-full">
+        <div className="max-w-7xl mx-auto px-4 flex-1 w-full">
 
           <Routes>
 
             <Route path="/" element={<Landing />} />
+
             <Route path="/login" element={<Login />} />
+
             <Route path="/register" element={<Register />} />
 
             <Route
               path="/notes"
-              element={
-                <ProtectedRoute>
-                  <Home />
-                </ProtectedRoute>
-              }
+              element={<ProtectedRoute><Home /></ProtectedRoute>}
             />
 
             <Route
               path="/notes/:id/preview"
-              element={
-                <ProtectedRoute>
-                  <NotePreview />
-                </ProtectedRoute>
-              }
+              element={<ProtectedRoute><NotePreview /></ProtectedRoute>}
             />
 
             <Route
               path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
+              element={<ProtectedRoute><Dashboard /></ProtectedRoute>}
             />
 
             <Route
               path="/upload"
-              element={
-                <ProtectedRoute>
-                  <UploadNote />
-                </ProtectedRoute>
-              }
+              element={<ProtectedRoute><UploadNote /></ProtectedRoute>}
             />
 
             <Route
               path="/profile"
-              element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              }
+              element={<ProtectedRoute><Profile /></ProtectedRoute>}
             />
 
             <Route path="/privacy" element={<PrivacyPolicy />} />
+
             <Route path="/about" element={<AboutUs />} />
+
             <Route path="/contact" element={<ContactUs />} />
+
             <Route path="/terms" element={<TermsConditions />} />
 
           </Routes>
