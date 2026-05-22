@@ -4,7 +4,10 @@ const bcrypt = require('bcryptjs');
 
 const Note = require('../models/Note');
 
-const { protect } =
+const {
+protect,
+protectCached
+} =
 require('../middleware/authMiddleware');
 
 const upload =
@@ -170,7 +173,7 @@ error.message
 
 router.get(
 '/',
-protect,
+protectCached,
 
 async(req,res)=>{
 
