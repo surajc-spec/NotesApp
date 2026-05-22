@@ -205,11 +205,21 @@ await getCache(key);
 
 if(cached){
 
+console.log(
+'Cache HIT',
+key
+);
+
 return res.json(
 cached
 );
 
 }
+
+console.log(
+'Cache MISS',
+key
+);
 
 const query={
 
