@@ -1,8 +1,13 @@
 require('dotenv').config();
 
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
+const express =
+require('express');
+
+const mongoose =
+require('mongoose');
+
+const cors =
+require('cors');
 
 const rateLimit =
 require('express-rate-limit');
@@ -18,23 +23,25 @@ express();
 
 
 
-// RATE LIMIT
+// --------------------
+// AUTH RATE LIMIT
+// --------------------
 
-const apiLimiter =
+const authLimiter =
 rateLimit({
 
 windowMs:
-15 *
+60 *
 60 *
 1000,
 
 max:
-300,
+20,
 
 message:{
 
 message:
-'Too many requests. Please try again later.'
+'Too many registrations. Try again in 1 hour.'
 
 },
 
@@ -48,44 +55,36 @@ false,
 
 
 
-// MIDDLEWARE
+// --------------------
+// GLOBAL MIDDLEWARE
+// --------------------
 
-app.use(cors());
+app.use(
+cors()
+);
 
-app.use(express.json());
+app.use(
+express.json()
+);
 
 app.use(
 express.urlencoded({
-extended:true
+
+extended:
+true
+
 })
 );
 
-// APPLY LIMITER
-
-app.use(
-apiLimiter
-);
 
 
-
-// ROUTES
-
-app.use(
-'/api/auth',
-authRoutes
-);
-
-app.use(
-'/api/notes',
-noteRoutes
-);
-
-
-
+// --------------------
 // HEALTH CHECK
+// --------------------
 
 app.get(
 '/',
+
 (req,res)=>{
 
 res.json({
@@ -100,6 +99,35 @@ message:
 
 
 
+// --------------------
+// ROUTES
+// --------------------
+
+// AUTH PROTECTED
+
+app.use(
+'/api/auth',
+
+authLimiter,
+
+authRoutes
+);
+
+
+// NOTES NORMAL
+
+app.use(
+'/api/notes',
+
+noteRoutes
+);
+
+
+
+// --------------------
+// DATABASE
+// --------------------
+
 const PORT =
 process.env.PORT ||
 5000;
@@ -108,8 +136,7 @@ process.env.PORT ||
 
 mongoose
 .connect(
-process.env
-.MONGO_URI
+process.env.MONGO_URI
 )
 
 .then(()=>{
@@ -119,12 +146,15 @@ console.log(
 );
 
 app.listen(
+
 PORT,
 
 ()=>{
 
 console.log(
+
 `Server running on port ${PORT}`
+
 );
 
 }
@@ -134,11 +164,15 @@ console.log(
 })
 
 .catch(
+
 (err)=>{
 
 console.error(
+
 'MongoDB connection error:',
+
 err
+
 );
 
 }
