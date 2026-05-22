@@ -31,20 +31,20 @@ useState("");
 const [error,setError]=
 useState("");
 
-const [searchText,setSearchText]=
-useState("");
-
 const [showSearch,setShowSearch]=
 useState(false);
+
+const [searchText,setSearchText]=
+useState("");
 
 
 
 const scrollToPage=
-(pageNumber)=>{
+(page)=>{
 
 const canvas=
 canvasRefs.current[
-pageNumber-1
+page-1
 ];
 
 if(!canvas)
@@ -61,7 +61,7 @@ block:
 });
 
 setCurrentPage(
-pageNumber
+page
 );
 
 };
@@ -75,7 +75,7 @@ false;
 
 let loadingTask;
 
-const renderPdf=
+const render=
 async()=>{
 
 setError("");
@@ -124,20 +124,19 @@ const width=
 Math.min(
 
 (
-containerRef
-.current
+containerRef.current
 ?.clientWidth
 ||
 900
-)-24,
+)-40,
 
-980
+900
 
 );
 
 for(
 
-const pageNumber
+const num
 
 of
 
@@ -149,8 +148,9 @@ if(cancelled)
 return;
 
 const page=
+
 await pdf.getPage(
-pageNumber
+num
 );
 
 const viewport=
@@ -175,13 +175,13 @@ scale
 const canvas=
 
 canvasRefs.current[
-pageNumber-1
+num-1
 ];
 
 if(!canvas)
 continue;
 
-const context=
+const ctx=
 canvas.getContext(
 "2d"
 );
@@ -208,7 +208,7 @@ canvas.style.height=
 await page.render({
 
 canvasContext:
-context,
+ctx,
 
 viewport:
 scaled,
@@ -261,7 +261,7 @@ err.message||
 };
 
 if(fileUrl)
-renderPdf();
+render();
 
 return()=>{
 
@@ -297,23 +297,18 @@ overflow-y-auto
 
 bg-surface-secondary
 
-px-3
-
-pt-0
-
-pb-5
+pb-6
 
 ${
-
 isFullscreen
 
 ?
 
-"h-full"
+"fixed inset-0 z-[9999] bg-black px-8 py-6"
 
 :
 
-"h-[78vh]"
+"h-[78vh] px-3"
 
 }
 
@@ -321,21 +316,19 @@ isFullscreen
 
 >
 
+{/* TOP BAR */}
+
 <div
 
 className="
 
 sticky
 
-top-0
+top-4
 
 z-50
 
-bg-surface-secondary
-
-pt-0
-
-pb-3
+mb-4
 
 "
 
@@ -345,7 +338,11 @@ pb-3
 
 className="
 
+mx-auto
+
 flex
+
+max-w-[900px]
 
 items-center
 
@@ -353,13 +350,15 @@ justify-center
 
 gap-3
 
-rounded-b-xl
+rounded-xl
 
 border
 
 border-border
 
-bg-surface
+bg-black/80
+
+backdrop-blur
 
 p-3
 
@@ -374,11 +373,8 @@ onClick={()=>
 scrollToPage(
 
 Math.max(
-
 1,
-
 currentPage-1
-
 )
 
 )
@@ -386,17 +382,11 @@ currentPage-1
 }
 
 className="
-
 rounded
-
 bg-gray-700
-
 px-3
-
 py-1
-
 text-white
-
 "
 
 >
@@ -405,7 +395,11 @@ text-white
 
 </button>
 
-<span>
+<span
+className="
+text-white
+"
+>
 
 Page
 
@@ -413,11 +407,11 @@ Page
 
 <input
 
-type="number"
-
 value={
 jumpPage
 }
+
+type="number"
 
 onChange={(e)=>
 
@@ -463,27 +457,14 @@ p
 }}
 
 className="
-
 w-20
-
 rounded
-
-border
-
-bg-white
-
-text-black
-
-dark:bg-[#171717]
-
-dark:text-white
-
+bg-black
 px-2
-
 py-1
-
 text-center
-
+text-white
+border
 "
 
 />
@@ -514,17 +495,11 @@ p
 }}
 
 className="
-
 rounded
-
 bg-green-500
-
 px-4
-
 py-1
-
 text-white
-
 "
 
 >
@@ -538,25 +513,17 @@ Go
 onClick={()=>
 
 setShowSearch(
-
-!showSearch
-
+v=>!v
 )
 
 }
 
 className="
-
 rounded
-
 bg-red-500
-
 px-3
-
 py-1
-
 text-white
-
 "
 
 >
@@ -567,9 +534,15 @@ size={18}
 
 </button>
 
-<span>
+<span
+className="
+text-white
+"
+>
 
-/ {pages.length}</span>
+/ {pages.length}
+
+</span>
 
 <button
 
@@ -590,17 +563,11 @@ currentPage+1
 }
 
 className="
-
 rounded
-
 bg-gray-700
-
 px-3
-
 py-1
-
 text-white
-
 "
 
 >
@@ -629,7 +596,9 @@ justify-center
 
 <input
 
-placeholder="Search"
+placeholder="
+Search
+"
 
 value={
 searchText
@@ -646,21 +615,12 @@ e.target.value
 }
 
 className="
-
-w-72
-
+w-80
 rounded
-
 border
-
 bg-surface
-
-px-3
-
+px-4
 py-2
-
-text-foreground
-
 "
 
 />
@@ -692,70 +652,88 @@ text-red-500
 :
 
 <div
+
 className="
+
 mx-auto
+
 flex
+
+max-w-[900px]
+
 flex-col
+
 items-center
-gap-5
+
+gap-8
+
 "
+
 >
 
 {
 
 pages.map(
 
-(pageNumber)=>(
+(page)=>(
 
 <div
+
 key={
-pageNumber
+page
 }
+
 className="
 relative
 "
+
 >
 
 <div
+
 className="
 absolute
-left-3
-top-3
-z-10
+left-4
+top-4
+z-20
 rounded
 bg-red-600
-px-2
+px-3
 py-1
-text-sm
 text-white
 "
+
 >
 
-{pageNumber}
+{page}
 
 </div>
 
 <canvas
 
-ref={(node)=>
+ref={(el)=>
 
 canvasRefs.current[
-pageNumber-1
-]=node
+page-1
+]=el
 
 }
-
-className="
-
-shadow-xl
-
-dark:invert-[0.92]
-
-"
 
 draggable={
 false
 }
+
+className="
+
+mx-auto
+
+rounded-xl
+
+shadow-2xl
+
+dark:invert-[0.92]
+
+"
 
 />
 
