@@ -9,6 +9,9 @@ require('mongoose');
 const cors =
 require('cors');
 
+const compression =
+require('compression');
+
 const rateLimit =
 require('express-rate-limit');
 
@@ -63,9 +66,18 @@ app.use(
 cors()
 );
 
+
+// ENABLE GZIP COMPRESSION
+
+app.use(
+compression()
+);
+
+
 app.use(
 express.json()
 );
+
 
 app.use(
 express.urlencoded({
@@ -83,6 +95,7 @@ true
 // --------------------
 
 app.get(
+
 '/',
 
 (req,res)=>{
@@ -95,6 +108,7 @@ message:
 });
 
 }
+
 );
 
 
@@ -106,20 +120,24 @@ message:
 // AUTH PROTECTED
 
 app.use(
+
 '/api/auth',
 
 authLimiter,
 
 authRoutes
+
 );
 
 
 // NOTES NORMAL
 
 app.use(
+
 '/api/notes',
 
 noteRoutes
+
 );
 
 
@@ -176,4 +194,5 @@ err
 );
 
 }
+
 );
