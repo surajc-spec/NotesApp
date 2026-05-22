@@ -1,60 +1,30 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 
 function DesktopOnly({ children }) {
-  const [allowAccess, setAllowAccess] = useState(true);
 
-  useEffect(() => {
-    const checkDevice = () => {
-      const ua = navigator.userAgent;
+  const isMobile =
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i
+      .test(navigator.userAgent);
 
-      const isMobileDevice =
-        /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|Mobile/i.test(
-          ua
-        );
-
-      const isDesktopMode =
-        window.innerWidth >= 1000;
-
-      // Block only mobile in normal mode
-      if (isMobileDevice && !isDesktopMode) {
-        setAllowAccess(false);
-      } else {
-        setAllowAccess(true);
-      }
-    };
-
-    checkDevice();
-
-    window.addEventListener("resize", checkDevice);
-
-    return () => {
-      window.removeEventListener("resize", checkDevice);
-    };
-  }, []);
-
-  if (!allowAccess) {
+  if (isMobile) {
     return (
       <div
         style={{
-          height: "100vh",
+          minHeight: "100vh",
+          background: "#000",
+          color: "#fff",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          flexDirection: "column",
-          background: "#000",
-          color: "#fff",
           textAlign: "center",
-          padding: "20px",
+          padding: "24px",
         }}
       >
-        <div
-          style={{
-            maxWidth: "500px",
-          }}
-        >
+        <div>
+
           <h1
             style={{
-              fontSize: "32px",
+              fontSize: "36px",
               marginBottom: "20px",
             }}
           >
@@ -63,21 +33,13 @@ function DesktopOnly({ children }) {
 
           <p
             style={{
-              fontSize: "18px",
               color: "#aaa",
+              fontSize: "18px",
             }}
           >
-            NoteShare is currently optimized for desktop experience.
+            NoteShare is available only on desktop devices.
           </p>
 
-          <p
-            style={{
-              marginTop: "20px",
-              color: "#00ffb7",
-            }}
-          >
-            Or enable <b>Desktop Site</b> in your browser.
-          </p>
         </div>
       </div>
     );

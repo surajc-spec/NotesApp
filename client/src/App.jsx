@@ -24,13 +24,20 @@ import TermsConditions from './pages/TermsConditions';
 
 function App() {
 
-  const isMobile =
+  const isMobileUA =
     /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i
       .test(navigator.userAgent);
 
-  if (isMobile) {
+  const isTouchDevice =
+    navigator.maxTouchPoints > 1;
+
+  const blockMobile =
+    isMobileUA || isTouchDevice;
+
+  if (blockMobile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black text-white px-6">
+
         <div className="text-center max-w-lg">
 
           <h1 className="text-4xl font-bold mb-6">
@@ -38,16 +45,18 @@ function App() {
           </h1>
 
           <p className="text-gray-400 text-lg">
-            NoteShare is currently available only on desktop devices.
+            NoteShare is available only on desktop devices.
           </p>
 
         </div>
+
       </div>
     );
   }
 
   return (
     <Router>
+
       <SecurityDeterrents />
       <RegistrationPopup />
       <Navbar />
@@ -64,27 +73,47 @@ function App() {
 
             <Route
               path="/notes"
-              element={<ProtectedRoute><Home /></ProtectedRoute>}
+              element={
+                <ProtectedRoute>
+                  <Home />
+                </ProtectedRoute>
+              }
             />
 
             <Route
               path="/notes/:id/preview"
-              element={<ProtectedRoute><NotePreview /></ProtectedRoute>}
+              element={
+                <ProtectedRoute>
+                  <NotePreview />
+                </ProtectedRoute>
+              }
             />
 
             <Route
               path="/dashboard"
-              element={<ProtectedRoute><Dashboard /></ProtectedRoute>}
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
             />
 
             <Route
               path="/upload"
-              element={<ProtectedRoute><UploadNote /></ProtectedRoute>}
+              element={
+                <ProtectedRoute>
+                  <UploadNote />
+                </ProtectedRoute>
+              }
             />
 
             <Route
               path="/profile"
-              element={<ProtectedRoute><Profile /></ProtectedRoute>}
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
             />
 
             <Route path="/privacy" element={<PrivacyPolicy />} />
