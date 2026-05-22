@@ -15,4 +15,9 @@ const noteSchema = new mongoose.Schema({
   password: { type: String } // Optional password protection
 }, { timestamps: true });
 
+noteSchema.index({ branch: 1, year: 1, isPublic: 1, createdAt: -1 });
+noteSchema.index({ branch: 1, year: 1, subject: 1, createdAt: -1 });
+noteSchema.index({ uploader: 1, createdAt: -1 });
+noteSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model('Note', noteSchema);

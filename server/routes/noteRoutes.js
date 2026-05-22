@@ -172,11 +172,36 @@ async(req,res)=>{
 
 try{
 
+const page=
+Math.max(
+Number(req.query.page)||
+1,
+1
+);
+
+const limit=
+Math.min(
+Math.max(
+Number(req.query.limit)||
+0,
+0
+),
+50
+);
+
+const subject=
+req.query.subject&&
+req.query.subject!=='All'
+?
+String(req.query.subject)
+:
+'All';
+
 const key=
-`notes_${req.user.id}`;
+`noteshare:notes:${req.user.id}:${subject}:${page}:${limit||'all'}`;
 
 const cached=
-getCache(key);
+await getCache(key);
 
 if(cached){
 
@@ -186,9 +211,7 @@ cached
 
 }
 
-const notes=
-await Note
-.find({
+const query={
 
 branch:
 req.user.branch,
@@ -206,16 +229,46 @@ req.user.id
 }
 ]
 
-})
+};
 
+if(
+subject!=='All'
+){
+
+query.subject=
+subject;
+
+}
+
+const dbQuery=
+Note
+.find(
+query
+)
 .populate(
 'uploader',
 'name email year branch'
 )
-
 .sort({
 createdAt:-1
 });
+
+if(
+limit
+){
+
+dbQuery
+.skip(
+(page-1)*limit
+)
+.limit(
+limit
+);
+
+}
+
+const notes=
+await dbQuery.lean();
 
 const grouped=
 notes.reduce(
@@ -241,7 +294,54 @@ return acc;
 {}
 );
 
-setCache(
+if(
+limit
+){
+
+const total=
+await Note.countDocuments(
+query
+);
+
+const payload={
+
+data:
+grouped,
+
+pagination:{
+
+page,
+
+limit,
+
+total,
+
+pages:
+Math.ceil(
+total/
+limit
+),
+
+hasMore:
+page*limit<
+total
+
+}
+
+};
+
+await setCache(
+key,
+payload
+);
+
+return res.json(
+payload
+);
+
+}
+
+await setCache(
 key,
 grouped
 );
