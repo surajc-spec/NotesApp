@@ -3,6 +3,7 @@ import { Trash2, Globe, Lock, Clock, Eye, User, FileText, ShieldCheck } from 'lu
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
+import { normalizeSubject } from '../utils/subjectUtils';
 
 const NoteCard = ({ note, onDelete, draggableProps, dragHandleProps, innerRef }) => {
   const { user } = useContext(AuthContext);
@@ -32,6 +33,7 @@ const NoteCard = ({ note, onDelete, draggableProps, dragHandleProps, innerRef })
     month: 'short',
     day: 'numeric'
   });
+  const subject = normalizeSubject(note.subject) || 'GENERAL';
 
   return (
     <div 
@@ -46,7 +48,7 @@ const NoteCard = ({ note, onDelete, draggableProps, dragHandleProps, innerRef })
                 <FileText size={20} />
             </div>
             <div>
-                <span className="text-[10px] uppercase tracking-wider text-muted font-bold block">{note.subject || 'General'}</span>
+                <span className="text-[10px] uppercase tracking-wider text-muted font-bold block">{subject}</span>
                 <h3 className="font-bold text-foreground leading-tight line-clamp-1">{note.title}</h3>
             </div>
         </div>

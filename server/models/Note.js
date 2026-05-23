@@ -1,8 +1,23 @@
 const mongoose = require('mongoose');
+const { normalizeSubject, isValidSubject } = require('../utils/subjectUtils');
 
 const noteSchema = new mongoose.Schema({
   title: { type: String, required: true },
-  subject: { type: String, required: true },
+  subject: {
+    type: String,
+    required: true,
+    set: normalizeSubject,
+    validate: {
+      validator: isValidSubject,
+      message: 'Subject is required',
+    },
+  },
+  subjectKey: {
+    type: String,
+    required: true,
+    index: true,
+    set: normalizeSubject,
+  },
   description: { type: String, required: true },
   branch: { type: String, required: true },
   year: { type: String, required: true },
@@ -15,8 +30,14 @@ const noteSchema = new mongoose.Schema({
   password: { type: String } // Optional password protection
 }, { timestamps: true });
 
+noteSchema.pre('validate', function setNormalizedSubject(next) {
+  this.subject = normalizeSubject(this.subject);
+  this.subjectKey = this.subject;
+  next();
+});
+
 noteSchema.index({ branch: 1, year: 1, isPublic: 1, createdAt: -1 });
-noteSchema.index({ branch: 1, year: 1, subject: 1, createdAt: -1 });
+noteSchema.index({ branch: 1, year: 1, subjectKey: 1, createdAt: -1 });
 noteSchema.index({ uploader: 1, createdAt: -1 });
 noteSchema.index({ createdAt: -1 });
 

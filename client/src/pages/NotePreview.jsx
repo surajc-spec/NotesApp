@@ -9,6 +9,7 @@ import AdUnit from '../components/AdUnit';
 import PasswordModal from '../components/PasswordModal';
 import ScreenshotGuard from '../components/ScreenshotGuard';
 import ProtectedPdfViewer from '../components/ProtectedPdfViewer';
+import { normalizeSubject } from '../utils/subjectUtils';
 
 const NotePreview = () => {
   const { id } = useParams();
@@ -328,7 +329,7 @@ const NotePreview = () => {
             </div>
             <h1 className="truncate text-2xl font-bold text-foreground">{note?.title}</h1>
             <p className="text-sm text-muted">
-              {note?.subject} | {note?.uploader?.name || 'Anonymous'}
+              {normalizeSubject(note?.subject)} | {note?.uploader?.name || 'Anonymous'}
             </p>
           </div>
 

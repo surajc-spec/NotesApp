@@ -9,6 +9,22 @@ const rateLimit = require('express-rate-limit');
 const User = require('../models/User');
 const { protect } = require('../middleware/authMiddleware');
 
+const normalizeEmail = (email) =>
+  String(email || '')
+    .trim()
+    .toLowerCase();
+
+const escapeRegex = (value) =>
+  String(value)
+    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const emailQuery = (email) => ({
+  email:
+  new RegExp(
+    `^${escapeRegex(normalizeEmail(email))}$`,
+    'i'
+  )
+});
 
 
 // TOKEN
@@ -121,10 +137,17 @@ message:
 
 
 
-const userExists =
-await User.findOne({
+const normalizedEmail =
+normalizeEmail(
 email
-});
+);
+
+const userExists =
+await User.findOne(
+emailQuery(
+normalizedEmail
+)
+);
 
 if (userExists) {
 
@@ -153,18 +176,19 @@ salt
 const user =
 await User.create({
 
-name,
+name:
+String(name).trim(),
 
 email:
-email
-.toLowerCase()
-.trim(),
+normalizedEmail,
 
 password:
 hashedPassword,
 
+year:
 year,
 
+branch:
 branch
 
 });
@@ -239,14 +263,11 @@ req.body;
 
 
 const user =
-await User.findOne({
-
-email:
+await User.findOne(
+emailQuery(
 email
-.toLowerCase()
-.trim()
-
-});
+)
+);
 
 
 

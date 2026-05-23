@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { UploadCloud, FileText, CheckCircle2, AlertCircle, Loader2, Globe, Lock, BookOpen } from 'lucide-react';
 import api from '../services/api';
 import CustomSelect from '../components/CustomSelect';
+import { normalizeSubject } from '../utils/subjectUtils';
 
 const UploadNote = () => {
   const [title, setTitle] = useState('');
@@ -37,13 +38,20 @@ const UploadNote = () => {
       setError('Please select a file to upload');
       return;
     }
+
+    const normalizedSubject = normalizeSubject(subject);
+
+    if (!normalizedSubject) {
+      setError('Please enter a subject');
+      return;
+    }
     
     setError('');
     setLoading(true);
 
     const formData = new FormData();
     formData.append('title', title);
-    formData.append('subject', subject);
+    formData.append('subject', normalizedSubject);
     formData.append('description', description);
     formData.append('isPublic', isPublic);
     if (hasPassword && password.trim() !== '') {

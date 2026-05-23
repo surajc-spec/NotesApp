@@ -21,6 +21,14 @@ require('./routes/authRoutes');
 const noteRoutes =
 require('./routes/noteRoutes');
 
+const adminRoutes =
+require('./routes/adminRoutes');
+
+const {
+migrateSubjects
+} =
+require('./services/subjectMigrationService');
+
 const app =
 express();
 
@@ -190,6 +198,14 @@ authRoutes
 
 app.use(
 
+'/api/admin',
+
+adminRoutes
+
+);
+
+app.use(
+
 '/api/notes',
 
 noteRoutes
@@ -213,11 +229,13 @@ mongoose
 process.env.MONGO_URI
 )
 
-.then(()=>{
+.then(async()=>{
 
 console.log(
 'MongoDB Connected'
 );
+
+await migrateSubjects();
 
 app.listen(
 

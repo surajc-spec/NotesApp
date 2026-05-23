@@ -5,6 +5,7 @@ import { Search, Filter, Loader2, BookOpen, ChevronRight, Hash } from 'lucide-re
 import { AuthContext } from '../context/AuthContext';
 import CustomSelect from '../components/CustomSelect';
 import AdUnit from '../components/AdUnit';
+import { normalizeSubject } from '../utils/subjectUtils';
 
 const Home = () => {
   const [groupedNotes, setGroupedNotes] = useState({});
@@ -20,13 +21,14 @@ const Home = () => {
   const fetchNotes = async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/notes?subject=${subjectFilter}`);
-      const data = res.data;
+      const normalizedSubject = subjectFilter === 'All' ? 'All' : normalizeSubject(subjectFilter);
+      const res = await api.get(`/notes?subject=${encodeURIComponent(normalizedSubject)}`);
+      const data = res.data?.data || res.data;
       
       // Safety check: If backend returns an array, group it here
       if (Array.isArray(data)) {
         const grouped = data.reduce((acc, note) => {
-          const sub = note.subject || 'Uncategorized';
+          const sub = normalizeSubject(note.subject) || 'UNCATEGORIZED';
           if (!acc[sub]) acc[sub] = [];
           acc[sub].push(note);
           return acc;
@@ -57,7 +59,7 @@ const Home = () => {
       const data = res.data;
       if (Array.isArray(data)) {
         const grouped = data.reduce((acc, note) => {
-          const sub = note.subject || 'Uncategorized';
+          const sub = normalizeSubject(note.subject) || 'UNCATEGORIZED';
           if (!acc[sub]) acc[sub] = [];
           acc[sub].push(note);
           return acc;

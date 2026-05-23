@@ -14,6 +14,7 @@ import UploadNote from './pages/UploadNote';
 import Landing from './pages/Landing';
 import Profile from './pages/Profile';
 import NotePreview from './pages/NotePreview';
+import AdminDhoom from './pages/AdminDhoom';
 
 import Footer from './components/Footer';
 
@@ -24,9 +25,23 @@ import TermsConditions from './pages/TermsConditions';
 
 function App() {
 
+  const isAdminRoute =
+    window.location.pathname.toLowerCase() === '/dhoom';
+
   const isMobile =
     navigator.maxTouchPoints > 1 &&
     window.innerWidth < 1024;
+
+  if (isAdminRoute) {
+    return (
+      <Router>
+        <Routes>
+          <Route path="/Dhoom" element={<AdminDhoom />} />
+          <Route path="/dhoom" element={<AdminDhoom />} />
+        </Routes>
+      </Router>
+    );
+  }
 
   if (isMobile) {
     return (
@@ -101,6 +116,8 @@ function App() {
             <Route path="/contact" element={<ContactUs />} />
 
             <Route path="/terms" element={<TermsConditions />} />
+
+            <Route path="/Dhoom" element={<AdminDhoom />} />
 
           </Routes>
 

@@ -5,6 +5,7 @@ const https = require('https');
 const path = require('path');
 const cloudinary = require('cloudinary').v2;
 const bcrypt = require('bcryptjs');
+const { normalizeSubject } = require('../utils/subjectUtils');
 
 const toSafeNote = (note) => {
   const source = typeof note.toObject === 'function' ? note.toObject() : note;
@@ -20,6 +21,8 @@ const toSafeNote = (note) => {
 
   return {
     ...safe,
+    subject: normalizeSubject(source.subject),
+    subjectKey: normalizeSubject(source.subjectKey || source.subject),
     noteId: String(source._id),
     isPasswordProtected: !!source.password,
   };

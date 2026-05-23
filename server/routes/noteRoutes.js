@@ -3,6 +3,10 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 
 const Note = require('../models/Note');
+const {
+normalizeSubject
+} =
+require('../utils/subjectUtils');
 
 const {
 protect,
@@ -43,6 +47,70 @@ process.hrtime.bigint()-
 start
 )/
 1000000;
+
+const escapeRegex =
+(value)=>
+String(value)
+.replace(
+/[.*+?^${}()|[\]\\]/g,
+'\\$&'
+);
+
+const getUserId =
+(user)=>
+String(
+user.id||
+user._id
+);
+
+const getBaseNotesQuery =
+(user)=>({
+
+branch:
+user.branch,
+
+year:
+user.year,
+
+$or:[
+{
+isPublic:true
+},
+{
+uploader:
+getUserId(user)
+}
+]
+
+});
+
+const groupNotesBySubject =
+(notes)=>
+notes.reduce(
+(acc,n)=>{
+
+const safeNote =
+toSafeNote(n);
+
+const s =
+safeNote.subject||
+'OTHER';
+
+if(
+!acc[s]
+)
+acc[s]=[];
+
+acc[s]
+.push(
+safeNote
+);
+
+return acc;
+
+},
+{}
+);
 
 
 // =======================
@@ -85,6 +153,24 @@ message:
 
 }
 
+const subject =
+normalizeSubject(
+req.body.subject
+);
+
+if(
+!subject
+){
+
+return res
+.status(400)
+.json({
+message:
+'Subject is required'
+});
+
+}
+
 let hashedPassword;
 
 if(
@@ -106,7 +192,10 @@ title:
 req.body.title,
 
 subject:
-req.body.subject,
+subject,
+
+subjectKey:
+subject,
 
 description:
 req.body.description,
@@ -222,7 +311,9 @@ const subject=
 req.query.subject&&
 req.query.subject!=='All'
 ?
-String(req.query.subject)
+normalizeSubject(
+req.query.subject
+)
 :
 'All';
 
@@ -296,21 +387,9 @@ key
 
 const query={
 
-branch:
-req.user.branch,
-
-year:
-req.user.year,
-
-$or:[
-{
-isPublic:true
-},
-{
-uploader:
-req.user.id
-}
-]
+...getBaseNotesQuery(
+req.user
+)
 
 };
 
@@ -318,7 +397,7 @@ if(
 subject!=='All'
 ){
 
-query.subject=
+query.subjectKey=
 subject;
 
 }
@@ -368,27 +447,8 @@ mongoStart
 );
 
 const grouped=
-notes.reduce(
-(acc,n)=>{
-
-const s=
-n.subject||
-'Other';
-
-if(
-!acc[s]
-)
-acc[s]=[];
-
-acc[s]
-.push(
-toSafeNote(n)
-);
-
-return acc;
-
-},
-{}
+groupNotesBySubject(
+notes
 );
 
 const payload={
@@ -482,27 +542,8 @@ mongoStart
 );
 
 const grouped=
-notes.reduce(
-(acc,n)=>{
-
-const s=
-n.subject||
-'Other';
-
-if(
-!acc[s]
-)
-acc[s]=[];
-
-acc[s]
-.push(
-toSafeNote(n)
-);
-
-return acc;
-
-},
-{}
+groupNotesBySubject(
+notes
 );
 
 const serializationStart =
@@ -574,6 +615,285 @@ router.get(
 '/',
 protectCached,
 getNotesHandler
+);
+
+router.get(
+'/mine',
+protect,
+
+async(req,res)=>{
+
+try{
+
+const notes=
+await Note
+.find({
+uploader:
+getUserId(
+req.user
+)
+})
+.populate(
+'uploader',
+'name email year branch'
+)
+.sort({
+createdAt:-1
+})
+.lean();
+
+res.json(
+notes.map(
+toSafeNote
+)
+);
+
+}
+
+catch(error){
+
+res
+.status(500)
+.json({
+message:
+error.message
+});
+
+}
+
+}
+);
+
+router.get(
+'/search',
+protectCached,
+
+async(req,res)=>{
+
+try{
+
+const term =
+String(
+req.query.q||
+''
+)
+.trim();
+
+if(
+!term
+){
+
+return res.json(
+{}
+);
+
+}
+
+const subject =
+normalizeSubject(
+term
+);
+
+const text =
+new RegExp(
+escapeRegex(
+term
+),
+'i'
+);
+
+const query={
+
+...getBaseNotesQuery(
+req.user
+),
+
+$and:[
+{
+$or:[
+{
+title:
+text
+},
+{
+description:
+text
+},
+{
+subjectKey:
+subject
+}
+]
+}
+]
+
+};
+
+const notes=
+await Note
+.find(
+query
+)
+.populate(
+'uploader',
+'name email year branch'
+)
+.sort({
+createdAt:-1
+})
+.lean();
+
+res.json(
+groupNotesBySubject(
+notes
+)
+);
+
+}
+
+catch(error){
+
+res
+.status(500)
+.json({
+message:
+error.message
+});
+
+}
+
+}
+);
+
+router.put(
+'/:id',
+protect,
+
+async(req,res)=>{
+
+try{
+
+const note=
+await Note.findById(
+req.params.id
+);
+
+if(
+!note
+){
+
+return res
+.status(404)
+.json({
+message:
+'Not found'
+});
+
+}
+
+if(
+String(
+note.uploader
+) !==
+getUserId(
+req.user
+)
+){
+
+return res
+.status(401)
+.json({
+message:
+'Unauthorized'
+});
+
+}
+
+if(
+req.body.title !==
+undefined
+){
+note.title =
+req.body.title;
+}
+
+if(
+req.body.description !==
+undefined
+){
+note.description =
+req.body.description;
+}
+
+if(
+req.body.subject !==
+undefined
+){
+
+const subject =
+normalizeSubject(
+req.body.subject
+);
+
+if(
+!subject
+){
+
+return res
+.status(400)
+.json({
+message:
+'Subject is required'
+});
+
+}
+
+note.subject =
+subject;
+note.subjectKey =
+subject;
+
+}
+
+if(
+req.body.isPublic !==
+undefined
+){
+note.isPublic =
+req.body.isPublic === true ||
+req.body.isPublic ===
+'true';
+}
+
+await note.save();
+await clearCache();
+
+const populated =
+await note.populate(
+'uploader',
+'name email year branch'
+);
+
+res.json(
+toSafeNote(
+populated
+)
+);
+
+}
+
+catch(error){
+
+res
+.status(500)
+.json({
+message:
+error.message
+});
+
+}
+
+}
 );
 
 
