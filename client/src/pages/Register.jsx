@@ -10,6 +10,8 @@ import {
   Building2,
   AlertCircle,
   Loader2,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 
 import CustomSelect from '../components/CustomSelect';
@@ -19,6 +21,7 @@ const Register = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [year, setYear] = useState('First Year');
   const [branch, setBranch] = useState('Computer Science');
 
@@ -204,7 +207,7 @@ const Register = () => {
             <div className="relative">
 
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 required
                 minLength="6"
                 value={password}
@@ -212,13 +215,22 @@ const Register = () => {
                 onChange={(e) =>
                   setPassword(e.target.value)
                 }
-                className="w-full pl-12 pr-4 py-3.5 bg-surface-secondary border rounded-field"
+                className="w-full pl-12 pr-12 py-3.5 bg-surface-secondary border rounded-field"
               />
 
               <Lock
                 size={20}
                 className="absolute left-4 top-1/2 -translate-y-1/2"
               />
+
+              <button
+                type="button"
+                onClick={() => setShowPassword((value) => !value)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted hover:text-accent transition-colors"
+                title={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
 
             </div>
 

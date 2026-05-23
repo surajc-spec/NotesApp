@@ -3,6 +3,8 @@ import {
   AlertCircle,
   Archive,
   Download,
+  Eye,
+  EyeOff,
   FileText,
   Loader2,
   Lock,
@@ -17,17 +19,13 @@ import api from '../services/api';
 const AdminDhoom = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [token, setToken] = useState(() => localStorage.getItem('adminToken') || '');
   const [users, setUsers] = useState([]);
   const [notes, setNotes] = useState([]);
   const [stats, setStats] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const isPhone = useMemo(
-    () => window.innerWidth < 768 && navigator.maxTouchPoints > 0,
-    []
-  );
 
   const adminHeaders = useMemo(
     () => ({
@@ -98,20 +96,6 @@ const AdminDhoom = () => {
     window.open(`${api.defaults.baseURL}${path}?${params.toString()}`, '_blank', 'noopener,noreferrer');
   };
 
-  if (!isPhone) {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
-        <div className="max-w-sm text-center space-y-4">
-          <Shield size={48} className="mx-auto text-accent" />
-          <h1 className="text-2xl font-bold">Admin is phone-only</h1>
-          <p className="text-gray-400">
-            This route is intentionally blocked on desktop.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   if (!token) {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center px-4">
@@ -148,13 +132,21 @@ const AdminDhoom = () => {
           <div className="relative">
             <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
             <input
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Admin password"
               required
-              className="w-full pl-11 pr-4 py-3 bg-surface-secondary border border-border rounded-field outline-none"
+              className="w-full pl-11 pr-11 py-3 bg-surface-secondary border border-border rounded-field outline-none"
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword((value) => !value)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted hover:text-accent transition-colors"
+              title={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
 
           <button
