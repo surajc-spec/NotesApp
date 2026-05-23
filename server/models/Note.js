@@ -30,10 +30,9 @@ const noteSchema = new mongoose.Schema({
   password: { type: String } // Optional password protection
 }, { timestamps: true });
 
-noteSchema.pre('validate', function setNormalizedSubject(next) {
+noteSchema.pre('validate', function setNormalizedSubject() {
   this.subject = normalizeSubject(this.subject);
   this.subjectKey = this.subject;
-  next();
 });
 
 noteSchema.index({ branch: 1, year: 1, isPublic: 1, createdAt: -1 });
