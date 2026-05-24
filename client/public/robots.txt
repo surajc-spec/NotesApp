@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://noteshare.online/sitemap.xml
+Sitemap: https://www.noteshare.online/sitemap.xml
