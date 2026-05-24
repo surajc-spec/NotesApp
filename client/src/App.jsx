@@ -116,6 +116,11 @@ function App() {
             />
 
             <Route
+              path="/my-notes"
+              element={<ProtectedRoute><Dashboard /></ProtectedRoute>}
+            />
+
+            <Route
               path="/upload"
               element={<ProtectedRoute><UploadNote /></ProtectedRoute>}
             />

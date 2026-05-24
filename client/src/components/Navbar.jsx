@@ -1,13 +1,11 @@
-import React, { useContext, useState, useEffect } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
-import { LogOut, BookOpen, PlusCircle, User as UserIcon, LayoutDashboard, Search, Menu, X } from 'lucide-react';
+import { LogOut, BookOpen, PlusCircle, User as UserIcon, LayoutDashboard, Search, Menu, X, FileQuestion } from 'lucide-react';
 import DarkModeToggle from './DarkModeToggle';
 
 const Navbar = () => {
   const { user, logout } = useContext(AuthContext);
-  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -27,7 +25,8 @@ const Navbar = () => {
 
   const navLinks = user ? [
     { name: 'All Notes', path: '/notes', icon: <Search size={18} /> },
-    { name: 'My Notes', path: '/dashboard', icon: <LayoutDashboard size={18} /> },
+    { name: 'Question Papers', path: '/questionpapers', icon: <FileQuestion size={18} /> },
+    { name: 'My Notes', path: '/my-notes', icon: <LayoutDashboard size={18} /> },
     { name: 'Profile', path: '/profile', icon: <UserIcon size={18} /> },
   ] : [
     { name: 'Login', path: '/login' },
@@ -146,4 +145,3 @@ const Navbar = () => {
 };
 
 export default Navbar;
-
