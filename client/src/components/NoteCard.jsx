@@ -1,25 +1,34 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import { Trash2, Globe, Lock, Clock, Eye, User, FileText, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import { normalizeSubject } from '../utils/subjectUtils';
 
-const NoteCard = ({ note, onDelete, draggableProps, dragHandleProps, innerRef }) => {
+const NoteCard = ({
+  note,
+  onDelete,
+  draggableProps,
+  dragHandleProps,
+  innerRef,
+  previewBasePath = '/notes',
+  deleteBasePath = '/notes',
+  itemLabel = 'Note',
+}) => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const isOwner = user && note.uploader && note.uploader._id === user._id;
 
   const handlePreview = (e) => {
     e.stopPropagation();
-    navigate(`/notes/${note.noteId || note._id}/preview`);
+    navigate(`${previewBasePath}/${note.noteId || note.questionPaperId || note._id}/preview`);
   };
 
   const handleDelete = async (e) => {
     e.stopPropagation();
-    if (window.confirm('Are you sure you want to delete this note?')) {
+    if (window.confirm(`Are you sure you want to delete this ${itemLabel.toLowerCase()}?`)) {
       try {
-        await api.delete(`/notes/${note._id}`);
+        await api.delete(`${deleteBasePath}/${note._id}`);
         onDelete(note._id);
       } catch (error) {
         console.error('Error deleting:', error);

@@ -11,7 +11,7 @@ import ScreenshotGuard from '../components/ScreenshotGuard';
 import ProtectedPdfViewer from '../components/ProtectedPdfViewer';
 import { normalizeSubject } from '../utils/subjectUtils';
 
-const NotePreview = () => {
+const NotePreview = ({ resourceType = 'notes' }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
@@ -24,6 +24,9 @@ const NotePreview = () => {
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [enteredPassword, setEnteredPassword] = useState('');
   const [isScreenShieldVisible, setIsScreenShieldVisible] = useState(false);
+  const isQuestionPaper = resourceType === 'questionpapers';
+  const resourceBasePath = isQuestionPaper ? '/questionpapers' : '/notes';
+  const resourceLabel = isQuestionPaper ? 'question paper' : 'note';
 
   const previewUrlRef = useRef('');
   const previewFrameRef = useRef(null);
@@ -108,7 +111,7 @@ const NotePreview = () => {
       };
 
       const info = await getFirstSuccessful([
-        () => api.get(`/notes/${id}/preview-info`, requestConfig),
+        () => api.get(`${resourceBasePath}/${id}${isQuestionPaper ? '' : '/preview-info'}`, requestConfig),
         () => api.get(`/notes/preview-info/${id}`, requestConfig),
       ]);
 
@@ -116,7 +119,7 @@ const NotePreview = () => {
 
       const file = await getFirstSuccessful([
         () =>
-          api.get(`/notes/${id}/preview`, {
+          api.get(`${resourceBasePath}/${id}/preview`, {
             responseType: 'blob',
             ...requestConfig,
             headers: {
@@ -151,6 +154,8 @@ const NotePreview = () => {
   };
 
   const handlePasswordSubmit = async (password) => {
+    if (isQuestionPaper) return;
+
     await getFirstSuccessful([
       () =>
         api.post(`/notes/${id}/verify-password`, {
@@ -292,10 +297,10 @@ const NotePreview = () => {
           <p className="mt-2 text-muted">{error}</p>
         </div>
         <button
-          onClick={() => navigate('/notes')}
+          onClick={() => navigate(resourceBasePath)}
           className="rounded-field bg-accent px-5 py-3 font-bold text-accent-foreground"
         >
-          Back to Notes
+          Back to {isQuestionPaper ? 'Question Papers' : 'Notes'}
         </button>
       </div>
     );
@@ -376,7 +381,7 @@ const NotePreview = () => {
         isOpen={isPasswordModalOpen}
         onSubmit={handlePasswordSubmit}
         onClose={() => navigate(-1)}
-        title={note?.title || 'Protected Note'}
+        title={note?.title || `Protected ${resourceLabel}`}
       />
     </ScreenshotGuard>
   );

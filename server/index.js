@@ -21,6 +21,9 @@ require('./routes/authRoutes');
 const noteRoutes =
 require('./routes/noteRoutes');
 
+const questionPaperRoutes =
+require('./routes/questionPaperRoutes');
+
 const adminRoutes =
 require('./routes/adminRoutes');
 
@@ -84,6 +87,11 @@ app.get(
 noteRoutes.getNotesMiddleware
 );
 
+app.get(
+'/api/questionpapers',
+questionPaperRoutes.getQuestionPapersMiddleware
+);
+
 
 // ENABLE GZIP COMPRESSION
 
@@ -94,8 +102,12 @@ filter:(req,res)=>{
 if(
 req.method ===
 'GET' &&
+(
 req.path ===
-'/api/notes'
+'/api/notes' ||
+req.path ===
+'/api/questionpapers'
+)
 ){
 return false;
 }
@@ -209,6 +221,14 @@ app.use(
 '/api/notes',
 
 noteRoutes
+
+);
+
+app.use(
+
+'/api/questionpapers',
+
+questionPaperRoutes
 
 );
 

@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import api from '../services/api';
 import NoteCard from '../components/NoteCard';
-import { Search, Filter, Loader2, BookOpen, ChevronRight, Hash } from 'lucide-react';
+import { Search, Filter, Loader2, BookOpen, Hash, FileQuestion } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
-import CustomSelect from '../components/CustomSelect';
 import AdUnit from '../components/AdUnit';
 import { normalizeSubject } from '../utils/subjectUtils';
 
@@ -84,18 +83,10 @@ const Home = () => {
     setGroupedNotes(newGrouped);
   };
 
-  const subjectOptions = [
-    { label: 'All Subjects', value: 'All' },
-    { label: 'DBMS', value: 'DBMS' },
-    { label: 'Data Structures', value: 'Data Structures' },
-    { label: 'Operating Systems', value: 'Operating Systems' },
-    { label: 'Computer Networks', value: 'Computer Networks' },
-    { label: 'Mathematics', value: 'Mathematics' },
-    { label: 'Physics', value: 'Physics' },
-    { label: 'Other', value: 'Other' },
-  ];
-
   const subjects = Object.keys(groupedNotes);
+  const openQuestionPapers = () => {
+    window.open('/questionpapers', '_blank');
+  };
 
   return (
     <div className="pb-20">
@@ -136,6 +127,15 @@ const Home = () => {
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-accent transition-colors" size={20} />
                 <button type="submit" className="hidden">Search</button>
             </form>
+
+            <button
+                type="button"
+                onClick={openQuestionPapers}
+                className="w-full sm:w-auto px-5 py-3.5 bg-accent text-accent-foreground rounded-field font-bold flex items-center justify-center gap-2 hover:scale-105 transition-all shadow-lg shadow-accent/20 whitespace-nowrap"
+            >
+                <FileQuestion size={20} />
+                Question Papers
+            </button>
         </div>
       </div>
 

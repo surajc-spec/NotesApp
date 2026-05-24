@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 import Navbar from './components/Navbar';
@@ -14,6 +13,8 @@ import UploadNote from './pages/UploadNote';
 import Landing from './pages/Landing';
 import Profile from './pages/Profile';
 import NotePreview from './pages/NotePreview';
+import QuestionPapers from './pages/QuestionPapers';
+import UploadQuestionPaper from './pages/UploadQuestionPaper';
 import AdminDhoom from './pages/AdminDhoom';
 
 import Footer from './components/Footer';
@@ -92,6 +93,21 @@ function App() {
             <Route
               path="/notes/:id/preview"
               element={<ProtectedRoute><NotePreview /></ProtectedRoute>}
+            />
+
+            <Route
+              path="/questionpapers"
+              element={<ProtectedRoute><QuestionPapers /></ProtectedRoute>}
+            />
+
+            <Route
+              path="/questionpapers/upload"
+              element={<ProtectedRoute><UploadQuestionPaper /></ProtectedRoute>}
+            />
+
+            <Route
+              path="/questionpapers/:id/preview"
+              element={<ProtectedRoute><NotePreview resourceType="questionpapers" /></ProtectedRoute>}
             />
 
             <Route
