@@ -25,7 +25,7 @@ const Navbar = () => {
 
   const navLinks = user ? [
     { name: 'All Notes', path: '/notes', icon: <Search size={18} /> },
-    { name: 'Question Papers', path: '/questionpapers', icon: <FileQuestion size={18} /> },
+    { name: 'Question Papers', path: '/questionpapers', icon: <FileQuestion size={18} />, opensNewTab: true },
     { name: 'My Notes', path: '/my-notes', icon: <LayoutDashboard size={18} /> },
     { name: 'Profile', path: '/profile', icon: <UserIcon size={18} /> },
   ] : [
@@ -48,14 +48,27 @@ const Navbar = () => {
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
-              <Link 
-                key={link.path} 
-                to={link.path} 
-                className={`text-sm font-medium transition-colors hover:text-accent flex items-center gap-1.5 ${isActive(link.path) ? 'text-accent' : 'text-muted'}`}
-              >
-                {link.icon}
-                {link.name}
-              </Link>
+              link.opensNewTab ? (
+                <a
+                  key={link.path}
+                  href={link.path}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`text-sm font-medium transition-colors hover:text-accent flex items-center gap-1.5 ${isActive(link.path) ? 'text-accent' : 'text-muted'}`}
+                >
+                  {link.icon}
+                  {link.name}
+                </a>
+              ) : (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  className={`text-sm font-medium transition-colors hover:text-accent flex items-center gap-1.5 ${isActive(link.path) ? 'text-accent' : 'text-muted'}`}
+                >
+                  {link.icon}
+                  {link.name}
+                </Link>
+              )
             ))}
 
             {/* Desktop Theme Toggle */}
@@ -99,17 +112,33 @@ const Navbar = () => {
         <div className="md:hidden absolute top-full left-0 right-0 bg-background border-b border-border p-4 animate-in slide-in-from-top duration-300">
           <div className="flex flex-col gap-4">
             {navLinks.map((link) => (
-              <Link 
-                key={link.path} 
-                to={link.path} 
-                className={`text-lg font-medium p-2 rounded-lg ${isActive(link.path) ? 'bg-accent/10 text-accent' : 'text-foreground hover:bg-surface-secondary'}`}
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <div className="flex items-center gap-3">
-                  {link.icon}
-                  {link.name}
-                </div>
-              </Link>
+              link.opensNewTab ? (
+                <a
+                  key={link.path}
+                  href={link.path}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`text-lg font-medium p-2 rounded-lg ${isActive(link.path) ? 'bg-accent/10 text-accent' : 'text-foreground hover:bg-surface-secondary'}`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <div className="flex items-center gap-3">
+                    {link.icon}
+                    {link.name}
+                  </div>
+                </a>
+              ) : (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  className={`text-lg font-medium p-2 rounded-lg ${isActive(link.path) ? 'bg-accent/10 text-accent' : 'text-foreground hover:bg-surface-secondary'}`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <div className="flex items-center gap-3">
+                    {link.icon}
+                    {link.name}
+                  </div>
+                </Link>
+              )
             ))}
             <div className="h-px bg-border my-2" />
             {user ? (
