@@ -12,9 +12,6 @@ require('cors');
 const compression =
 require('compression');
 
-const rateLimit =
-require('express-rate-limit');
-
 const authRoutes =
 require('./routes/authRoutes');
 
@@ -42,38 +39,6 @@ app.set(
 'etag',
 false
 );
-
-
-
-// --------------------
-// AUTH RATE LIMIT
-// --------------------
-
-const authLimiter =
-rateLimit({
-
-windowMs:
-60 *
-60 *
-1000,
-
-max:
-20,
-
-message:{
-
-message:
-'Too many registrations. Try again in 1 hour.'
-
-},
-
-standardHeaders:
-true,
-
-legacyHeaders:
-false,
-
-});
 
 
 
@@ -201,8 +166,6 @@ message:
 app.use(
 
 '/api/auth',
-
-authLimiter,
 
 authRoutes
 

@@ -10,6 +10,7 @@ const Note = require('../models/Note');
 const QuestionPaper = require('../models/QuestionPaper');
 const User = require('../models/User');
 const ContactMessage = require('../models/ContactMessage');
+const RateLimitEvent = require('../models/RateLimitEvent');
 const { getAdminSecret, protectAdmin } = require('../middleware/adminMiddleware');
 const { normalizeSubject } = require('../utils/subjectUtils');
 const { clearCache } = require('../services/cacheService');
@@ -289,7 +290,7 @@ router.get('/messages', protectAdmin, async (req, res) => {
 router.patch('/messages/:id', protectAdmin, async (req, res) => {
   const status = String(req.body.status || '').trim().toLowerCase();
 
-  if (!['new', 'read', 'resolved'].includes(status)) {
+  if (!['new', 'read', 'reply_later', 'resolved'].includes(status)) {
     return res.status(400).json({ message: 'Invalid message status' });
   }
 
@@ -304,6 +305,17 @@ router.patch('/messages/:id', protectAdmin, async (req, res) => {
   }
 
   return res.json(message);
+});
+
+router.get('/rate-limit-events', protectAdmin, async (req, res) => {
+  const events = await RateLimitEvent
+    .find({})
+    .select('email route reason createdAt')
+    .sort({ createdAt: -1 })
+    .limit(50)
+    .lean();
+
+  return res.json(events);
 });
 
 router.get('/analytics', protectAdmin, async (req, res) => {

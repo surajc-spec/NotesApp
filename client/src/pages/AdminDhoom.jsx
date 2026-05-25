@@ -28,9 +28,10 @@ const StatusBadge = ({ status }) => (
   <span className={`rounded-full px-2.5 py-1 text-xs font-bold uppercase ${
     status === 'new' ? 'bg-accent/15 text-accent' :
     status === 'resolved' ? 'bg-success/15 text-success' :
+    status === 'reply_later' ? 'bg-warning/15 text-warning' :
     'bg-surface-secondary text-muted'
   }`}>
-    {status}
+    {status === 'reply_later' ? 'Reply later' : status}
   </span>
 );
 
@@ -56,6 +57,7 @@ const AdminDhoom = () => {
   const [users, setUsers] = useState([]);
   const [notes, setNotes] = useState([]);
   const [messages, setMessages] = useState([]);
+  const [rateLimitEvents, setRateLimitEvents] = useState([]);
   const [stats, setStats] = useState(null);
   const [analytics, setAnalytics] = useState(null);
   const [paperMetrics, setPaperMetrics] = useState(null);
@@ -74,11 +76,12 @@ const AdminDhoom = () => {
     setError('');
 
     try {
-      const [usersRes, notesRes, statsRes, messagesRes, analyticsRes, paperMetricsRes] = await Promise.all([
+      const [usersRes, notesRes, statsRes, messagesRes, rateLimitRes, analyticsRes, paperMetricsRes] = await Promise.all([
         api.get('/admin/users', { headers: adminHeaders }),
         api.get('/admin/notes', { headers: adminHeaders }),
         api.get('/admin/stats', { headers: adminHeaders }),
         api.get('/admin/messages', { headers: adminHeaders }),
+        api.get('/admin/rate-limit-events', { headers: adminHeaders }),
         api.get('/admin/analytics', { headers: adminHeaders }),
         api.get('/admin/question-paper-metrics', { headers: adminHeaders }),
       ]);
@@ -87,6 +90,7 @@ const AdminDhoom = () => {
       setNotes(notesRes.data || []);
       setStats(statsRes.data || null);
       setMessages(messagesRes.data || []);
+      setRateLimitEvents(rateLimitRes.data || []);
       setAnalytics(analyticsRes.data || null);
       setPaperMetrics(paperMetricsRes.data || null);
     } catch (err) {
@@ -311,6 +315,26 @@ const AdminDhoom = () => {
           </section>
 
           <section className="space-y-3">
+            <h2 className="text-lg font-bold">Rate Limit Events</h2>
+            <div className="overflow-hidden rounded-xl border border-border bg-surface">
+              <div className="admin-table-scrollbar max-h-[600px] overflow-x-auto overflow-y-auto scroll-smooth">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="sticky top-0 z-10 bg-surface-secondary text-muted shadow-sm"><tr><th className="p-3">Email</th><th className="p-3">Route</th><th className="p-3">Time</th><th className="p-3">Reason</th></tr></thead>
+                  <tbody>
+                    {rateLimitEvents.map((event) => (
+                      <tr key={event._id} className="border-t border-border">
+                        <td className="p-3 font-bold">{event.email}</td><td className="p-3">{event.route}</td><td className="p-3 text-muted">{formatDate(event.createdAt)}</td><td className="p-3 text-warning">{event.reason}</td>
+                      </tr>
+                    ))}
+                    {!rateLimitEvents.length && <tr><td colSpan="4" className="p-6 text-center text-muted">No rate limit events recorded.</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+              <p className="border-t border-border px-3 py-2 text-xs text-muted">Showing {rateLimitEvents.length} of the latest 50 events</p>
+            </div>
+          </section>
+
+          <section className="space-y-3">
             <div className="flex items-center justify-between"><h2 className="text-lg font-bold">Recent Uploads</h2><button type="button" onClick={() => openAdminFile('/admin/download-all')} className="px-3 py-2 bg-accent text-accent-foreground rounded-lg text-xs font-bold flex items-center gap-2"><Download size={14} />Download All</button></div>
             <div className="overflow-hidden rounded-xl border border-border bg-surface">
               <div className="admin-table-scrollbar max-h-[600px] overflow-x-auto overflow-y-auto scroll-smooth">
@@ -342,6 +366,18 @@ const AdminDhoom = () => {
             <p><span className="text-muted">Created:</span> {formatDate(selectedMessage.createdAt)}</p>
             <StatusBadge status={selectedMessage.status} />
             <p className="rounded-xl bg-surface-secondary p-4 whitespace-pre-wrap">{selectedMessage.message}</p>
+            <div className="flex gap-3 pt-2">
+              {selectedMessage.status !== 'resolved' && (
+                <>
+                  <button type="button" onClick={() => setMessageStatus(selectedMessage, 'resolved')} className="rounded-field bg-accent px-4 py-2 font-bold text-accent-foreground">
+                    Resolve
+                  </button>
+                  <button type="button" onClick={() => setMessageStatus(selectedMessage, 'reply_later')} className="rounded-field bg-surface-secondary px-4 py-2 font-bold text-foreground">
+                    Reply later
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </Modal>
       )}

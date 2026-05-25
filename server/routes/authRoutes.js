@@ -5,8 +5,10 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const rateLimit = require('express-rate-limit');
+const { ipKeyGenerator } = require('express-rate-limit');
 
 const User = require('../models/User');
+const RateLimitEvent = require('../models/RateLimitEvent');
 const { protect } = require('../middleware/authMiddleware');
 
 const normalizeEmail = (email) =>
@@ -25,6 +27,48 @@ const emailQuery = (email) => ({
     'i'
   )
 });
+
+const getAuthRateLimitKey = (req) =>
+  `${ipKeyGenerator(req.ip)}:${normalizeEmail(req.body?.email) || 'unknown'}`;
+
+const getWaitMinutes = (req) => {
+  const waitMs = req.rateLimit?.resetTime
+    ? req.rateLimit.resetTime.getTime() - Date.now()
+    : 60 * 1000;
+
+  return Math.max(1, Math.ceil(waitMs / (60 * 1000)));
+};
+
+const handleRateLimit = (route) => async (req, res) => {
+  const email = normalizeEmail(req.body?.email) || 'unknown';
+  const waitMinutes = getWaitMinutes(req);
+
+  try {
+    await RateLimitEvent.create({
+      email,
+      route,
+      reason: 'Rate limit',
+    });
+
+    const keep = await RateLimitEvent
+      .find({})
+      .select('_id')
+      .sort({ createdAt: -1 })
+      .skip(50)
+      .lean();
+
+    if (keep.length) {
+      await RateLimitEvent.deleteMany({ _id: { $in: keep.map((event) => event._id) } });
+    }
+  } catch (error) {
+    console.error('Could not log rate limit event:', error.message);
+  }
+
+  return res.status(429).json({
+    message: `Too many attempts detected. Please wait ${waitMinutes} minute${waitMinutes === 1 ? '' : 's'} and try again.`,
+    retryAfterMinutes: waitMinutes,
+  });
+};
 
 
 // TOKEN
@@ -52,12 +96,13 @@ windowMs:
 1000,
 
 max:
-3,
+10,
 
-message: {
-message:
-'Too many registrations. Try again in 1 hour.'
-},
+keyGenerator:
+getAuthRateLimitKey,
+
+handler:
+handleRateLimit('/register'),
 
 standardHeaders:
 true,
@@ -75,17 +120,18 @@ const loginLimiter =
 rateLimit({
 
 windowMs:
-15 *
+60 *
 60 *
 1000,
 
 max:
-20,
+10,
 
-message:{
-message:
-'Too many login attempts. Try later.'
-},
+keyGenerator:
+getAuthRateLimitKey,
+
+handler:
+handleRateLimit('/login'),
 
 standardHeaders:
 true,
@@ -192,6 +238,10 @@ branch:
 branch
 
 });
+
+await registerLimiter.resetKey(
+getAuthRateLimitKey(req)
+);
 
 
 

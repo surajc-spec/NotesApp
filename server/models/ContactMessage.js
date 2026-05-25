@@ -7,7 +7,7 @@ const contactMessageSchema = new mongoose.Schema({
   message: { type: String, required: true, trim: true, minlength: 10, maxlength: 5000 },
   status: {
     type: String,
-    enum: ['new', 'read', 'resolved'],
+    enum: ['new', 'read', 'reply_later', 'resolved'],
     default: 'new',
     index: true,
   },
