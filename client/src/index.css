@@ -146,6 +146,29 @@
   @apply bg-accent/40 rounded-full hover:bg-accent/60 transition-colors;
 }
 
+.admin-table-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklch, var(--accent) 75%, transparent) transparent;
+}
+
+.admin-table-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.admin-table-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-table-scrollbar::-webkit-scrollbar-thumb {
+  background: color-mix(in oklch, var(--accent) 75%, transparent);
+  border-radius: 999px;
+}
+
+.admin-table-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
 .protected-preview {
   font-family: var(--font-ubuntu);
 }

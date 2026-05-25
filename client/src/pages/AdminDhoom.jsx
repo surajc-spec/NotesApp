@@ -292,36 +292,42 @@ const AdminDhoom = () => {
 
           <section className="space-y-3">
             <h2 className="text-lg font-bold">Recent Users</h2>
-            <div className="overflow-x-auto rounded-xl border border-border bg-surface">
-              <table className="min-w-full text-left text-sm">
-                <thead className="bg-surface-secondary text-muted"><tr><th className="p-3">Name</th><th className="p-3">Branch</th><th className="p-3">Year</th><th className="p-3">Joined</th><th className="p-3">Action</th></tr></thead>
-                <tbody>
-                  {users.slice(0, 10).map((user) => (
-                    <tr key={user._id} className="border-t border-border">
-                      <td className="p-3 font-bold">{user.name}</td><td className="p-3">{user.branch}</td><td className="p-3">{user.year}</td><td className="p-3 text-muted">{formatDate(user.createdAt)}</td>
-                      <td className="p-3"><button onClick={() => setSelectedUser(user)} className="text-accent font-bold">View</button></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="overflow-hidden rounded-xl border border-border bg-surface">
+              <div className="admin-table-scrollbar max-h-[600px] overflow-x-auto overflow-y-auto scroll-smooth">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="sticky top-0 z-10 bg-surface-secondary text-muted shadow-sm"><tr><th className="p-3">Name</th><th className="p-3">Branch</th><th className="p-3">Year</th><th className="p-3">Joined</th><th className="p-3">Action</th></tr></thead>
+                  <tbody>
+                    {users.map((user) => (
+                      <tr key={user._id} className="border-t border-border">
+                        <td className="p-3 font-bold">{user.name}</td><td className="p-3">{user.branch}</td><td className="p-3">{user.year}</td><td className="p-3 text-muted">{formatDate(user.createdAt)}</td>
+                        <td className="p-3"><button onClick={() => setSelectedUser(user)} className="text-accent font-bold">View</button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="border-t border-border px-3 py-2 text-xs text-muted">Showing {users.length} of {users.length} users</p>
             </div>
           </section>
 
           <section className="space-y-3">
             <div className="flex items-center justify-between"><h2 className="text-lg font-bold">Recent Uploads</h2><button type="button" onClick={() => openAdminFile('/admin/download-all')} className="px-3 py-2 bg-accent text-accent-foreground rounded-lg text-xs font-bold flex items-center gap-2"><Download size={14} />Download All</button></div>
-            <div className="overflow-x-auto rounded-xl border border-border bg-surface">
-              <table className="min-w-full text-left text-sm">
-                <thead className="bg-surface-secondary text-muted"><tr><th className="p-3">Title</th><th className="p-3">Subject</th><th className="p-3">Uploader</th><th className="p-3">Preview</th><th className="p-3">Actions</th></tr></thead>
-                <tbody>
-                  {notes.slice(0, 10).map((note) => (
-                    <tr key={note._id} className="border-t border-border">
-                      <td className="p-3 font-bold">{note.title}</td><td className="p-3">{note.subject}</td><td className="p-3 text-muted">{note.uploader?.name || 'Unknown'}</td>
-                      <td className="p-3"><button onClick={() => openAdminFile(`/admin/preview/${note._id}`)} className="text-accent font-bold">View</button></td>
-                      <td className="p-3 whitespace-nowrap space-x-3"><button onClick={() => openAdminFile(`/admin/download/${note._id}`)} title="Download"><Download size={16} className="inline" /></button><button onClick={() => softDeleteNote(note)} className="text-danger" title="Soft delete"><Trash2 size={16} className="inline" /></button></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="overflow-hidden rounded-xl border border-border bg-surface">
+              <div className="admin-table-scrollbar max-h-[600px] overflow-x-auto overflow-y-auto scroll-smooth">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="sticky top-0 z-10 bg-surface-secondary text-muted shadow-sm"><tr><th className="p-3">Title</th><th className="p-3">Subject</th><th className="p-3">Uploader</th><th className="p-3">Preview</th><th className="p-3">Actions</th></tr></thead>
+                  <tbody>
+                    {notes.map((note) => (
+                      <tr key={note._id} className="border-t border-border">
+                        <td className="p-3 font-bold">{note.title}</td><td className="p-3">{note.subject}</td><td className="p-3 text-muted">{note.uploader?.name || 'Unknown'}</td>
+                        <td className="p-3"><button onClick={() => openAdminFile(`/admin/preview/${note._id}`)} className="text-accent font-bold">View</button></td>
+                        <td className="p-3 whitespace-nowrap space-x-3"><button onClick={() => openAdminFile(`/admin/download/${note._id}`)} title="Download"><Download size={16} className="inline" /></button><button onClick={() => softDeleteNote(note)} className="text-danger" title="Soft delete"><Trash2 size={16} className="inline" /></button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="border-t border-border px-3 py-2 text-xs text-muted">Showing {notes.length} of {notes.length} notes</p>
             </div>
           </section>
         </>
