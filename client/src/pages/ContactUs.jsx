@@ -64,7 +64,7 @@ const ContactUs = () => {
             <div>
               <h4 className="font-bold text-foreground">Email Support</h4>
               <p className="text-xs text-muted mt-1">Our team replies within 24 hours.</p>
-              <a href="mailto:surajchougule2706@gmail.com" className="text-accent text-sm font-semibold hover:underline mt-2 inline-block">
+              <a href="mailto:noteshare07@gmail.com" className="text-accent text-sm font-semibold hover:underline mt-2 inline-block">
                 Email
               </a>
             </div>
