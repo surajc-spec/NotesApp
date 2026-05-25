@@ -67,6 +67,7 @@ const ContactUs = () => {
               <a href="mailto:noteshare07@gmail.com" className="text-accent text-sm font-semibold hover:underline mt-2 inline-block">
                 Email
               </a>
+              
             </div>
           </div>
 
