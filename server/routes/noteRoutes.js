@@ -66,6 +66,10 @@ user._id
 const getBaseNotesQuery =
 (user)=>({
 
+isDeleted:{
+$ne:true
+},
+
 branch:
 user.branch,
 
@@ -631,7 +635,10 @@ await Note
 uploader:
 getUserId(
 req.user
-)
+),
+isDeleted:{
+$ne:true
+}
 })
 .populate(
 'uploader',
@@ -774,9 +781,10 @@ async(req,res)=>{
 try{
 
 const note=
-await Note.findById(
-req.params.id
-);
+await Note.findOne({
+_id:req.params.id,
+isDeleted:{$ne:true}
+});
 
 if(
 !note
@@ -911,9 +919,10 @@ try{
 
 const note=
 await Note
-.findById(
-req.params.id
-);
+.findOne({
+_id:req.params.id,
+isDeleted:{$ne:true}
+});
 
 if(
 !note
@@ -981,9 +990,10 @@ async(req,res)=>{
 try{
 
 const note=
-await Note.findById(
-req.params.id
-);
+await Note.findOne({
+_id:req.params.id,
+isDeleted:{$ne:true}
+});
 
 if(
 !note
@@ -1055,9 +1065,10 @@ try{
 
 const note=
 await Note
-.findById(
-req.params.id
-);
+.findOne({
+_id:req.params.id,
+isDeleted:{$ne:true}
+});
 
 if(
 !note

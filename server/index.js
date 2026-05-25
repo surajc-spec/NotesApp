@@ -27,6 +27,9 @@ require('./routes/questionPaperRoutes');
 const adminRoutes =
 require('./routes/adminRoutes');
 
+const contactRoutes =
+require('./routes/contactRoutes');
+
 const {
 migrateSubjects
 } =
@@ -213,6 +216,14 @@ app.use(
 '/api/admin',
 
 adminRoutes
+
+);
+
+app.use(
+
+'/api/contact',
+
+contactRoutes
 
 );
 

@@ -7,11 +7,15 @@ const fs = require('fs/promises');
 const cloudinary = require('cloudinary').v2;
 
 const Note = require('../models/Note');
+const QuestionPaper = require('../models/QuestionPaper');
 const User = require('../models/User');
+const ContactMessage = require('../models/ContactMessage');
 const { getAdminSecret, protectAdmin } = require('../middleware/adminMiddleware');
 const { normalizeSubject } = require('../utils/subjectUtils');
+const { clearCache } = require('../services/cacheService');
 
 const router = express.Router();
+const activeNotes = { isDeleted: { $ne: true } };
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -230,7 +234,7 @@ router.get('/users', protectAdmin, async (req, res) => {
 
 router.get('/notes', protectAdmin, async (req, res) => {
   const notes = await Note
-    .find({})
+    .find(activeNotes)
     .populate('uploader', 'name email branch year')
     .sort({ createdAt: -1 })
     .lean();
@@ -257,11 +261,11 @@ router.get('/stats', protectAdmin, async (req, res) => {
     newestUpload
   ] = await Promise.all([
     User.countDocuments(),
-    Note.countDocuments(),
-    Note.distinct('subjectKey'),
-    Note.countDocuments({ createdAt: { $gte: today } }),
+    Note.countDocuments(activeNotes),
+    Note.distinct('subjectKey', activeNotes),
+    Note.countDocuments({ ...activeNotes, createdAt: { $gte: today } }),
     User.findOne({}).select('name email createdAt').sort({ createdAt: -1 }).lean(),
-    Note.findOne({}).select('title subject createdAt').sort({ createdAt: -1 }).lean(),
+    Note.findOne(activeNotes).select('title subject createdAt').sort({ createdAt: -1 }).lean(),
   ]);
 
   res.json({
@@ -277,8 +281,99 @@ router.get('/stats', protectAdmin, async (req, res) => {
   });
 });
 
+router.get('/messages', protectAdmin, async (req, res) => {
+  const messages = await ContactMessage.find({}).sort({ createdAt: -1 }).lean();
+  return res.json(messages);
+});
+
+router.patch('/messages/:id', protectAdmin, async (req, res) => {
+  const status = String(req.body.status || '').trim().toLowerCase();
+
+  if (!['new', 'read', 'resolved'].includes(status)) {
+    return res.status(400).json({ message: 'Invalid message status' });
+  }
+
+  const message = await ContactMessage.findByIdAndUpdate(
+    req.params.id,
+    { status },
+    { new: true, runValidators: true }
+  ).lean();
+
+  if (!message) {
+    return res.status(404).json({ message: 'Message not found' });
+  }
+
+  return res.json(message);
+});
+
+router.get('/analytics', protectAdmin, async (req, res) => {
+  return res.json({
+    configured: false,
+    activeUsers: null,
+    averageEngagementTime: null,
+    returningUsers: null,
+    traffic: {
+      newUsers: null,
+      returningUsers: null,
+      views: null,
+    },
+    message: 'Google Analytics reporting is not configured on the server.',
+  });
+});
+
+router.get('/question-paper-metrics', protectAdmin, async (req, res) => {
+  const [papers, subjects, mostUploaded] = await Promise.all([
+    QuestionPaper.countDocuments(),
+    QuestionPaper.distinct('subjectKey'),
+    QuestionPaper.aggregate([
+      { $group: { _id: '$subjectKey', uploads: { $sum: 1 } } },
+      { $sort: { uploads: -1, _id: 1 } },
+      { $limit: 1 },
+    ]),
+  ]);
+
+  return res.json({
+    papers,
+    subjects: subjects.filter(Boolean).length,
+    mostUploadedSubject: mostUploaded[0]?._id || null,
+    mostViewedSubject: null,
+  });
+});
+
+router.patch('/notes/:id/soft-delete', protectAdmin, async (req, res) => {
+  const note = await Note.findOneAndUpdate(
+    { _id: req.params.id, ...activeNotes },
+    { isDeleted: true, deletedAt: new Date(), deletedBy: req.admin.email },
+    { new: true }
+  ).select('_id title').lean();
+
+  if (!note) {
+    return res.status(404).json({ message: 'Note not found' });
+  }
+
+  await clearCache();
+  return res.json({ message: 'Note removed from public content.', note });
+});
+
+router.get('/preview/:id', protectAdmin, async (req, res) => {
+  const note = await Note.findOne({ _id: req.params.id, ...activeNotes }).lean();
+
+  if (!note) {
+    return res.status(404).json({ message: 'Note not found' });
+  }
+
+  const file = await getNoteFileBuffer(note);
+  res.set({
+    'Content-Type': 'application/pdf',
+    'Content-Disposition': `inline; filename="${safeFileName(note.title, 'note')}.pdf"`,
+    'Cache-Control': 'no-store',
+  });
+
+  return res.send(file);
+});
+
 router.get('/download/:id', protectAdmin, async (req, res) => {
-  const note = await Note.findById(req.params.id).lean();
+  const note = await Note.findOne({ _id: req.params.id, ...activeNotes }).lean();
 
   if (!note) {
     return res.status(404).json({ message: 'Note not found' });
@@ -296,7 +391,7 @@ router.get('/download/:id', protectAdmin, async (req, res) => {
 
 router.get('/download-all', protectAdmin, async (req, res) => {
   const notes = await Note
-    .find({})
+    .find(activeNotes)
     .select('title subject fileUrl filePublicId fileResourceType fileStorageType createdAt')
     .sort({ createdAt: -1 })
     .lean();

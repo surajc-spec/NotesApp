@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, MessageSquare, CheckCircle, AlertCircle, Loader2, Send, MapPin } from 'lucide-react';
 import AdUnit from '../components/AdUnit';
+import api from '../services/api';
 
 const ContactUs = () => {
   const [name, setName] = useState('');
@@ -11,25 +12,28 @@ const ContactUs = () => {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name || !email || !subject || !message) {
-      setError('Please fill in all fields');
+    if (!name.trim() || !email.trim() || !subject.trim() || !message.trim()) {
+      setError('Please fill in all fields.');
       return;
     }
 
     setLoading(true);
     setError('');
 
-    // Simulate sending API message
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await api.post('/contact', { name, email, subject, message });
       setSuccess(true);
       setName('');
       setEmail('');
       setSubject('');
       setMessage('');
-    }, 1500);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to send message. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -92,9 +96,9 @@ const ContactUs = () => {
                   <CheckCircle size={40} />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-foreground">Message Sent Successfully!</h3>
+                  <h3 className="text-2xl font-bold text-foreground">Message sent successfully.</h3>
                   <p className="text-muted mt-2 text-sm max-w-xs mx-auto">
-                    Thank you for reaching out. We have logged your request and will contact you shortly.
+                    Admin will review and contact if needed.
                   </p>
                 </div>
                 <button
@@ -158,6 +162,7 @@ const ContactUs = () => {
                     placeholder="Describe your issue or suggestion..."
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
+                    minLength={10}
                     required
                   />
                 </div>
@@ -170,7 +175,7 @@ const ContactUs = () => {
                   {loading ? (
                     <>
                       <Loader2 className="animate-spin" size={18} />
-                      Sending Message...
+                      Sending...
                     </>
                   ) : (
                     <>

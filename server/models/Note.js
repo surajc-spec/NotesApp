@@ -27,7 +27,10 @@ const noteSchema = new mongoose.Schema({
   fileStorageType: { type: String, default: 'authenticated' },
   uploader: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   isPublic: { type: Boolean, default: true },
-  password: { type: String } // Optional password protection
+  password: { type: String }, // Optional password protection
+  isDeleted: { type: Boolean, default: false, index: true },
+  deletedAt: { type: Date },
+  deletedBy: { type: String },
 }, { timestamps: true });
 
 noteSchema.pre('validate', function setNormalizedSubject() {
