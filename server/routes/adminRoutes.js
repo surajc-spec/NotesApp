@@ -203,6 +203,17 @@ router.post('/login', async (req, res) => {
   const adminEmail = normalizeEmail(process.env.ADMIN_EMAIL).replace(/^["']|["']$/g, '');
   const adminPassword = String(process.env.ADMIN_PASSWORD || '').trim().replace(/^["']|["']$/g, '');
 
+  console.log('--- ADMIN LOGIN DEBUG ---');
+  console.log('Incoming Email:', req.body.email);
+  console.log('Parsed Incoming Email:', email);
+  console.log('Has Password:', !!req.body.password);
+  console.log('Env Email:', process.env.ADMIN_EMAIL);
+  console.log('Parsed Env Email:', adminEmail);
+  console.log('Env Password Exists:', !!adminPassword);
+  console.log('Email Match:', email === adminEmail);
+  console.log('Password Match:', password === adminPassword);
+  console.log('-------------------------');
+
   if (!adminEmail || !adminPassword || email !== adminEmail || password !== adminPassword) {
     return res.status(403).json({ message: 'Invalid admin credentials' });
   }
