@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
-import { Maximize2, MoveHorizontal, ZoomIn, ZoomOut } from 'lucide-react';
+import { Maximize2, Moon, MoveHorizontal, Sun, ZoomIn, ZoomOut } from 'lucide-react';
 
 import * as pdfjs from 'pdfjs-dist';
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
+import { useTheme } from '../context/ThemeContext';
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
 const ProtectedPdfViewer = ({ fileUrl, title, isFullscreen = false }) => {
+  const { theme, toggleTheme } = useTheme();
   const containerRef = useRef(null);
   const canvasRefs = useRef([]);
   const pdfRef = useRef(null);
@@ -216,6 +218,22 @@ const ProtectedPdfViewer = ({ fileUrl, title, isFullscreen = false }) => {
             <ZoomIn size={16} className="text-muted" />
             <span className="w-10 text-right text-xs text-muted">{Math.round(zoom * 100)}%</span>
           </div>
+
+          {isFullscreen && (
+            <button
+              onClick={toggleTheme}
+              className="flex h-8 w-8 items-center justify-center rounded bg-gray-700 text-white transition hover:bg-gray-600"
+              type="button"
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              aria-label={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              {theme === 'dark' ? (
+                <Sun size={17} className="text-yellow-400" />
+              ) : (
+                <Moon size={17} className="text-indigo-300" />
+              )}
+            </button>
+          )}
         </div>
       </div>
 

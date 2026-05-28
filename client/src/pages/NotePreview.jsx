@@ -241,27 +241,17 @@ const NotePreview = ({ resourceType = 'notes' }) => {
         className="protected-preview fixed inset-0 z-[999999] flex h-[100dvh] w-screen flex-col overflow-hidden bg-background outline-none"
         onContextMenu={(e) => e.preventDefault()}
       >
-        <div className="relative z-30 grid h-20 shrink-0 grid-cols-[minmax(0,1fr)_minmax(220px,520px)_auto] items-center gap-3 border-b border-border bg-surface px-4">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase text-accent">
-              <Eye size={16} />
-              Preview only
-            </div>
-            <p className="truncate text-sm font-bold text-foreground">{note?.title}</p>
-          </div>
-
-          <AdUnit placement="fullscreen" compact className="h-14 max-h-14 w-full" />
-
+        <div className="relative min-h-0 flex-1 overflow-hidden bg-black/85 backdrop-blur-md">
           <button
             onClick={toggleFullscreen}
-            className="flex shrink-0 items-center justify-center gap-2 rounded-field bg-accent px-4 py-3 font-bold text-accent-foreground shadow-lg hover:opacity-90"
+            className="absolute bottom-4 right-4 z-30 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-lg hover:opacity-90"
+            type="button"
+            aria-label="Exit fullscreen"
+            title="Exit fullscreen"
           >
             <Minimize size={18} />
-            Exit
           </button>
-        </div>
 
-        <div className="relative min-h-0 flex-1 overflow-hidden bg-black/85 backdrop-blur-md">
           {isScreenShieldVisible && (
             <div className="absolute inset-0 z-[2147483647] flex items-center justify-center bg-black text-center text-lg font-bold text-white">
               Protected preview
