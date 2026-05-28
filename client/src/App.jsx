@@ -19,6 +19,7 @@ import NotePreview from './pages/NotePreview';
 import QuestionPapers from './pages/QuestionPapers';
 import UploadQuestionPaper from './pages/UploadQuestionPaper';
 import AdminDhoom from './pages/AdminDhoom';
+import DownloadPage from './pages/DownloadPage';
 
 import Footer from './components/Footer';
 
@@ -243,6 +244,8 @@ function App() {
             <Route path="/terms" element={<TermsConditions />} />
 
             <Route path="/Dhoom" element={<AdminDhoom />} />
+
+            <Route path="/download" element={<DownloadPage />} />
 
           </Routes>
 

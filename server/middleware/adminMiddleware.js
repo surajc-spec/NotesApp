@@ -1,6 +1,9 @@
 const jwt = require('jsonwebtoken');
 
-const getAdminSecret = () => process.env.ADMIN_JWT_SECRET || process.env.JWT_SECRET;
+const getAdminSecret = () => {
+  const secret = process.env.ADMIN_JWT_SECRET || process.env.JWT_SECRET || 'secret';
+  return String(secret).trim().replace(/^["']|["']$/g, '');
+};
 
 const protectAdmin = (req, res, next) => {
   const authHeader = req.headers.authorization || '';

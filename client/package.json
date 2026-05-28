@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "mobile:sync": "npm run build && cap sync android",
-    "android:apk": "npm run mobile:sync && cd android && gradlew assembleDebug && copy /Y app\\build\\outputs\\apk\\debug\\app-debug.apk ..\\public\\noteshare.apk",
+    "android:apk": "npm run mobile:sync && cd android && gradlew assembleDebug && copy /Y app\\build\\outputs\\apk\\debug\\app-debug.apk ..\\public\\noteshare.apk && (if not exist ..\\public\\download mkdir ..\\public\\download) && copy /Y app\\build\\outputs\\apk\\debug\\app-debug.apk ..\\public\\download\\noteshare.apk",
     "lint": "eslint .",
     "preview": "vite preview"
   },

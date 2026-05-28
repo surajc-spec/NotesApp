@@ -197,10 +197,11 @@ const createZip = (entries) => {
 };
 
 router.post('/login', async (req, res) => {
-  const email = normalizeEmail(req.body.email);
-  const password = String(req.body.password || '');
-  const adminEmail = normalizeEmail(process.env.ADMIN_EMAIL);
-  const adminPassword = process.env.ADMIN_PASSWORD || '';
+  const email = normalizeEmail(req.body.email).replace(/^["']|["']$/g, '');
+  const password = String(req.body.password || '').trim().replace(/^["']|["']$/g, '');
+  
+  const adminEmail = normalizeEmail(process.env.ADMIN_EMAIL).replace(/^["']|["']$/g, '');
+  const adminPassword = String(process.env.ADMIN_PASSWORD || '').trim().replace(/^["']|["']$/g, '');
 
   if (!adminEmail || !adminPassword || email !== adminEmail || password !== adminPassword) {
     return res.status(403).json({ message: 'Invalid admin credentials' });
