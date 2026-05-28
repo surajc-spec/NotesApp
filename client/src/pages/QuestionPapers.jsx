@@ -39,6 +39,7 @@ const QuestionPapers = () => {
         params: {
           subject: normalizedSubject,
           search: searchTerm.trim() || undefined,
+          _t: Date.now(),
         },
       });
 

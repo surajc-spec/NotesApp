@@ -1,14 +1,19 @@
 import axios from 'axios';
+import { Capacitor } from '@capacitor/core';
+
+const productionApiUrl = 'https://notesapp-pbjv.onrender.com/api';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://notesapp-x37n.onrender.com/api',
+  baseURL: Capacitor.isNativePlatform()
+    ? productionApiUrl
+    : import.meta.env.VITE_API_URL || productionApiUrl,
 });
 
 // Add a request interceptor
 api.interceptors.request.use(
   (config) => {
     const user = JSON.parse(localStorage.getItem('user'));
-    if (user && user.token && !config.headers.Authorization) {
+    if (user && user.token) {
       config.headers.Authorization = `Bearer ${user.token}`;
     }
     return config;

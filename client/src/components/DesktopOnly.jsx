@@ -1,4 +1,5 @@
 import React from "react";
+import { Capacitor } from "@capacitor/core";
 
 function DesktopOnly({ children }) {
 
@@ -6,7 +7,9 @@ function DesktopOnly({ children }) {
     /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i
       .test(navigator.userAgent);
 
-  if (isMobile) {
+  const isNativeApp = Capacitor.isNativePlatform();
+
+  if (isMobile && !isNativeApp) {
     return (
       <div
         style={{

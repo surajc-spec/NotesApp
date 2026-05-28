@@ -1,5 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
-import { Maximize2, Moon, MoveHorizontal, Sun, ZoomIn, ZoomOut } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Maximize2,
+  Minimize2,
+  Moon,
+  MoveHorizontal,
+  Sun,
+  ZoomIn,
+  ZoomOut,
+} from 'lucide-react';
 
 import * as pdfjs from 'pdfjs-dist';
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
@@ -9,13 +20,14 @@ pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
-const ProtectedPdfViewer = ({ fileUrl, title, isFullscreen = false }) => {
+const ProtectedPdfViewer = ({ fileUrl, title, isFullscreen = false, onExitFullscreen }) => {
   const { theme, toggleTheme } = useTheme();
   const containerRef = useRef(null);
   const canvasRefs = useRef([]);
   const pdfRef = useRef(null);
   const renderTokenRef = useRef(0);
   const zoomFrameRef = useRef(null);
+  const pagesContainerRef = useRef(null);
 
   const [pages, setPages] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -37,6 +49,30 @@ const ProtectedPdfViewer = ({ fileUrl, title, isFullscreen = false }) => {
     setCurrentPage(pageNumber);
   };
 
+  const updateCurrentPageFromScroll = () => {
+    const container = containerRef.current;
+    if (!container || !canvasRefs.current.length) return;
+
+    const containerTop = container.getBoundingClientRect().top;
+    const readerCenter = containerTop + container.clientHeight * 0.42;
+    let closestPage = currentPage;
+    let closestDistance = Number.POSITIVE_INFINITY;
+
+    canvasRefs.current.forEach((canvas, index) => {
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const pageCenter = rect.top + rect.height / 2;
+      const distance = Math.abs(pageCenter - readerCenter);
+
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestPage = index + 1;
+      }
+    });
+
+    if (closestPage !== currentPage) setCurrentPage(closestPage);
+  };
+
   useEffect(() => {
     let cancelled = false;
     let loadingTask;
@@ -48,7 +84,15 @@ const ProtectedPdfViewer = ({ fileUrl, title, isFullscreen = false }) => {
       pdfRef.current = null;
 
       try {
-        loadingTask = pdfjs.getDocument(fileUrl);
+        if (typeof fileUrl === 'string') {
+          loadingTask = pdfjs.getDocument(fileUrl);
+        } else if (fileUrl && fileUrl.byteLength > 0) {
+          // Clone the ArrayBuffer to prevent detaching/transfer issues when loaded in multiple viewers
+          const clonedData = fileUrl.slice(0);
+          loadingTask = pdfjs.getDocument({ data: clonedData });
+        } else {
+          throw new Error('Invalid PDF data');
+        }
 
         const pdf = await loadingTask.promise;
 
@@ -72,6 +116,69 @@ const ProtectedPdfViewer = ({ fileUrl, title, isFullscreen = false }) => {
     };
   }, [fileUrl]);
 
+  const touchStartDistRef = useRef(null);
+  const touchStartZoomRef = useRef(null);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    const pagesContainer = pagesContainerRef.current;
+    if (!container || !pagesContainer) return;
+
+    const handleTouchStart = (e) => {
+      if (e.touches.length === 2) {
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        touchStartDistRef.current = dist;
+        touchStartZoomRef.current = zoom;
+      }
+    };
+
+    const handleTouchMove = (e) => {
+      if (e.touches.length === 2 && touchStartDistRef.current !== null && touchStartZoomRef.current !== null) {
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        const factor = dist / touchStartDistRef.current;
+        pagesContainer.style.transform = `scale(${factor})`;
+      }
+    };
+
+    const handleTouchEnd = (e) => {
+      if (touchStartDistRef.current !== null && touchStartZoomRef.current !== null) {
+        let factor = 1;
+        if (e.touches.length === 0 && e.changedTouches && e.changedTouches.length >= 2) {
+          const dist = Math.hypot(
+            e.changedTouches[0].clientX - e.changedTouches[1].clientX,
+            e.changedTouches[0].clientY - e.changedTouches[1].clientY
+          );
+          factor = dist / touchStartDistRef.current;
+        }
+        
+        pagesContainer.style.transform = '';
+        const finalZoom = clamp(touchStartZoomRef.current * (factor || 1), 0.6, 2.0);
+        setZoom(finalZoom);
+        
+        touchStartDistRef.current = null;
+        touchStartZoomRef.current = null;
+      }
+    };
+
+    container.addEventListener('touchstart', handleTouchStart, { passive: true });
+    container.addEventListener('touchmove', handleTouchMove, { passive: true });
+    container.addEventListener('touchend', handleTouchEnd);
+    container.addEventListener('touchcancel', handleTouchEnd);
+
+    return () => {
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchmove', handleTouchMove);
+      container.removeEventListener('touchend', handleTouchEnd);
+      container.removeEventListener('touchcancel', handleTouchEnd);
+    };
+  }, [zoom]);
+
   useEffect(() => {
     if (!pdfRef.current || !pages.length) return;
 
@@ -82,8 +189,8 @@ const ProtectedPdfViewer = ({ fileUrl, title, isFullscreen = false }) => {
     const renderPages = async () => {
       const pdf = pdfRef.current;
       const container = containerRef.current;
-      const toolbarHeight = isFullscreen ? 76 : 72;
-      const horizontalPadding = isFullscreen ? 12 : 24;
+      const toolbarHeight = isFullscreen ? 56 : 72;
+      const horizontalPadding = isFullscreen ? 8 : 24;
       const containerWidth = Math.max((container?.clientWidth || 900) - horizontalPadding, 320);
       const containerHeight = Math.max(
         (container?.clientHeight || window.innerHeight) - toolbarHeight - 20,
@@ -139,25 +246,34 @@ const ProtectedPdfViewer = ({ fileUrl, title, isFullscreen = false }) => {
       ref={containerRef}
       title={title}
       className={`protected-pdf-viewer overflow-y-auto bg-surface-secondary px-3 pt-0 pb-5 ${
-        isFullscreen ? 'h-full px-1' : 'h-[78vh]'
+        isFullscreen ? 'fullscreen-pdf-reader h-full px-0 pb-20' : 'h-[78vh]'
       }`}
+      onScroll={updateCurrentPageFromScroll}
       onContextMenu={(e) => e.preventDefault()}
     >
-      <div className="sticky top-0 z-50 bg-surface-secondary py-3">
-        <div className="mx-auto flex max-w-[980px] flex-wrap items-center justify-center gap-3 rounded-b-xl border border-border bg-surface p-3 text-foreground shadow-sm">
+      <div
+        className={isFullscreen ? 'fixed left-0 right-0 z-50 px-4' : 'sticky top-0 z-50 bg-surface-secondary py-3'}
+        style={isFullscreen ? { bottom: 'calc(1.25rem + env(safe-area-inset-bottom))' } : {}}
+      >
+        <div
+          className={`mx-auto flex items-center justify-center gap-2 text-foreground shadow-sm ${
+            isFullscreen
+              ? 'max-w-[680px] w-[calc(100%-2rem)] flex-wrap justify-center rounded-2xl border border-white/10 bg-black/75 px-4 py-2 text-white backdrop-blur-xl gap-2 sm:gap-3'
+              : 'max-w-[980px] flex-wrap rounded-b-xl border border-border bg-surface p-3'
+          }`}
+        >
           <button
             onClick={() => scrollToPage(Math.max(currentPage - 1, 1))}
-            className="rounded bg-gray-700 px-3 py-1 text-white"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/15"
             type="button"
+            title="Previous page"
           >
-            &larr;
+            <ChevronLeft size={18} />
           </button>
-
-          <span>Page</span>
 
           <input
             type="number"
-            value={jumpPage}
+            value={jumpPage || currentPage}
             onChange={(e) => setJumpPage(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
@@ -165,7 +281,12 @@ const ProtectedPdfViewer = ({ fileUrl, title, isFullscreen = false }) => {
                 if (page >= 1 && page <= pages.length) scrollToPage(page);
               }
             }}
-            className="w-20 rounded border bg-black px-2 py-1 text-center text-white dark:bg-white dark:text-black"
+            className={`h-9 w-14 rounded-full border px-2 text-center text-sm font-bold outline-none ${
+              isFullscreen
+                ? 'border-white/10 bg-white/10 text-white focus:border-accent'
+                : 'border-border bg-field-background text-field-foreground'
+            }`}
+            aria-label="Page number"
           />
 
           <button
@@ -173,56 +294,49 @@ const ProtectedPdfViewer = ({ fileUrl, title, isFullscreen = false }) => {
               const page = Number(jumpPage);
               if (page >= 1 && page <= pages.length) scrollToPage(page);
             }}
-            className="rounded bg-green-500 px-4 py-1 text-white"
+            className={`h-9 rounded-full px-3 text-sm font-bold ${
+              isFullscreen ? 'bg-accent text-accent-foreground' : 'bg-accent text-accent-foreground'
+            }`}
             type="button"
           >
             Go
           </button>
 
-          <span>/ {pages.length}</span>
+          <span className={`min-w-10 text-sm font-bold ${isFullscreen ? 'text-white/70' : 'text-muted'}`}>
+            / {pages.length}
+          </span>
 
           <button
             onClick={() => scrollToPage(Math.min(currentPage + 1, pages.length))}
-            className="rounded bg-gray-700 px-3 py-1 text-white"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/15"
             type="button"
+            title="Next page"
           >
-            &rarr;
+            <ChevronRight size={18} />
           </button>
 
-          {isFullscreen && (
-            <button
-              onClick={() => {
-                setFitMode((mode) => (mode === 'width' ? 'page' : 'width'));
-                setZoom(1);
-              }}
-              className="flex h-8 w-8 items-center justify-center rounded bg-gray-700 text-white"
-              type="button"
-              title={fitMode === 'width' ? 'Fit full page' : 'Fill width'}
-            >
-              {fitMode === 'width' ? <Maximize2 size={17} /> : <MoveHorizontal size={17} />}
-            </button>
+          {(!isFullscreen || !Capacitor.isNativePlatform()) && (
+            <div className={`flex min-w-[150px] items-center gap-2 rounded-full px-2 py-1 ${isFullscreen ? 'bg-white/10' : 'bg-surface-secondary'}`}>
+              <ZoomOut size={16} className={isFullscreen ? 'text-white/70' : 'text-muted'} />
+              <input
+                type="range"
+                min="0.6"
+                max="1.6"
+                step="0.05"
+                value={zoom}
+                onChange={(e) => setZoom(Number(e.target.value))}
+                className="w-24 accent-[var(--accent)]"
+                title="Zoom"
+              />
+              <ZoomIn size={16} className={isFullscreen ? 'text-white/70' : 'text-muted'} />
+              <span className={`w-10 text-right text-xs ${isFullscreen ? 'text-white/70' : 'text-muted'}`}>{Math.round(zoom * 100)}%</span>
+            </div>
           )}
-
-          <div className="flex min-w-[180px] items-center gap-2 rounded bg-surface-secondary px-2 py-1">
-            <ZoomOut size={16} className="text-muted" />
-            <input
-              type="range"
-              min="0.6"
-              max="1.6"
-              step="0.05"
-              value={zoom}
-              onChange={(e) => setZoom(Number(e.target.value))}
-              className="w-28 accent-[var(--accent)]"
-              title="Zoom"
-            />
-            <ZoomIn size={16} className="text-muted" />
-            <span className="w-10 text-right text-xs text-muted">{Math.round(zoom * 100)}%</span>
-          </div>
 
           {isFullscreen && (
             <button
               onClick={toggleTheme}
-              className="flex h-8 w-8 items-center justify-center rounded bg-gray-700 text-white transition hover:bg-gray-600"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/15"
               type="button"
               title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
               aria-label={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
@@ -234,6 +348,18 @@ const ProtectedPdfViewer = ({ fileUrl, title, isFullscreen = false }) => {
               )}
             </button>
           )}
+
+          {isFullscreen && (
+            <button
+              onClick={onExitFullscreen}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-lg shadow-accent/20 transition hover:opacity-90"
+              type="button"
+              title="Exit fullscreen"
+              aria-label="Exit fullscreen"
+            >
+              <Minimize2 size={18} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -241,13 +367,14 @@ const ProtectedPdfViewer = ({ fileUrl, title, isFullscreen = false }) => {
         <div className="text-red-500">{error}</div>
       ) : (
         <div
-          className={`mx-auto flex flex-col items-center gap-5 ${
-            isFullscreen ? 'max-w-none' : 'max-w-[980px]'
+          ref={pagesContainerRef}
+          className={`mx-auto flex flex-col items-center transition-transform origin-top ${
+            isFullscreen ? 'max-w-none gap-3 px-1' : 'max-w-[980px] gap-5'
           }`}
         >
           {pages.map((page) => (
             <div key={page} className="relative">
-              <div className="absolute left-3 top-3 z-10 rounded bg-red-600 px-2 py-1 text-sm text-white">
+              <div className="absolute left-3 top-3 z-10 rounded bg-black/65 px-2 py-1 text-xs font-bold text-white">
                 {page}
               </div>
 

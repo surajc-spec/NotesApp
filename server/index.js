@@ -50,6 +50,14 @@ app.use(
 cors()
 );
 
+// Global middleware to disable HTTP caching for all API endpoints
+app.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
+
 app.get(
 '/api/notes',
 noteRoutes.getNotesMiddleware

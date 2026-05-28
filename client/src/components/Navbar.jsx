@@ -1,5 +1,6 @@
 import { useContext, useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
 import { AuthContext } from '../context/AuthContext';
 import { LogOut, BookOpen, PlusCircle, User as UserIcon, LayoutDashboard, Search, Menu, X, FileQuestion } from 'lucide-react';
 import DarkModeToggle from './DarkModeToggle';
@@ -10,6 +11,7 @@ const Navbar = () => {
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const isNativeApp = Capacitor.isNativePlatform() || window.Capacitor?.isNativePlatform?.() === true;
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -25,7 +27,7 @@ const Navbar = () => {
 
   const navLinks = user ? [
     { name: 'All Notes', path: '/notes', icon: <Search size={18} /> },
-    { name: 'Question Papers', path: '/questionpapers', icon: <FileQuestion size={18} />, opensNewTab: true },
+    { name: 'Question Papers', path: '/questionpapers', icon: <FileQuestion size={18} />, opensNewTab: !isNativeApp },
     { name: 'My Notes', path: '/my-notes', icon: <LayoutDashboard size={18} /> },
     { name: 'Profile', path: '/profile', icon: <UserIcon size={18} /> },
   ] : [
@@ -34,8 +36,38 @@ const Navbar = () => {
 
   const isActive = (path) => location.pathname === path;
 
+  if (isNativeApp && user) {
+    const activeLink = navLinks.find((link) => isActive(link.path));
+    const title = activeLink
+      ? activeLink.name.replace('All Notes', 'Notes').replace('Question Papers', 'Papers')
+      : 'NoteShare';
+
+    return (
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/88 backdrop-blur-md border-b border-border py-3 native-topbar">
+        <div className="max-w-7xl mx-auto px-4 flex justify-between items-center w-full">
+          <span className="text-xl font-bold tracking-tight text-foreground">{title}</span>
+          <div className="flex items-center gap-2">
+            <DarkModeToggle />
+          </div>
+        </div>
+        <div className="native-bottom-tabs md:hidden">
+          {navLinks.map((link) => (
+            <Link
+              key={link.path}
+              to={link.path}
+              className={`native-bottom-tab ${isActive(link.path) ? 'native-bottom-tab-active' : ''}`}
+            >
+              {link.icon}
+              <span>{link.name.replace('Question Papers', 'Papers').replace('All Notes', 'Notes')}</span>
+            </Link>
+          ))}
+        </div>
+      </nav>
+    );
+  }
+
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-background/80 backdrop-blur-md border-b border-border py-3' : 'bg-transparent py-5'}`}>
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isNativeApp ? 'native-topbar bg-background/88 backdrop-blur-md border-b border-border py-2' : isScrolled ? 'bg-background/80 backdrop-blur-md border-b border-border py-3' : 'bg-transparent py-5'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center">
           <Link to="/" className="flex items-center gap-2 group">
@@ -97,12 +129,14 @@ const Navbar = () => {
             <DarkModeToggle />
 
             {/* Mobile Menu Toggle Button */}
-            <button 
-              className="p-2 text-foreground cursor-pointer"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            >
-              {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
-            </button>
+            {(!isNativeApp || !user) && (
+              <button 
+                className="p-2 text-foreground cursor-pointer"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              >
+                {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -167,6 +201,21 @@ const Navbar = () => {
               </Link>
             )}
           </div>
+        </div>
+      )}
+
+      {isNativeApp && user && (
+        <div className="native-bottom-tabs md:hidden">
+          {navLinks.map((link) => (
+            <Link
+              key={link.path}
+              to={link.path}
+              className={`native-bottom-tab ${isActive(link.path) ? 'native-bottom-tab-active' : ''}`}
+            >
+              {link.icon}
+              <span>{link.name.replace('Question Papers', 'Papers').replace('All Notes', 'Notes')}</span>
+            </Link>
+          ))}
         </div>
       )}
     </nav>

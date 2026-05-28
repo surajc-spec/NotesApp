@@ -1,7 +1,7 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Eye, Loader2, Maximize, Minimize, RefreshCw, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Eye, Loader2, Maximize, RefreshCw, ShieldCheck } from 'lucide-react';
 
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
@@ -92,7 +92,7 @@ const NotePreview = ({ resourceType = 'notes' }) => {
     setLoading(true);
     setError('');
 
-    if (previewUrlRef.current) {
+    if (previewUrlRef.current && typeof previewUrlRef.current === 'string') {
       URL.revokeObjectURL(previewUrlRef.current);
       previewUrlRef.current = '';
     }
@@ -120,7 +120,7 @@ const NotePreview = ({ resourceType = 'notes' }) => {
       const file = await getFirstSuccessful([
         () =>
           api.get(`${resourceBasePath}/${id}/preview`, {
-            responseType: 'blob',
+            responseType: 'arraybuffer',
             ...requestConfig,
             headers: {
               ...requestConfig.headers,
@@ -128,7 +128,7 @@ const NotePreview = ({ resourceType = 'notes' }) => {
           }),
         () =>
           api.get(`/notes/preview/${id}`, {
-            responseType: 'blob',
+            responseType: 'arraybuffer',
             ...requestConfig,
             headers: {
               ...requestConfig.headers,
@@ -136,9 +136,8 @@ const NotePreview = ({ resourceType = 'notes' }) => {
           }),
       ]);
 
-      const url = URL.createObjectURL(file.data);
-      previewUrlRef.current = url;
-      setPreviewUrl(url);
+      previewUrlRef.current = file.data;
+      setPreviewUrl(file.data);
       setIsPasswordModalOpen(false);
     } catch (err) {
       const askPwd = err.response?.status === 401;
@@ -176,7 +175,7 @@ const NotePreview = ({ resourceType = 'notes' }) => {
     loadPreview();
 
     return () => {
-      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+      if (previewUrlRef.current && typeof previewUrlRef.current === 'string') URL.revokeObjectURL(previewUrlRef.current);
       if (shieldTimerRef.current) clearTimeout(shieldTimerRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -215,20 +214,37 @@ const NotePreview = ({ resourceType = 'notes' }) => {
     };
   }, [isFullscreen]);
 
+  useEffect(() => {
+    window.__noteshareHandleAndroidBack = () => {
+      if (!isFullscreen) return false;
+
+      setIsFullscreen(false);
+      return true;
+    };
+
+    return () => {
+      if (window.__noteshareHandleAndroidBack) {
+        delete window.__noteshareHandleAndroidBack;
+      }
+    };
+  }, [isFullscreen]);
+
   const toggleFullscreen = () => {
     setIsFullscreen((prev) => !prev);
     requestAnimationFrame(() => previewFrameRef.current?.focus());
   };
 
-  const watermarkLayer = (
+  const watermarkLayer = (isFullscreenMode = false) => (
     <div className="pointer-events-none absolute inset-0 z-10 select-none opacity-70">
       <div
         className="preview-watermark-grid h-full w-full"
         style={{ '--watermark-text': `"${watermark}"` }}
       />
-      <div className="absolute bottom-4 left-4 right-4 rounded-lg bg-surface/80 px-4 py-2 text-xs font-bold text-foreground shadow-sm">
-        {watermark}
-      </div>
+      {!isFullscreenMode && (
+        <div className="absolute bottom-4 left-4 right-4 rounded-lg bg-surface/80 px-4 py-2 text-xs font-bold text-foreground shadow-sm">
+          {watermark}
+        </div>
+      )}
     </div>
   );
 
@@ -241,28 +257,19 @@ const NotePreview = ({ resourceType = 'notes' }) => {
         className="protected-preview fixed inset-0 z-[999999] flex h-[100dvh] w-screen flex-col overflow-hidden bg-background outline-none"
         onContextMenu={(e) => e.preventDefault()}
       >
-        <div className="relative min-h-0 flex-1 overflow-hidden bg-black/85 backdrop-blur-md">
-          <button
-            onClick={toggleFullscreen}
-            className="absolute bottom-4 right-4 z-30 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-lg hover:opacity-90"
-            type="button"
-            aria-label="Exit fullscreen"
-            title="Exit fullscreen"
-          >
-            <Minimize size={18} />
-          </button>
-
+        <div className="relative min-h-0 flex-1 overflow-hidden bg-[#050807]">
           {isScreenShieldVisible && (
             <div className="absolute inset-0 z-[2147483647] flex items-center justify-center bg-black text-center text-lg font-bold text-white">
               Protected preview
             </div>
           )}
 
-          {watermarkLayer}
+          {watermarkLayer(true)}
           <ProtectedPdfViewer
             fileUrl={previewUrl}
             title={note?.title || 'Protected note preview'}
             isFullscreen
+            onExitFullscreen={toggleFullscreen}
           />
         </div>
       </section>,
@@ -351,7 +358,7 @@ const NotePreview = ({ resourceType = 'notes' }) => {
             className="preview-fullscreen-shell relative min-h-[75vh] overflow-hidden rounded-lg border border-border bg-surface"
             onContextMenu={(e) => e.preventDefault()}
           >
-            {watermarkLayer}
+            {watermarkLayer(false)}
             <ProtectedPdfViewer
               fileUrl={previewUrl}
               title={note?.title || 'Protected note preview'}

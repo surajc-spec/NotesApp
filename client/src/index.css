@@ -246,6 +246,7 @@ body,
 
 .protected-pdf-viewer {
   overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .protected-pdf-page {
@@ -253,6 +254,123 @@ body,
   max-width: 100%;
   background: white;
   box-shadow: 0 14px 40px color-mix(in oklch, var(--foreground) 14%, transparent);
+}
+
+.fullscreen-pdf-reader {
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.64), transparent 74px),
+    #050807;
+  scroll-padding-top: 62px;
+}
+
+.fullscreen-pdf-reader .protected-pdf-page {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.42);
+}
+
+.mobile-block-screen {
+  color-scheme: dark;
+}
+
+.noteshare-native {
+  min-height: 100dvh;
+  padding-top: calc(4.5rem + env(safe-area-inset-top));
+  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+}
+
+.native-topbar {
+  padding-top: calc(16px + env(safe-area-inset-top));
+  padding-bottom: 16px;
+}
+
+.native-bottom-tabs {
+  position: fixed;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: calc(0.75rem + env(safe-area-inset-bottom));
+  z-index: 60;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.25rem;
+  border: 1px solid color-mix(in oklch, var(--border) 82%, transparent);
+  border-radius: 1.25rem;
+  background: color-mix(in oklch, var(--background) 88%, transparent);
+  padding: 0.35rem;
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(18px);
+}
+
+.native-bottom-tab {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  border-radius: 0.9rem;
+  padding: 0.45rem 0.25rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.native-bottom-tab svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.native-bottom-tab-active {
+  background: color-mix(in oklch, var(--accent) 16%, transparent);
+  color: var(--accent);
+}
+
+@media (max-width: 768px) {
+  body {
+    touch-action: manipulation;
+  }
+
+  .noteshare-native > .max-w-7xl,
+  .max-w-7xl.mx-auto {
+    padding-left: 0.875rem;
+    padding-right: 0.875rem;
+  }
+
+  .noteshare-native h1,
+  .noteshare-native h2 {
+    line-height: 1.12;
+  }
+
+  .noteshare-native .rounded-\[3rem\] {
+    border-radius: 1.25rem;
+  }
+
+  .noteshare-native .p-24 {
+    padding: 2rem;
+  }
+
+  .noteshare-native .mb-16 {
+    margin-bottom: 2rem;
+  }
+
+  .noteshare-native .gap-8 {
+    gap: 1.25rem;
+  }
+
+  .noteshare-native .text-4xl {
+    font-size: 2rem;
+  }
+
+  .noteshare-native .hover\:-translate-y-1:hover {
+    transform: none;
+  }
+
+  .protected-preview {
+    padding-bottom: 2rem;
+  }
+
+  .protected-preview .preview-fullscreen-shell {
+    min-height: 70dvh;
+  }
 }
 
 @media print {

@@ -5,6 +5,7 @@ const path = require('path');
 
 const QuestionPaper = require('../models/QuestionPaper');
 const { normalizeSubject } = require('../utils/subjectUtils');
+const { normalizeBranch, normalizeYear } = require('../utils/normalizationUtils');
 const { protect, protectCached } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 const { streamPreviewFile } = require('../services/notePreviewService');
@@ -33,14 +34,31 @@ const getStoredFileName = (fileName) => {
   return `${Date.now()}_${crypto.randomUUID()}_${baseName}${extension.toLowerCase()}`;
 };
 
-const getBaseQuestionPaperQuery = (user) => ({
-  branch: user.branch,
-  year: user.year,
-  $or: [
-    { isPublic: true },
-    { uploader: getUserId(user) },
-  ],
-});
+const getBaseQuestionPaperQuery = (user) => {
+  const normBranch = normalizeBranch(user.branch);
+  const normYear = normalizeYear(user.year);
+
+  return {
+    $and: [
+      {
+        $or: [
+          { branch: normBranch },
+          { branch: { $regex: new RegExp(`^${escapeRegex(user.branch)}$`, 'i') } }
+        ]
+      },
+      {
+        $or: [
+          { year: normYear },
+          { year: { $regex: new RegExp(`^${escapeRegex(user.year)}$`, 'i') } }
+        ]
+      }
+    ],
+    $or: [
+      { isPublic: true },
+      { uploader: getUserId(user) }
+    ]
+  };
+};
 
 const toSafeQuestionPaper = (questionPaper) => {
   const source = typeof questionPaper.toObject === 'function'
@@ -70,7 +88,7 @@ const toSafeQuestionPaper = (questionPaper) => {
 const groupQuestionPapersBySubject = (questionPapers) =>
   questionPapers.reduce((acc, questionPaper) => {
     const safeQuestionPaper = toSafeQuestionPaper(questionPaper);
-    const subject = safeQuestionPaper.subject || 'OTHER';
+    const subject = String(safeQuestionPaper.subject || 'OTHER').toUpperCase();
 
     if (!acc[subject]) acc[subject] = [];
     acc[subject].push(safeQuestionPaper);
@@ -88,7 +106,7 @@ const buildQuestionPaperQuery = (req) => {
     : 'All';
 
   if (subject !== 'All') {
-    query.subjectKey = subject;
+    query.subjectKey = { $regex: new RegExp(`^${escapeRegex(subject)}$`, 'i') };
   }
 
   const search = String(req.query.search || '').trim();
@@ -122,7 +140,7 @@ const getQuestionPapersHandler = async (req, res) => {
     const page = Math.max(Number(req.query.page) || 1, 1);
     const limit = Math.min(Math.max(Number(req.query.limit) || 0, 0), 50);
     const { query, subject, search } = buildQuestionPaperQuery(req);
-    const key = `noteshare:questionpapers:${req.user.id}:${subject}:${search}:${page}:${limit || 'all'}`;
+    const key = `noteshare:questionpapers:${req.user.id}:${req.user.branch}:${req.user.year}:${subject}:${search}:${page}:${limit || 'all'}`;
 
     const cacheStart = process.hrtime.bigint();
     const cached = await getCacheRaw(key);
@@ -255,8 +273,8 @@ router.post('/', protect, (req, res) => {
         subject,
         subjectKey: subject,
         description: req.body.description,
-        branch: req.user.branch,
-        year: req.user.year,
+        branch: normalizeBranch(req.user.branch),
+        year: normalizeYear(req.user.year),
         uploader: req.user.id,
         isPublic: req.body.isPublic === undefined ? true : req.body.isPublic === 'true',
         originalFileName: file.originalname,
@@ -313,7 +331,9 @@ router.get('/:id', protect, async (req, res) => {
     const uploaderId = questionPaper.uploader?._id || questionPaper.uploader;
     const isOwner = uploaderId && uploaderId.toString() === getUserId(req.user);
     const hasAccess = isOwner ||
-      (questionPaper.isPublic && questionPaper.branch === req.user.branch && questionPaper.year === req.user.year);
+      (questionPaper.isPublic &&
+       normalizeBranch(questionPaper.branch) === normalizeBranch(req.user.branch) &&
+       normalizeYear(questionPaper.year) === normalizeYear(req.user.year));
 
     if (!hasAccess) {
       return res.status(403).json({ message: 'Access denied' });
@@ -336,7 +356,9 @@ router.get('/:id/preview', protect, async (req, res) => {
     const uploaderId = questionPaper.uploader?._id || questionPaper.uploader;
     const isOwner = uploaderId && uploaderId.toString() === getUserId(req.user);
     const hasAccess = isOwner ||
-      (questionPaper.isPublic && questionPaper.branch === req.user.branch && questionPaper.year === req.user.year);
+      (questionPaper.isPublic &&
+       normalizeBranch(questionPaper.branch) === normalizeBranch(req.user.branch) &&
+       normalizeYear(questionPaper.year) === normalizeYear(req.user.year));
 
     if (!hasAccess) {
       return res.status(403).json({ message: 'Access denied' });

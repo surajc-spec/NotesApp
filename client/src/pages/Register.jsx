@@ -50,6 +50,10 @@ const Register = () => {
       value: 'Computer Science',
     },
     {
+      label: 'Computer Engineering',
+      value: 'Computer Engineering',
+    },
+    {
       label: 'Information Technology',
       value: 'Information Technology',
     },
@@ -58,8 +62,8 @@ const Register = () => {
       value: 'Electronics',
     },
     {
-      label: 'Mechanical',
-      value: 'Mechanical',
+      label: 'Mechanical Engineering',
+      value: 'Mechanical Engineering',
     },
     {
       label: 'Civil',

@@ -10,6 +10,7 @@ const { ipKeyGenerator } = require('express-rate-limit');
 const User = require('../models/User');
 const RateLimitEvent = require('../models/RateLimitEvent');
 const { protect } = require('../middleware/authMiddleware');
+const { normalizeBranch, normalizeYear } = require('../utils/normalizationUtils');
 
 const normalizeEmail = (email) =>
   String(email || '')
@@ -232,10 +233,10 @@ password:
 hashedPassword,
 
 year:
-year,
+normalizeYear(year),
 
 branch:
-branch
+normalizeBranch(branch)
 
 });
 
@@ -423,17 +424,22 @@ message:
 
 
 user.year =
-req.body.year ||
-user.year;
+normalizeYear(req.body.year || user.year);
 
 user.branch =
-req.body.branch ||
-user.branch;
+normalizeBranch(req.body.branch || user.branch);
 
 
 
 const updatedUser =
 await user.save();
+
+try {
+  const { clearCache } = require('../services/cacheService');
+  await clearCache();
+} catch (cacheError) {
+  console.error('Error clearing cache on profile update:', cacheError.message);
+}
 
 
 

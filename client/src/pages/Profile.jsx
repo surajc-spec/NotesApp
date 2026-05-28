@@ -2,9 +2,12 @@ import React, { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { User, Mail, GraduationCap, Building2, Save, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import CustomSelect from '../components/CustomSelect';
+import DarkModeToggle from '../components/DarkModeToggle';
+import { useTheme } from '../context/ThemeContext';
 
 const Profile = () => {
   const { user, updateProfile } = useContext(AuthContext);
+  const { themeMode } = useTheme();
   const [year, setYear] = useState(user?.year || 'First Year');
   const [branch, setBranch] = useState(user?.branch || 'Computer Science');
   const [loading, setLoading] = useState(false);
@@ -20,9 +23,10 @@ const Profile = () => {
 
   const branchOptions = [
     { label: 'Computer Science', value: 'Computer Science' },
+    { label: 'Computer Engineering', value: 'Computer Engineering' },
     { label: 'Information Technology', value: 'Information Technology' },
     { label: 'Electronics', value: 'Electronics' },
-    { label: 'Mechanical', value: 'Mechanical' },
+    { label: 'Mechanical Engineering', value: 'Mechanical Engineering' },
     { label: 'Civil', value: 'Civil' },
   ];
 
@@ -83,6 +87,19 @@ const Profile = () => {
             <div className="bg-accent/5 border border-accent/20 rounded-[2rem] p-8">
                 <h4 className="font-bold text-accent mb-2">Student Status</h4>
                 <p className="text-sm text-foreground/70 leading-relaxed">Your year and branch help us personalize your feed and connect you with relevant study groups.</p>
+            </div>
+
+            <div className="bg-surface border border-border rounded-[2rem] p-8 shadow-xl">
+                <h4 className="font-bold text-foreground mb-4">App Preference</h4>
+                <div className="flex items-center justify-between">
+                    <div className="flex flex-col">
+                        <span className="text-sm font-bold text-foreground">Theme Mode</span>
+                        <span className="text-xs text-muted">
+                            {themeMode === 'system' ? 'System (Default)' : themeMode === 'dark' ? 'Always Dark' : 'Always Light'}
+                        </span>
+                    </div>
+                    <DarkModeToggle />
+                </div>
             </div>
         </div>
 

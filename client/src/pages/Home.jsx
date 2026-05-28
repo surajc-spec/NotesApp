@@ -21,7 +21,7 @@ const Home = () => {
     setLoading(true);
     try {
       const normalizedSubject = subjectFilter === 'All' ? 'All' : normalizeSubject(subjectFilter);
-      const res = await api.get(`/notes?subject=${encodeURIComponent(normalizedSubject)}`);
+      const res = await api.get(`/notes?subject=${encodeURIComponent(normalizedSubject)}&_t=${Date.now()}`);
       const data = res.data?.data || res.data;
       
       // Safety check: If backend returns an array, group it here
@@ -52,7 +52,7 @@ const Home = () => {
     }
     setLoading(true);
     try {
-      const res = await api.get(`/notes/search?q=${search}`);
+      const res = await api.get(`/notes/search?q=${search}&_t=${Date.now()}`);
       // Search might not return grouped data by default from backend search route,
       // let's ensure we group it if it's an array
       const data = res.data;

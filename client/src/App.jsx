@@ -1,4 +1,7 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
+import { BookOpen, Download, Monitor } from 'lucide-react';
 
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -24,14 +27,129 @@ import AboutUs from './pages/AboutUs';
 import ContactUs from './pages/ContactUs';
 import TermsConditions from './pages/TermsConditions';
 
+const appDownloadUrl = import.meta.env.VITE_ANDROID_APK_URL || '/noteshare.apk';
+
+const isNativeRuntime = () => {
+  if (Capacitor.isNativePlatform()) return true;
+  return window.Capacitor?.isNativePlatform?.() === true;
+};
+
+const isMobileBrowser = () => {
+  if (isNativeRuntime()) return false;
+
+  const userAgent = navigator.userAgent || '';
+  const uaDataMobile = navigator.userAgentData?.mobile === true;
+  const mobileUa = /Android|iPhone|iPad|iPod|IEMobile|Opera Mini|Mobile|Silk/i.test(userAgent);
+  const isIPad = /Macintosh/i.test(userAgent) && navigator.maxTouchPoints > 1;
+
+  return uaDataMobile || mobileUa || isIPad;
+};
+
+const MobileBrowserBlock = () => (
+  <main className="mobile-block-screen min-h-[100dvh] bg-[#06110f] px-5 py-8 text-white">
+    <div className="mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-md flex-col justify-center">
+      <div className="mb-8 flex items-center gap-3">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent text-accent-foreground shadow-lg shadow-accent/20">
+          <BookOpen size={28} />
+        </div>
+        <div>
+          <p className="text-sm font-bold uppercase tracking-[0.24em] text-accent">NoteShare</p>
+          <h1 className="text-3xl font-bold leading-tight">Use the app for mobile reading</h1>
+        </div>
+      </div>
+
+      <div className="rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-black/40 backdrop-blur">
+        <img src="/favicon2.png" alt="NoteShare" className="mb-6 h-16 w-16 rounded-2xl bg-white/5 p-3" />
+        <p className="text-lg font-semibold text-white">Mobile browser access is limited for protected previews.</p>
+        <p className="mt-3 text-sm leading-6 text-white/68">
+          Download the Android app for the secure reader experience, or open NoteShare on a laptop or desktop.
+        </p>
+
+        <a
+          href={appDownloadUrl}
+          className="mt-7 flex min-h-14 w-full items-center justify-center gap-3 rounded-field bg-accent px-5 py-4 text-base font-bold text-accent-foreground shadow-lg shadow-accent/20"
+        >
+          <Download size={20} />
+          Download App
+        </a>
+
+        <div className="mt-4 flex items-center gap-3 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-white/72">
+          <Monitor className="shrink-0 text-accent" size={20} />
+          <span>Already on a laptop or desktop? Open noteshare.online there for the full website.</span>
+        </div>
+      </div>
+    </div>
+  </main>
+);
+
+const AppBackButtonHandler = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const originalHandler = window.__noteshareHandleAndroidBack;
+
+    window.__noteshareHandleAndroidBack = () => {
+      if (originalHandler) {
+        const handled = originalHandler();
+        if (handled) return true;
+      }
+
+      const rootPaths = ['/', '/notes', '/login', '/register', '/dashboard', '/questionpapers'];
+      const currentPath = location.pathname.toLowerCase();
+
+      if (rootPaths.includes(currentPath)) {
+        return 'exit';
+      }
+
+      navigate(-1);
+      return true;
+    };
+
+    return () => {
+      window.__noteshareHandleAndroidBack = originalHandler;
+    };
+  }, [location, navigate]);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    let sub;
+
+    const setupBackButton = async () => {
+      try {
+        const { App: CapApp } = await import('@capacitor/app');
+        sub = await CapApp.addListener('backButton', () => {
+          if (window.__noteshareHandleAndroidBack) {
+            const result = window.__noteshareHandleAndroidBack();
+            if (result === 'exit') {
+              CapApp.exitApp();
+            }
+          }
+        });
+      } catch (e) {
+        console.warn('Capacitor App plugin not available:', e.message);
+      }
+    };
+
+    setupBackButton();
+
+    return () => {
+      if (sub) {
+        sub.remove();
+      }
+    };
+  }, []);
+
+  return null;
+};
+
 function App() {
 
   const isAdminRoute =
     window.location.pathname.toLowerCase() === '/dhoom';
 
-  const isMobile =
-    navigator.maxTouchPoints > 1 &&
-    window.innerWidth < 1024;
+  const isNativeApp = isNativeRuntime();
 
   if (isAdminRoute) {
     return (
@@ -44,28 +162,14 @@ function App() {
     );
   }
 
-  if (isMobile) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-
-        <div className="text-center">
-
-          <h1 className="text-white text-5xl mb-5">
-            🖥 Open on Laptop / PC
-          </h1>
-
-          <p className="text-gray-400">
-            NoteShare is available only on desktop devices.
-          </p>
-
-        </div>
-
-      </div>
-    );
+  if (isMobileBrowser()) {
+    return <MobileBrowserBlock />;
   }
+
 
   return (
     <Router>
+      <AppBackButtonHandler />
 
       <SecurityDeterrents />
 
@@ -73,7 +177,7 @@ function App() {
 
       <Navbar />
 
-      <div className="pt-24 min-h-screen flex flex-col justify-between">
+      <div className={`min-h-screen flex flex-col justify-between ${isNativeApp ? 'noteshare-native' : 'pt-24'}`}>
 
         <div className="max-w-7xl mx-auto px-4 flex-1 w-full">
 

@@ -7,6 +7,7 @@ const {
 normalizeSubject
 } =
 require('../utils/subjectUtils');
+const { normalizeBranch, normalizeYear } = require('../utils/normalizationUtils');
 
 const {
 protect,
@@ -63,30 +64,32 @@ user.id||
 user._id
 );
 
-const getBaseNotesQuery =
-(user)=>({
+const getBaseNotesQuery = (user) => {
+  const normBranch = normalizeBranch(user.branch);
+  const normYear = normalizeYear(user.year);
 
-isDeleted:{
-$ne:true
-},
-
-branch:
-user.branch,
-
-year:
-user.year,
-
-$or:[
-{
-isPublic:true
-},
-{
-uploader:
-getUserId(user)
-}
-]
-
-});
+  return {
+    isDeleted: { $ne: true },
+    $and: [
+      {
+        $or: [
+          { branch: normBranch },
+          { branch: { $regex: new RegExp(`^${escapeRegex(user.branch)}$`, 'i') } }
+        ]
+      },
+      {
+        $or: [
+          { year: normYear },
+          { year: { $regex: new RegExp(`^${escapeRegex(user.year)}$`, 'i') } }
+        ]
+      }
+    ],
+    $or: [
+      { isPublic: true },
+      { uploader: getUserId(user) }
+    ]
+  };
+};
 
 const groupNotesBySubject =
 (notes)=>
@@ -97,8 +100,7 @@ const safeNote =
 toSafeNote(n);
 
 const s =
-safeNote.subject||
-'OTHER';
+String(safeNote.subject||'OTHER').toUpperCase();
 
 if(
 !acc[s]
@@ -205,10 +207,10 @@ description:
 req.body.description,
 
 branch:
-req.user.branch,
+normalizeBranch(req.user.branch),
 
 year:
-req.user.year,
+normalizeYear(req.user.year),
 
 uploader:
 req.user.id,
@@ -322,7 +324,7 @@ req.query.subject
 'All';
 
 const key=
-`noteshare:notes:${req.user.id}:${subject}:${page}:${limit||'all'}`;
+`noteshare:notes:${req.user.id}:${req.user.branch}:${req.user.year}:${subject}:${page}:${limit||'all'}`;
 
 const cacheStart =
 process.hrtime.bigint();
@@ -402,7 +404,7 @@ subject!=='All'
 ){
 
 query.subjectKey=
-subject;
+{ $regex: new RegExp(`^${escapeRegex(subject)}$`, 'i') };
 
 }
 

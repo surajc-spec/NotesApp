@@ -1,6 +1,7 @@
 # Node
 node_modules/
 npm-debug.log
+.npm-cache/
 
 # Environment variables
 .env
@@ -12,6 +13,7 @@ dist/
 build/
 client/dist/
 .codex-backups/
+.android-sdk/
 
 # Server uploads
 server/uploads/
