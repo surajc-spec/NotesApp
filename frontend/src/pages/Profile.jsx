@@ -198,7 +198,7 @@ const Profile = () => {
             <div className="w-full pt-2 space-y-2">
               <Link
                 to="/notes"
-                className="w-full h-11 px-4 bg-primary hover:bg-emerald-400 text-primary-foreground font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(54,215,157,0.35)]"
+                className="w-full h-11 px-4 bg-primary hover:bg-emerald-400 text-primary-foreground font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2"
               >
                 <BookOpen className="w-4 h-4" />
                 <span>View Notes for My Branch</span>
@@ -312,7 +312,7 @@ const Profile = () => {
               <button
                 type="submit"
                 disabled={saving}
-                className="w-full h-[50px] text-base font-bold text-primary-foreground bg-primary hover:bg-emerald-400 rounded-btn transition-all duration-200 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_20px_rgba(54,215,157,0.35)] mt-8"
+                className="w-full h-[50px] text-base font-bold text-primary-foreground bg-primary hover:bg-emerald-400 rounded-btn transition-all duration-200 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed mt-8"
               >
                 {saving ? (
                   <>

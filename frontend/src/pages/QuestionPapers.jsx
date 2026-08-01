@@ -160,7 +160,7 @@ const QuestionPapers = () => {
             <button
               type="button"
               onClick={() => navigate('/notes')}
-              className="w-full sm:w-auto h-[46px] px-5 bg-primary hover:bg-emerald-400 text-primary-foreground font-bold text-sm rounded-btn transition-all duration-200 flex items-center justify-center gap-2 hover:scale-[1.03] active:scale-[0.97] shadow-[0_4px_20px_rgba(54,215,157,0.35)] shrink-0"
+              className="w-full sm:w-auto h-[46px] px-5 bg-primary hover:bg-emerald-400 text-primary-foreground font-bold text-sm rounded-btn transition-all duration-200 flex items-center justify-center gap-2 hover:scale-[1.03] active:scale-[0.97] shrink-0"
             >
               <BookOpen className="w-4 h-4 stroke-[2.5]" />
               <span>All Notes</span>

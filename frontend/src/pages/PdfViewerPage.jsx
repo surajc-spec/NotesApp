@@ -364,7 +364,7 @@ const PdfViewerPage = () => {
             <button
               type="button"
               onClick={toggleFullscreen}
-              className="h-10 px-5 bg-primary text-primary-foreground font-bold text-xs rounded-xl shadow-[0_4px_20px_rgba(54,215,157,0.35)] hover:bg-emerald-400 transition-all flex items-center gap-2 active:scale-95 shrink-0"
+              className="h-10 px-5 bg-primary text-primary-foreground font-bold text-xs rounded-xl hover:bg-emerald-400 transition-all flex items-center gap-2 active:scale-95 shrink-0"
             >
               <Maximize className="w-4 h-4 stroke-[2.5]" />
               <span>Fullscreen View</span>

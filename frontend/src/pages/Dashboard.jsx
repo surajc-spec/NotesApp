@@ -438,7 +438,7 @@ const Dashboard = () => {
             onClick={() => { setActiveTab('notes'); setMessage({ type: '', text: '' }); }}
             className={`h-[44px] px-6 text-sm font-bold rounded-btn transition-all duration-200 flex items-center gap-2 whitespace-nowrap ${
               activeTab === 'notes'
-                ? 'bg-primary text-primary-foreground shadow-[0_4px_20px_rgba(54,215,157,0.35)]'
+                ? 'bg-primary text-primary-foreground'
                 : 'bg-light-surface-secondary dark:bg-dark-surface-secondary text-light-muted dark:text-dark-muted hover:text-light-foreground dark:hover:text-dark-foreground border border-light-border dark:border-dark-border'
             }`}
           >
@@ -451,7 +451,7 @@ const Dashboard = () => {
             onClick={() => { setActiveTab('question-papers'); setMessage({ type: '', text: '' }); }}
             className={`h-[44px] px-6 text-sm font-bold rounded-btn transition-all duration-200 flex items-center gap-2 whitespace-nowrap ${
               activeTab === 'question-papers'
-                ? 'bg-primary text-primary-foreground shadow-[0_4px_20px_rgba(54,215,157,0.35)]'
+                ? 'bg-primary text-primary-foreground'
                 : 'bg-light-surface-secondary dark:bg-dark-surface-secondary text-light-muted dark:text-dark-muted hover:text-light-foreground dark:hover:text-dark-foreground border border-light-border dark:border-dark-border'
             }`}
           >
@@ -464,7 +464,7 @@ const Dashboard = () => {
             onClick={() => { setActiveTab('users'); fetchUsersData(); }}
             className={`h-[44px] px-6 text-sm font-bold rounded-btn transition-all duration-200 flex items-center gap-2 whitespace-nowrap ${
               activeTab === 'users'
-                ? 'bg-primary text-primary-foreground shadow-[0_4px_20px_rgba(54,215,157,0.35)]'
+                ? 'bg-primary text-primary-foreground'
                 : 'bg-light-surface-secondary dark:bg-dark-surface-secondary text-light-muted dark:text-dark-muted hover:text-light-foreground dark:hover:text-dark-foreground border border-light-border dark:border-dark-border'
             }`}
           >
@@ -477,7 +477,7 @@ const Dashboard = () => {
             onClick={() => { setActiveTab('manage'); setMessage({ type: '', text: '' }); fetchManageData(); }}
             className={`h-[44px] px-6 text-sm font-bold rounded-btn transition-all duration-200 flex items-center gap-2 whitespace-nowrap ${
               activeTab === 'manage'
-                ? 'bg-primary text-primary-foreground shadow-[0_4px_20px_rgba(54,215,157,0.35)]'
+                ? 'bg-primary text-primary-foreground'
                 : 'bg-light-surface-secondary dark:bg-dark-surface-secondary text-light-muted dark:text-dark-muted hover:text-light-foreground dark:hover:text-dark-foreground border border-light-border dark:border-dark-border'
             }`}
           >
@@ -626,7 +626,7 @@ const Dashboard = () => {
                     onClick={() => setFormData(prev => ({ ...prev, examType: 'insem' }))}
                     className={`h-[50px] px-5 rounded-field border text-sm font-bold transition-all duration-200 flex items-center justify-center gap-3 cursor-pointer ${
                       formData.examType === 'insem'
-                        ? 'bg-primary/15 border-primary text-primary shadow-[0_0_15px_rgba(54,215,157,0.2)]'
+                        ? 'bg-primary/15 border-primary text-primary'
                         : 'bg-light-surface-secondary dark:bg-dark-surface-secondary border-light-border dark:border-dark-border text-light-muted dark:text-dark-muted hover:border-primary/40 hover:text-light-foreground dark:hover:text-dark-foreground'
                     }`}
                   >
@@ -643,7 +643,7 @@ const Dashboard = () => {
                     onClick={() => setFormData(prev => ({ ...prev, examType: 'endsem' }))}
                     className={`h-[50px] px-5 rounded-field border text-sm font-bold transition-all duration-200 flex items-center justify-center gap-3 cursor-pointer ${
                       formData.examType === 'endsem'
-                        ? 'bg-primary/15 border-primary text-primary shadow-[0_0_15px_rgba(54,215,157,0.2)]'
+                        ? 'bg-primary/15 border-primary text-primary'
                         : 'bg-light-surface-secondary dark:bg-dark-surface-secondary border-light-border dark:border-dark-border text-light-muted dark:text-dark-muted hover:border-primary/40 hover:text-light-foreground dark:hover:text-dark-foreground'
                     }`}
                   >
@@ -696,7 +696,7 @@ const Dashboard = () => {
               <button
                 type="submit"
                 disabled={uploading}
-                className="w-full h-[50px] text-base font-bold text-primary-foreground bg-primary hover:bg-emerald-400 rounded-btn transition-all duration-200 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_20px_rgba(54,215,157,0.35)] mt-6"
+                className="w-full h-[50px] text-base font-bold text-primary-foreground bg-primary hover:bg-emerald-400 rounded-btn transition-all duration-200 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed mt-6"
               >
                 {uploading ? (
                   <>

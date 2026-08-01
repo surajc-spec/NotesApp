@@ -49,7 +49,7 @@ const Hero = () => {
                   {/* Guest Button 1: Get Started -> /register */}
                   <Link
                     to="/register"
-                    className="h-[50px] px-8 text-base font-bold text-primary-foreground bg-primary hover:bg-emerald-400 rounded-btn transition-all duration-200 ease-out flex items-center justify-center gap-2.5 hover:scale-[1.04] active:scale-[0.96] shadow-[0_4px_20px_rgba(54,215,157,0.35)]"
+                    className="h-[50px] px-8 text-base font-bold text-primary-foreground bg-primary hover:bg-emerald-400 rounded-btn transition-all duration-200 ease-out flex items-center justify-center gap-2.5 hover:scale-[1.04] active:scale-[0.96]"
                   >
                     <span>Get Started</span>
                     <ArrowRight className="w-5 h-5 stroke-[2.5]" />
@@ -69,7 +69,7 @@ const Hero = () => {
                   {/* Logged-in Button 1: Browse Library -> /notes */}
                   <Link
                     to="/notes"
-                    className="h-[50px] px-8 text-base font-bold text-primary-foreground bg-primary hover:bg-emerald-400 rounded-btn transition-all duration-200 ease-out flex items-center justify-center gap-2.5 hover:scale-[1.04] active:scale-[0.96] shadow-[0_4px_20px_rgba(54,215,157,0.35)]"
+                    className="h-[50px] px-8 text-base font-bold text-primary-foreground bg-primary hover:bg-emerald-400 rounded-btn transition-all duration-200 ease-out flex items-center justify-center gap-2.5 hover:scale-[1.04] active:scale-[0.96]"
                   >
                     <BookOpen className="w-5 h-5 stroke-[2.5]" />
                     <span>Browse Library</span>

@@ -131,7 +131,7 @@ const Navbar = () => {
                 {/* Primary Filled CTA Button */}
                 <NavLink
                   to="/register"
-                  className="h-[44px] px-6 text-sm font-bold text-primary-foreground bg-primary hover:bg-emerald-400 rounded-btn transition-all duration-200 ease-out flex items-center justify-center gap-2 hover:scale-[1.04] active:scale-[0.96] shadow-[0_4px_20px_rgba(54,215,157,0.35)]"
+                  className="h-[44px] px-6 text-sm font-bold text-primary-foreground bg-primary hover:bg-emerald-400 rounded-btn transition-all duration-200 ease-out flex items-center justify-center gap-2 hover:scale-[1.04] active:scale-[0.96]"
                 >
                   <UserPlus className="w-4 h-4 stroke-[2.5]" />
                   <span>Sign Up</span>
@@ -216,7 +216,7 @@ const Navbar = () => {
                   <NavLink
                     to="/register"
                     onClick={closeMobileMenu}
-                    className="h-[48px] px-5 text-base font-bold text-primary-foreground bg-primary hover:bg-emerald-400 rounded-btn transition-all duration-200 flex items-center justify-center gap-3 mt-1 active:scale-[0.98] shadow-[0_4px_20px_rgba(54,215,157,0.35)]"
+                    className="h-[48px] px-5 text-base font-bold text-primary-foreground bg-primary hover:bg-emerald-400 rounded-btn transition-all duration-200 flex items-center justify-center gap-3 mt-1 active:scale-[0.98]"
                   >
                     <UserPlus className="w-5 h-5 stroke-[2.5]" />
                     <span>Sign Up</span>
