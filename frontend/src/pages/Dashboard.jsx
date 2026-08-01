@@ -5,9 +5,7 @@ import {
   Upload, 
   FileText, 
   GraduationCap, 
-  Users, 
   Trash2, 
-  PlusCircle, 
   CheckCircle2, 
   AlertCircle, 
   Loader2, 
@@ -64,7 +62,7 @@ const Dashboard = () => {
   const [deleteLoadingId, setDeleteLoadingId] = useState(null);
   const [searchManage, setSearchManage] = useState('');
 
-  // Upload Form State (Shared format)
+  // Upload Form State
   const [formData, setFormData] = useState({
     title: '',
     subject: '',
@@ -88,13 +86,16 @@ const Dashboard = () => {
   const fetchManageData = async () => {
     setManageLoading(true);
     try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
       // Fetch Notes
-      const notesRes = await fetch('/api/notes/view-notes?limit=50', { credentials: 'include' });
+      const notesRes = await fetch('/api/notes/view-notes?limit=50', { headers, credentials: 'include' });
       const notesData = await notesRes.json();
       const notesList = notesData.notes || [];
 
       // Fetch Question Papers
-      const papersRes = await fetch('/api/question-papers/view-question-papers?limit=50', { credentials: 'include' });
+      const papersRes = await fetch('/api/question-papers/view-question-papers?limit=50', { headers, credentials: 'include' });
       const papersData = await papersRes.json();
       const papersList = papersData.questionPapers || [];
 
@@ -154,6 +155,14 @@ const Dashboard = () => {
     try {
       const semNum = Number(semester);
       const yearStr = getYearFromSem(semNum);
+      const token = localStorage.getItem('token');
+
+      const authHeaders = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        authHeaders['Authorization'] = `Bearer ${token}`;
+      }
 
       // Endpoint paths
       const uploadUrlEndpoint = isQuestionPaper 
@@ -167,7 +176,7 @@ const Dashboard = () => {
       // 1. Get Upload Presigned URL from Cloudflare R2
       const urlRes = await fetch(uploadUrlEndpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders,
         credentials: 'include',
         body: JSON.stringify({
           fileName: selectedFile.name,
@@ -179,24 +188,29 @@ const Dashboard = () => {
       const urlData = await urlRes.json();
 
       if (!urlRes.ok || !urlData.uploadUrl) {
-        throw new Error(urlData.message || 'Failed to get upload authorization URL.');
+        throw new Error(urlData.message || 'Failed to generate presigned upload URL.');
       }
 
       // 2. Upload file directly to R2 bucket
-      const r2Res = await fetch(urlData.uploadUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': selectedFile.type },
-        body: selectedFile,
-      });
+      let r2Res;
+      try {
+        r2Res = await fetch(urlData.uploadUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': selectedFile.type },
+          body: selectedFile,
+        });
+      } catch (r2Err) {
+        throw new Error('Direct upload to storage server failed. Please ensure Cloudflare R2 bucket CORS is allowed.');
+      }
 
       if (!r2Res.ok) {
-        throw new Error('Failed to upload PDF file to storage server.');
+        throw new Error(`Upload to storage server failed with status ${r2Res.status}.`);
       }
 
       // 3. Save Record in MongoDB Database
       const createRes = await fetch(createEndpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders,
         credentials: 'include',
         body: JSON.stringify({
           title,
@@ -250,8 +264,12 @@ const Dashboard = () => {
     setDeleteLoadingId(id);
 
     try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
       const res = await fetch(`/api/notes/${id}`, {
         method: 'DELETE',
+        headers,
         credentials: 'include',
       });
 
@@ -275,8 +293,12 @@ const Dashboard = () => {
     setDeleteLoadingId(id);
 
     try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
       const res = await fetch(`/api/question-papers/${id}`, {
         method: 'DELETE',
+        headers,
         credentials: 'include',
       });
 
