@@ -7,6 +7,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import Home from './pages/Home';
 import Notes from './pages/Notes';
 import QuestionPapers from './pages/QuestionPapers';
+import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Register from './pages/Register';
 
@@ -53,7 +54,7 @@ const AppContent = () => {
           <Route path="/" element={<Home />} />
           <Route path="/notes" element={<Notes />} />
           <Route path="/question-papers" element={<QuestionPapers />} />
-          <Route path="/dashboard" element={<DummyPage title="Admin Dashboard" />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<DummyPage title="User Profile" />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
