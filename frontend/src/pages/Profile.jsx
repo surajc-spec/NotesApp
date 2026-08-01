@@ -3,17 +3,11 @@ import { useNavigate, Link } from 'react-router-dom';
 import { 
   User, 
   Mail, 
-  GraduationCap, 
-  BookOpen, 
   CheckCircle2, 
   AlertCircle, 
   Loader2, 
   Save, 
-  Edit3,
-  Calendar,
-  Layers,
-  ArrowRight,
-  FileCheck2
+  ArrowRight
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import CustomSelect from '../components/CustomSelect';
@@ -68,7 +62,7 @@ const Profile = () => {
   if (!user) {
     return (
       <div className="min-h-[calc(100vh-72px)] flex items-center justify-center p-6 bg-light-background dark:bg-dark-background">
-        <div className="bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border rounded-2xl p-10 max-w-md text-center shadow-xl space-y-4">
+        <div className="bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border rounded-2xl p-8 sm:p-10 max-w-md text-center shadow-xl space-y-4">
           <h2 className="text-2xl font-bold text-light-foreground dark:text-dark-foreground">Please Sign In</h2>
           <p className="text-sm text-light-muted dark:text-dark-muted">
             You need to be logged in to view and manage your profile.
@@ -120,7 +114,6 @@ const Profile = () => {
         throw new Error(data.message || 'Failed to update profile.');
       }
 
-      // Sync user state in AuthContext & LocalStorage
       updateUser(data.user);
 
       setMessage({
@@ -136,31 +129,31 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-72px)] bg-light-background dark:bg-dark-background text-light-foreground dark:text-dark-foreground pb-20 transition-colors duration-300">
-      <div className="max-w-4xl mx-auto px-6 sm:px-8 pt-10">
+    <div className="min-h-[calc(100vh-72px)] bg-light-background dark:bg-dark-background text-light-foreground dark:text-dark-foreground py-8 sm:py-12 transition-colors duration-300">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* PAGE HEADER */}
-        <div className="mb-10 text-center sm:text-left">
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-light-foreground dark:text-dark-foreground font-sans">
+        <div className="mb-8 text-center sm:text-left">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-light-foreground dark:text-dark-foreground font-sans">
             User Profile &amp; Preferences
           </h1>
-          <p className="text-sm text-light-muted dark:text-dark-muted mt-1 font-sans">
+          <p className="text-xs sm:text-sm text-light-muted dark:text-dark-muted mt-1 font-sans">
             Manage your branch, academic semester, and exam preferences
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
           
           {/* LEFT COLUMN: User Card Overview */}
-          <div className="lg:col-span-5 bg-light-surface/90 dark:bg-dark-surface/90 backdrop-blur-md border border-light-border dark:border-dark-border rounded-2xl p-8 shadow-xl flex flex-col items-center text-center space-y-6">
+          <div className="lg:col-span-5 bg-light-surface/90 dark:bg-dark-surface/90 backdrop-blur-md border border-light-border dark:border-dark-border rounded-2xl p-6 sm:p-8 shadow-xl flex flex-col items-center text-center space-y-5">
             
             {/* Avatar Circle */}
-            <div className="w-24 h-24 rounded-full bg-primary/10 border-2 border-primary/30 flex items-center justify-center text-primary shadow-inner">
-              <User className="w-12 h-12 stroke-[2]" />
+            <div className="w-20 h-20 rounded-full bg-primary/10 border-2 border-primary/30 flex items-center justify-center text-primary shadow-inner">
+              <User className="w-10 h-10 stroke-[2]" />
             </div>
 
             <div>
-              <h2 className="text-2xl font-bold text-light-foreground dark:text-dark-foreground font-sans">
+              <h2 className="text-xl font-bold text-light-foreground dark:text-dark-foreground font-sans">
                 {user.name}
               </h2>
               <div className="flex items-center justify-center gap-1.5 text-xs text-light-muted dark:text-dark-muted mt-1">
@@ -172,60 +165,43 @@ const Profile = () => {
             {/* Academic Badges */}
             <div className="w-full pt-4 border-t border-light-border dark:border-dark-border space-y-3">
               
-              <div className="p-3.5 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                  <Layers className="w-4 h-4" />
-                </div>
-                <div className="text-left min-w-0 flex-1">
-                  <div className="text-[10px] uppercase font-bold text-light-muted dark:text-dark-muted">Engineering Branch</div>
-                  <div className="text-sm font-bold text-light-foreground dark:text-dark-foreground truncate">
-                    {user.branch || 'Not Set'}
-                  </div>
+              <div className="p-3.5 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border text-left">
+                <div className="text-[10px] uppercase font-bold text-light-muted dark:text-dark-muted tracking-wider">Engineering Branch</div>
+                <div className="text-sm font-bold text-light-foreground dark:text-dark-foreground truncate mt-0.5">
+                  {user.branch || 'Not Set'}
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
-                  <Calendar className="w-4 h-4" />
-                </div>
-                <div className="text-left min-w-0 flex-1">
-                  <div className="text-[10px] uppercase font-bold text-light-muted dark:text-dark-muted">Academic Year &amp; Semester</div>
-                  <div className="text-sm font-bold text-light-foreground dark:text-dark-foreground">
-                    Semester {user.semester || 1} • <span className="text-primary">{user.year || getYearFromSem(user.semester)}</span>
-                  </div>
+              <div className="p-3.5 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border text-left">
+                <div className="text-[10px] uppercase font-bold text-light-muted dark:text-dark-muted tracking-wider">Academic Year &amp; Semester</div>
+                <div className="text-sm font-bold text-light-foreground dark:text-dark-foreground mt-0.5">
+                  Semester {user.semester || 1} • <span className="text-primary">{user.year || getYearFromSem(user.semester)}</span>
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0">
-                  <FileCheck2 className="w-4 h-4" />
-                </div>
-                <div className="text-left min-w-0 flex-1">
-                  <div className="text-[10px] uppercase font-bold text-light-muted dark:text-dark-muted">Exam Type Preference</div>
-                  <div className="text-sm font-bold text-primary">
-                    {user.examType === 'insem' ? 'In-Sem (Mid Semester)' : user.examType === 'endsem' ? 'End-Sem (Final Semester)' : 'All Exams'}
-                  </div>
+              <div className="p-3.5 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border text-left">
+                <div className="text-[10px] uppercase font-bold text-light-muted dark:text-dark-muted tracking-wider">Exam Type Preference</div>
+                <div className="text-sm font-bold text-primary mt-0.5">
+                  {user.examType === 'insem' ? 'In-Sem (Mid Semester)' : user.examType === 'endsem' ? 'End-Sem (Final Semester)' : 'All Exams'}
                 </div>
               </div>
 
             </div>
 
             {/* Quick Action Links */}
-            <div className="w-full pt-2 space-y-2">
+            <div className="w-full pt-2 space-y-2.5">
               <Link
                 to="/notes"
-                className="w-full h-11 px-4 bg-primary hover:bg-emerald-400 text-primary-foreground font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2"
+                className="w-full h-11 px-4 bg-primary hover:bg-emerald-400 text-primary-foreground font-bold text-xs rounded-xl transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.98]"
               >
-                <BookOpen className="w-4 h-4" />
                 <span>View Notes for My Branch</span>
                 <ArrowRight className="w-4 h-4 ml-auto" />
               </Link>
 
               <Link
                 to="/question-papers"
-                className="w-full h-11 px-4 bg-light-surface-secondary hover:bg-light-surface-tertiary dark:bg-dark-surface-secondary dark:hover:bg-dark-surface-tertiary text-light-foreground dark:text-dark-foreground font-bold text-xs rounded-xl border border-light-border dark:border-dark-border transition-all flex items-center justify-center gap-2"
+                className="w-full h-11 px-4 bg-light-surface-secondary hover:bg-light-surface-tertiary dark:bg-dark-surface-secondary dark:hover:bg-dark-surface-tertiary text-light-foreground dark:text-dark-foreground font-bold text-xs rounded-xl border border-light-border dark:border-dark-border transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.98]"
               >
-                <GraduationCap className="w-4 h-4 text-emerald-400" />
                 <span>View Question Papers</span>
                 <ArrowRight className="w-4 h-4 ml-auto" />
               </Link>
@@ -234,20 +210,15 @@ const Profile = () => {
           </div>
 
           {/* RIGHT COLUMN: Edit Academic Profile Form */}
-          <div className="lg:col-span-7 bg-light-surface/90 dark:bg-dark-surface/90 backdrop-blur-md border border-light-border dark:border-dark-border rounded-2xl p-8 sm:p-10 shadow-xl">
+          <div className="lg:col-span-7 bg-light-surface/90 dark:bg-dark-surface/90 backdrop-blur-md border border-light-border dark:border-dark-border rounded-2xl p-6 sm:p-8 shadow-xl">
             
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                <Edit3 className="w-5 h-5" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-light-foreground dark:text-dark-foreground">
-                  Update Academic Details
-                </h2>
-                <p className="text-xs text-light-muted dark:text-dark-muted mt-0.5">
-                  Customize branch, semester, and exam type to filter your notes &amp; papers
-                </p>
-              </div>
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-light-foreground dark:text-dark-foreground">
+                Update Academic Details
+              </h2>
+              <p className="text-xs text-light-muted dark:text-dark-muted mt-1">
+                Customize branch, semester, and exam type to filter your notes &amp; papers
+              </p>
             </div>
 
             {/* Alert Message */}
@@ -262,15 +233,15 @@ const Profile = () => {
                 ) : (
                   <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
                 )}
-                <span>{message.text}</span>
+                <span className="text-xs sm:text-sm">{message.text}</span>
               </div>
             )}
 
-            <form onSubmit={handleSave} className="space-y-6">
+            <form onSubmit={handleSave} className="space-y-5">
               
               {/* Full Name */}
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-light-muted dark:text-dark-muted mb-1.5">
                   Full Name
                 </label>
                 <input
@@ -278,13 +249,13 @@ const Profile = () => {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full h-[50px] px-5 py-3 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-field text-sm text-light-foreground dark:text-dark-foreground placeholder-light-muted dark:placeholder-dark-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                  className="w-full h-[46px] px-4 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-field text-sm text-light-foreground dark:text-dark-foreground placeholder-light-muted dark:placeholder-dark-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                 />
               </div>
 
               {/* Engineering Branch */}
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-light-muted dark:text-dark-muted mb-1.5">
                   Engineering Branch
                 </label>
                 <CustomSelect
@@ -300,7 +271,7 @@ const Profile = () => {
 
               {/* Semester Select */}
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-light-muted dark:text-dark-muted mb-1.5">
                   Current Semester
                 </label>
                 <CustomSelect
@@ -316,15 +287,15 @@ const Profile = () => {
 
               {/* Exam Type Preference Toggle (In-Sem / End-Sem / All) */}
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-light-muted dark:text-dark-muted mb-1.5">
                   Target Exam Type Preference
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   
                   <button
                     type="button"
                     onClick={() => setExamType('insem')}
-                    className={`h-[48px] px-4 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                    className={`h-[46px] px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                       examType === 'insem'
                         ? 'bg-primary/15 border-primary text-primary'
                         : 'bg-light-surface-secondary dark:bg-dark-surface-secondary border-light-border dark:border-dark-border text-light-muted dark:text-dark-muted hover:border-primary/40'
@@ -341,7 +312,7 @@ const Profile = () => {
                   <button
                     type="button"
                     onClick={() => setExamType('endsem')}
-                    className={`h-[48px] px-4 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                    className={`h-[46px] px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                       examType === 'endsem'
                         ? 'bg-primary/15 border-primary text-primary'
                         : 'bg-light-surface-secondary dark:bg-dark-surface-secondary border-light-border dark:border-dark-border text-light-muted dark:text-dark-muted hover:border-primary/40'
@@ -358,7 +329,7 @@ const Profile = () => {
                   <button
                     type="button"
                     onClick={() => setExamType('all')}
-                    className={`h-[48px] px-4 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                    className={`h-[46px] px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                       examType === 'all'
                         ? 'bg-primary/15 border-primary text-primary'
                         : 'bg-light-surface-secondary dark:bg-dark-surface-secondary border-light-border dark:border-dark-border text-light-muted dark:text-dark-muted hover:border-primary/40'
@@ -375,30 +346,26 @@ const Profile = () => {
                 </div>
               </div>
 
-              {/* Automatically Computed Year Preview */}
-              <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-between text-xs">
-                <span className="font-medium text-light-foreground dark:text-dark-foreground">
-                  Calculated Academic Year:
-                </span>
-                <span className="font-extrabold text-primary text-sm">
-                  {calculatedYear}
-                </span>
+              {/* Automatically Computed Year Banner */}
+              <div className="p-3.5 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-between text-xs font-semibold text-light-foreground dark:text-dark-foreground">
+                <span>Calculated Academic Year:</span>
+                <span className="font-extrabold text-primary text-sm">{calculatedYear}</span>
               </div>
 
               {/* Save Button */}
               <button
                 type="submit"
                 disabled={saving}
-                className="w-full h-[50px] text-base font-bold text-primary-foreground bg-primary hover:bg-emerald-400 rounded-btn transition-all duration-200 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed mt-8"
+                className="w-full h-[48px] text-sm font-bold text-primary-foreground bg-primary hover:bg-emerald-400 rounded-btn transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed mt-6"
               >
                 {saving ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin" />
                     <span>Saving Profile...</span>
                   </>
                 ) : (
                   <>
-                    <Save className="w-5 h-5 stroke-[2.5]" />
+                    <Save className="w-4 h-4 stroke-[2.5]" />
                     <span>Update Academic Profile</span>
                   </>
                 )}
