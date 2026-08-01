@@ -615,35 +615,45 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              {/* Exam Type Radio Group */}
+              {/* Exam Type Selection Cards */}
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2 font-sans">
                   Exam Type
                 </label>
-                <div className="flex items-center gap-6">
-                  <label className="inline-flex items-center gap-2 cursor-pointer text-sm font-bold text-light-foreground dark:text-dark-foreground">
-                    <input
-                      type="radio"
-                      name="examType"
-                      value="insem"
-                      checked={formData.examType === 'insem'}
-                      onChange={handleInputChange}
-                      className="w-4 h-4 text-primary focus:ring-primary"
-                    />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, examType: 'insem' }))}
+                    className={`h-[50px] px-5 rounded-field border text-sm font-bold transition-all duration-200 flex items-center justify-center gap-3 cursor-pointer ${
+                      formData.examType === 'insem'
+                        ? 'bg-primary/15 border-primary text-primary shadow-[0_0_15px_rgba(54,215,157,0.2)]'
+                        : 'bg-light-surface-secondary dark:bg-dark-surface-secondary border-light-border dark:border-dark-border text-light-muted dark:text-dark-muted hover:border-primary/40 hover:text-light-foreground dark:hover:text-dark-foreground'
+                    }`}
+                  >
+                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors shrink-0 ${
+                      formData.examType === 'insem' ? 'border-primary bg-primary' : 'border-light-border dark:border-dark-border'
+                    }`}>
+                      {formData.examType === 'insem' && <div className="w-1.5 h-1.5 rounded-full bg-primary-foreground" />}
+                    </div>
                     <span>In-Sem (Mid Semester)</span>
-                  </label>
+                  </button>
 
-                  <label className="inline-flex items-center gap-2 cursor-pointer text-sm font-bold text-light-foreground dark:text-dark-foreground">
-                    <input
-                      type="radio"
-                      name="examType"
-                      value="endsem"
-                      checked={formData.examType === 'endsem'}
-                      onChange={handleInputChange}
-                      className="w-4 h-4 text-primary focus:ring-primary"
-                    />
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, examType: 'endsem' }))}
+                    className={`h-[50px] px-5 rounded-field border text-sm font-bold transition-all duration-200 flex items-center justify-center gap-3 cursor-pointer ${
+                      formData.examType === 'endsem'
+                        ? 'bg-primary/15 border-primary text-primary shadow-[0_0_15px_rgba(54,215,157,0.2)]'
+                        : 'bg-light-surface-secondary dark:bg-dark-surface-secondary border-light-border dark:border-dark-border text-light-muted dark:text-dark-muted hover:border-primary/40 hover:text-light-foreground dark:hover:text-dark-foreground'
+                    }`}
+                  >
+                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors shrink-0 ${
+                      formData.examType === 'endsem' ? 'border-primary bg-primary' : 'border-light-border dark:border-dark-border'
+                    }`}>
+                      {formData.examType === 'endsem' && <div className="w-1.5 h-1.5 rounded-full bg-primary-foreground" />}
+                    </div>
                     <span>End-Sem (Final Semester)</span>
-                  </label>
+                  </button>
                 </div>
               </div>
 
