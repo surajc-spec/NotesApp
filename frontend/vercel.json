@@ -1,7 +1,11 @@
 {
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/api/:path*",
+      "destination": "https://notesapp-pbjv.onrender.com/api/:path*"
+    },
+    {
+      "source": "/:(.*)",
       "destination": "/index.html"
     }
   ]

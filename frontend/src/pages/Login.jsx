@@ -45,7 +45,18 @@ const Login = () => {
         body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
+      let data = {};
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        try {
+          data = JSON.parse(text);
+        } catch {
+          throw new Error('Backend is waking up or starting. Please try again in a few seconds.');
+        }
+      }
 
       if (!response.ok) {
         throw new Error(data.message || 'Failed to login. Please try again.');
