@@ -12,7 +12,8 @@ import {
   Edit3,
   Calendar,
   Layers,
-  ArrowRight
+  ArrowRight,
+  FileCheck2
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import CustomSelect from '../components/CustomSelect';
@@ -50,6 +51,7 @@ const Profile = () => {
   const [name, setName] = useState(user?.name || '');
   const [branch, setBranch] = useState(user?.branch || 'Information Technology');
   const [semester, setSemester] = useState(user?.semester || 1);
+  const [examType, setExamType] = useState(user?.examType || 'insem');
 
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -59,6 +61,7 @@ const Profile = () => {
       setName(user.name || '');
       setBranch(user.branch || 'Information Technology');
       setSemester(user.semester || 1);
+      setExamType(user.examType || 'insem');
     }
   }, [user]);
 
@@ -72,7 +75,7 @@ const Profile = () => {
           </p>
           <button
             onClick={() => navigate('/login')}
-            className="w-full h-[46px] bg-primary text-primary-foreground font-bold rounded-btn transition-transform active:scale-95 shadow-md mt-4"
+            className="w-full h-[46px] bg-primary text-primary-foreground font-bold rounded-btn transition-transform active:scale-95 mt-4"
           >
             Go to Login
           </button>
@@ -107,6 +110,7 @@ const Profile = () => {
           name,
           branch,
           semester: Number(semester),
+          examType,
         }),
       });
 
@@ -121,7 +125,7 @@ const Profile = () => {
 
       setMessage({
         type: 'success',
-        text: `Academic profile updated! Your notes & question papers are now tailored to ${data.user.branch} • ${data.user.year}.`,
+        text: `Academic profile updated! Notes & question papers are now tailored to ${data.user.branch} • ${data.user.year} (${data.user.examType === 'insem' ? 'In-Sem' : data.user.examType === 'endsem' ? 'End-Sem' : 'All Exams'}).`,
       });
     } catch (err) {
       console.error(err);
@@ -141,7 +145,7 @@ const Profile = () => {
             User Profile &amp; Preferences
           </h1>
           <p className="text-sm text-light-muted dark:text-dark-muted mt-1 font-sans">
-            Manage your personal info, branch, and academic semester
+            Manage your branch, academic semester, and exam preferences
           </p>
         </div>
 
@@ -192,6 +196,18 @@ const Profile = () => {
                 </div>
               </div>
 
+              <div className="p-3.5 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0">
+                  <FileCheck2 className="w-4 h-4" />
+                </div>
+                <div className="text-left min-w-0 flex-1">
+                  <div className="text-[10px] uppercase font-bold text-light-muted dark:text-dark-muted">Exam Type Preference</div>
+                  <div className="text-sm font-bold text-primary">
+                    {user.examType === 'insem' ? 'In-Sem (Mid Semester)' : user.examType === 'endsem' ? 'End-Sem (Final Semester)' : 'All Exams'}
+                  </div>
+                </div>
+              </div>
+
             </div>
 
             {/* Quick Action Links */}
@@ -229,7 +245,7 @@ const Profile = () => {
                   Update Academic Details
                 </h2>
                 <p className="text-xs text-light-muted dark:text-dark-muted mt-0.5">
-                  Change your branch or semester to customize study recommendations
+                  Customize branch, semester, and exam type to filter your notes &amp; papers
                 </p>
               </div>
             </div>
@@ -296,6 +312,67 @@ const Profile = () => {
                   options={SEMESTER_OPTIONS}
                   placeholder="Select Semester"
                 />
+              </div>
+
+              {/* Exam Type Preference Toggle (In-Sem / End-Sem / All) */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
+                  Target Exam Type Preference
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  
+                  <button
+                    type="button"
+                    onClick={() => setExamType('insem')}
+                    className={`h-[48px] px-4 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                      examType === 'insem'
+                        ? 'bg-primary/15 border-primary text-primary'
+                        : 'bg-light-surface-secondary dark:bg-dark-surface-secondary border-light-border dark:border-dark-border text-light-muted dark:text-dark-muted hover:border-primary/40'
+                    }`}
+                  >
+                    <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${
+                      examType === 'insem' ? 'border-primary bg-primary' : 'border-light-border dark:border-dark-border'
+                    }`}>
+                      {examType === 'insem' && <div className="w-1.5 h-1.5 rounded-full bg-primary-foreground" />}
+                    </div>
+                    <span>In-Sem (Mid)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setExamType('endsem')}
+                    className={`h-[48px] px-4 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                      examType === 'endsem'
+                        ? 'bg-primary/15 border-primary text-primary'
+                        : 'bg-light-surface-secondary dark:bg-dark-surface-secondary border-light-border dark:border-dark-border text-light-muted dark:text-dark-muted hover:border-primary/40'
+                    }`}
+                  >
+                    <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${
+                      examType === 'endsem' ? 'border-primary bg-primary' : 'border-light-border dark:border-dark-border'
+                    }`}>
+                      {examType === 'endsem' && <div className="w-1.5 h-1.5 rounded-full bg-primary-foreground" />}
+                    </div>
+                    <span>End-Sem (Final)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setExamType('all')}
+                    className={`h-[48px] px-4 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                      examType === 'all'
+                        ? 'bg-primary/15 border-primary text-primary'
+                        : 'bg-light-surface-secondary dark:bg-dark-surface-secondary border-light-border dark:border-dark-border text-light-muted dark:text-dark-muted hover:border-primary/40'
+                    }`}
+                  >
+                    <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${
+                      examType === 'all' ? 'border-primary bg-primary' : 'border-light-border dark:border-dark-border'
+                    }`}>
+                      {examType === 'all' && <div className="w-1.5 h-1.5 rounded-full bg-primary-foreground" />}
+                    </div>
+                    <span>All Exams</span>
+                  </button>
+
+                </div>
               </div>
 
               {/* Automatically Computed Year Preview */}

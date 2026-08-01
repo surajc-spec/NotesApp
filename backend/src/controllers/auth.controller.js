@@ -5,7 +5,7 @@ const config = require("../config/config");
 const bcrypt = require("bcrypt");
 
 async function userRegister(req, res) {
-    const { name, email, password, semester, branch } = req.body;
+    const { name, email, password, semester, branch, examType } = req.body;
 
     if (!name || !email || !password || !branch || semester === undefined) {
         return res.status(400).json({
@@ -38,6 +38,7 @@ async function userRegister(req, res) {
         branch,
         semester: sem,
         year: getYearFromSemester(sem),
+        examType: examType || "insem",
         role: "user",
     });
 
@@ -65,6 +66,7 @@ async function userRegister(req, res) {
             branch: user.branch,
             semester: user.semester,
             year: user.year,
+            examType: user.examType || "insem",
             role: user.role,
         },
     });
@@ -119,6 +121,7 @@ async function userLogin(req, res) {
             branch: user.branch,
             semester: user.semester,
             year: user.year,
+            examType: user.examType || "insem",
             role: user.role,
         },
     });
@@ -149,11 +152,14 @@ async function getAllUsers(req, res) {
 async function updateProfile(req, res) {
     try {
         const userId = req.user.id;
-        const { branch, semester, name } = req.body;
+        const { branch, semester, name, examType } = req.body;
 
         const updateData = {};
         if (name) updateData.name = name;
         if (branch) updateData.branch = branch;
+        if (examType && ["insem", "endsem", "all"].includes(examType)) {
+            updateData.examType = examType;
+        }
 
         if (semester !== undefined && semester !== null) {
             const sem = Number(semester);
@@ -185,6 +191,7 @@ async function updateProfile(req, res) {
                 branch: updatedUser.branch,
                 semester: updatedUser.semester,
                 year: updatedUser.year,
+                examType: updatedUser.examType || "insem",
                 role: updatedUser.role,
             },
         });

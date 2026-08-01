@@ -33,7 +33,13 @@ const QuestionPapers = () => {
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const response = await fetch('/api/question-papers/view-question-papers?limit=50', {
+      const params = new URLSearchParams({ limit: '50' });
+      if (user?.branch) params.append('branch', user.branch);
+      if (user?.year) params.append('year', user.year);
+      if (user?.semester) params.append('semester', user.semester);
+      if (user?.examType && user.examType !== 'all') params.append('examType', user.examType);
+
+      const response = await fetch(`/api/question-papers/view-question-papers?${params.toString()}`, {
         method: 'GET',
         headers,
         credentials: 'include',

@@ -35,6 +35,12 @@ const userSchema = mongoose.Schema({
         required: true
     },
 
+    examType: {
+        type: String,
+        enum: ["insem", "endsem", "all"],
+        default: "insem"
+    },
+
     role: {
         type: String,
         enum: ["user", "admin"],
