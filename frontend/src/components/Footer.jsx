@@ -49,26 +49,11 @@ const Footer = () => {
                   All Study Notes
                 </Link>
               </li>
-              <li>
-                <Link 
-                  to="/dashboard" 
-                  className="hover:text-primary transition-colors duration-200 inline-block"
-                >
-                  My Uploads Dashboard
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  to="/notes" 
-                  className="hover:text-primary transition-colors duration-200 inline-block"
-                >
-                  Publish New Note
-                </Link>
-              </li>
+             
             </ul>
           </div>
 
-          {/* COLUMN 3: Company & Legal Links (Desktop 4 cols) */}
+         
           <div className="md:col-span-4 flex flex-col space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground font-sans">
               Company &amp; Legal

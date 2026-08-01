@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext({
   user: null,
@@ -7,6 +6,7 @@ const AuthContext = createContext({
   setUser: () => {},
   login: () => {},
   logout: () => {},
+  updateUser: () => {},
 });
 
 export const AuthProvider = ({ children }) => {
@@ -24,11 +24,9 @@ export const AuthProvider = ({ children }) => {
     return localStorage.getItem('token') || null;
   });
 
-  // Keep state and localStorage in sync
   const login = (data) => {
     if (!data) return;
     
-    // Handle both { success, token, user } or direct user/token parameters
     const authToken = data.token || null;
     const authUser = data.user || (data._id || data.role ? data : null);
 
@@ -43,6 +41,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateUser = (updatedUser) => {
+    if (!updatedUser) return;
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    setUser(updatedUser);
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -51,7 +55,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, token, setToken, login, logout }}>
+    <AuthContext.Provider value={{ user, setUser, token, setToken, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -146,4 +146,52 @@ async function getAllUsers(req, res) {
     }
 }
 
-module.exports = { userRegister, userLogin, userLogout, getAllUsers };
+async function updateProfile(req, res) {
+    try {
+        const userId = req.user.id;
+        const { branch, semester, name } = req.body;
+
+        const updateData = {};
+        if (name) updateData.name = name;
+        if (branch) updateData.branch = branch;
+
+        if (semester !== undefined && semester !== null) {
+            const sem = Number(semester);
+            if (!Number.isInteger(sem) || sem < 1 || sem > 8) {
+                return res.status(400).json({
+                    message: "Semester must be between 1 and 8",
+                });
+            }
+            updateData.semester = sem;
+            updateData.year = getYearFromSemester(sem);
+        }
+
+        const updatedUser = await userModel.findByIdAndUpdate(
+            userId,
+            updateData,
+            { new: true }
+        ).select("-password");
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        return res.status(200).json({
+            message: "Profile updated successfully",
+            user: {
+                id: updatedUser._id,
+                name: updatedUser.name,
+                email: updatedUser.email,
+                branch: updatedUser.branch,
+                semester: updatedUser.semester,
+                year: updatedUser.year,
+                role: updatedUser.role,
+            },
+        });
+    } catch (error) {
+        console.error("Update profile error:", error);
+        return res.status(500).json({ message: "Failed to update profile" });
+    }
+}
+
+module.exports = { userRegister, userLogin, userLogout, getAllUsers, updateProfile };
