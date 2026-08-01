@@ -14,10 +14,6 @@ import {
   Lock,
   EyeOff
 } from 'lucide-react';
-import * as pdfjsLib from 'pdfjs-dist';
-
-// Configure PDF.js worker URL
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 const PdfViewerPage = () => {
   const [searchParams] = useSearchParams();
@@ -162,10 +158,17 @@ const PdfViewerPage = () => {
       if (data.note) setDocumentDetails(data.note);
       if (data.questionPaper) setDocumentDetails(data.questionPaper);
 
-      // Load PDF via PDF.js into Canvas
+      // Access PDF.js from window
+      const pdfjsLib = window.pdfjsLib;
+      if (!pdfjsLib) {
+        throw new Error('PDF Engine not loaded. Please refresh the page.');
+      }
+
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || '3.11.174'}/pdf.worker.min.js`;
+
       const loadingTask = pdfjsLib.getDocument({
         url: data.pdfUrl,
-        cMapUrl: '//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
+        cMapUrl: `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || '3.11.174'}/cmaps/`,
         cMapPacked: true,
       });
 
