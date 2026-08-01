@@ -96,7 +96,7 @@ const currentLimit = Math.min(
 );
 
 const skip = (currentPage - 1) * currentLimit;
-    const total = await notesModel.countDocuments(filter);
+    const total = await questionPapersModel.countDocuments(filter);
     const questionPapers = await questionPapersModel
     .find(filter)
     .select("title subject subjectCode description branch year semester examType" )

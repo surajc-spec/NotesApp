@@ -28,16 +28,13 @@ const QuestionPapers = () => {
     setLoading(true);
 
     try {
-      const params = new URLSearchParams();
-      if (user?.branch) params.append('branch', user.branch);
-      if (user?.year) params.append('year', user.year);
-      if (user?.semester) params.append('semester', user.semester);
+      const token = localStorage.getItem('token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const response = await fetch(`/api/question-papers/view-question-papers?${params.toString()}`, {
+      const response = await fetch('/api/question-papers/view-question-papers?limit=50', {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         credentials: 'include',
       });
 
@@ -52,33 +49,8 @@ const QuestionPapers = () => {
       groupPapersBySubject(fetchedPapers, subjectFilter, searchQuery);
     } catch (err) {
       console.error('Error fetching question papers:', err);
-      // Fallback sample question papers for demo
-      const samplePapers = [
-        {
-          _id: 'qp-1',
-          title: 'In-Sem Question Paper 2025',
-          subject: 'DATA STRUCTURES',
-          subjectCode: 'DS201',
-          description: 'Mid semester question paper with solutions',
-          examType: 'insem',
-          branch: user?.branch || 'Information Technology',
-          year: user?.year || 'Third Year',
-          semester: 5,
-        },
-        {
-          _id: 'qp-2',
-          title: 'End-Sem Question Paper 2024',
-          subject: 'OPERATING SYSTEMS',
-          subjectCode: 'OS301',
-          description: 'End semester final examination paper',
-          examType: 'endsem',
-          branch: user?.branch || 'Information Technology',
-          year: user?.year || 'Third Year',
-          semester: 5,
-        },
-      ];
-      setPapersList(samplePapers);
-      groupPapersBySubject(samplePapers, subjectFilter, searchQuery);
+      setPapersList([]);
+      setGroupedPapers({});
     } finally {
       setLoading(false);
     }
@@ -124,16 +96,18 @@ const QuestionPapers = () => {
     groupPapersBySubject(papersList, subjectFilter, val);
   };
 
-  // View PDF -> Opens directly in a NEW TAB as requested
+  // View PDF -> Opens directly in a NEW TAB
   const handleViewPdfInNewTab = async (paperId) => {
     setLoadingPdfId(paperId);
 
     try {
+      const token = localStorage.getItem('token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
       const response = await fetch(`/api/question-papers/${paperId}/view`, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         credentials: 'include',
       });
 
@@ -142,12 +116,11 @@ const QuestionPapers = () => {
       if (response.ok && data.pdfUrl) {
         window.open(data.pdfUrl, '_blank', 'noopener,noreferrer');
       } else {
-        // Fallback PDF viewer in new tab
-        window.open('https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', '_blank', 'noopener,noreferrer');
+        alert(data.message || 'Could not fetch question paper PDF URL.');
       }
     } catch (err) {
       console.error('Error fetching question paper PDF:', err);
-      window.open('https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', '_blank', 'noopener,noreferrer');
+      alert('Could not fetch question paper PDF URL.');
     } finally {
       setLoadingPdfId(null);
     }
@@ -172,10 +145,7 @@ const QuestionPapers = () => {
                 Question Papers
               </h1>
               <p className="text-sm text-light-muted dark:text-dark-muted mt-1 font-sans">
-                Personalized for{' '}
-                <span className="text-primary font-bold">
-                  {user?.branch || 'Information Technology'} • {user?.year || 'Third Year'}
-                </span>
+                Browse previous year examination question papers
               </p>
             </div>
           </div>
@@ -229,7 +199,7 @@ const QuestionPapers = () => {
           <div className="flex flex-col items-center justify-center py-24 gap-4">
             <Loader2 className="w-12 h-12 text-primary animate-spin" />
             <p className="text-light-muted dark:text-dark-muted font-medium text-base animate-pulse font-sans">
-              Organizing question papers...
+              Fetching question papers...
             </p>
           </div>
         ) : subjectKeys.length === 0 ? (
@@ -242,7 +212,7 @@ const QuestionPapers = () => {
                 No question papers found
               </h3>
               <p className="text-sm text-light-muted dark:text-dark-muted mt-1 max-w-sm mx-auto font-sans">
-                Only question papers matching your <span className="text-primary font-bold">{user?.branch || 'profile'}</span> are shown here.
+                Question papers uploaded by admins will appear here.
               </p>
             </div>
           </div>
