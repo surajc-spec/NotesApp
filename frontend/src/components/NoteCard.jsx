@@ -1,19 +1,13 @@
-import React, { useState } from 'react';
-import { FileText, Eye, Loader2 } from 'lucide-react';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { FileText, Eye } from 'lucide-react';
 
-const NoteCard = ({ note, onViewPdf }) => {
-  const [loadingPdf, setLoadingPdf] = useState(false);
+const NoteCard = ({ note }) => {
+  const navigate = useNavigate();
 
-  const handleViewClick = async () => {
-    if (!onViewPdf) return;
-    setLoadingPdf(true);
-    try {
-      await onViewPdf(note._id || note.id, note);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoadingPdf(false);
-    }
+  const handleViewClick = () => {
+    const id = note._id || note.id;
+    navigate(`/pdf-viewer?type=note&id=${id}`);
   };
 
   return (
@@ -49,15 +43,10 @@ const NoteCard = ({ note, onViewPdf }) => {
         <button
           type="button"
           onClick={handleViewClick}
-          disabled={loadingPdf}
-          aria-label="View note PDF"
-          className="w-9 h-9 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary hover:bg-primary hover:text-primary-foreground text-light-foreground dark:text-dark-foreground border border-light-border dark:border-dark-border hover:border-primary transition-all flex items-center justify-center active:scale-95 disabled:opacity-50"
+          className="h-9 px-4 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary hover:bg-primary hover:text-primary-foreground text-light-foreground dark:text-dark-foreground border border-light-border dark:border-dark-border hover:border-primary transition-all text-xs font-bold flex items-center justify-center gap-2 active:scale-95 shadow-sm"
         >
-          {loadingPdf ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Eye className="w-4 h-4 stroke-[2]" />
-          )}
+          <Eye className="w-4 h-4 stroke-[2]" />
+          <span>View PDF</span>
         </button>
       </div>
 

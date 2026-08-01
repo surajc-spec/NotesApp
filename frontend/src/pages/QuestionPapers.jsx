@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   GraduationCap, 
   Search, 
@@ -6,11 +7,12 @@ import {
   BookOpen, 
   Hash, 
   Loader2, 
-  ExternalLink 
+  Eye 
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const QuestionPapers = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
 
   const [papersList, setPapersList] = useState([]);
@@ -18,7 +20,6 @@ const QuestionPapers = () => {
   const [loading, setLoading] = useState(true);
   const [subjectFilter, setSubjectFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [loadingPdfId, setLoadingPdfId] = useState(null);
 
   useEffect(() => {
     fetchQuestionPapers();
@@ -96,34 +97,8 @@ const QuestionPapers = () => {
     groupPapersBySubject(papersList, subjectFilter, val);
   };
 
-  // View PDF -> Opens directly in a NEW TAB
-  const handleViewPdfInNewTab = async (paperId) => {
-    setLoadingPdfId(paperId);
-
-    try {
-      const token = localStorage.getItem('token');
-      const headers = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-
-      const response = await fetch(`/api/question-papers/${paperId}/view`, {
-        method: 'GET',
-        headers,
-        credentials: 'include',
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.pdfUrl) {
-        window.open(data.pdfUrl, '_blank', 'noopener,noreferrer');
-      } else {
-        alert(data.message || 'Could not fetch question paper PDF URL.');
-      }
-    } catch (err) {
-      console.error('Error fetching question paper PDF:', err);
-      alert('Could not fetch question paper PDF URL.');
-    } finally {
-      setLoadingPdfId(null);
-    }
+  const handleViewPdf = (paperId) => {
+    navigate(`/pdf-viewer?type=question-paper&id=${paperId}`);
   };
 
   const subjectKeys = Object.keys(groupedPapers);
@@ -184,7 +159,7 @@ const QuestionPapers = () => {
             {/* All Notes Button */}
             <button
               type="button"
-              onClick={() => window.open('/notes', '_blank')}
+              onClick={() => navigate('/notes')}
               className="w-full sm:w-auto h-[46px] px-5 bg-primary hover:bg-emerald-400 text-primary-foreground font-bold text-sm rounded-btn transition-all duration-200 flex items-center justify-center gap-2 hover:scale-[1.03] active:scale-[0.97] shadow-[0_4px_20px_rgba(54,215,157,0.35)] shrink-0"
             >
               <BookOpen className="w-4 h-4 stroke-[2.5]" />
@@ -244,54 +219,52 @@ const QuestionPapers = () => {
 
                   {/* Question Paper Cards Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {groupedPapers[subjectName].map((paper) => (
-                      <div
-                        key={paper._id || paper.id}
-                        className="bg-light-surface/90 dark:bg-dark-surface/90 backdrop-blur-md border border-light-border dark:border-dark-border rounded-2xl p-5 flex flex-col justify-between transition-all duration-200 hover:scale-[1.02] hover:border-primary/40 shadow-sm group"
-                      >
-                        <div>
-                          {/* Header Row */}
-                          <div className="flex items-center gap-3 mb-3">
-                            <div className="w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/15 text-primary flex items-center justify-center shrink-0 border border-primary/20">
-                              <GraduationCap className="w-5 h-5 stroke-[2]" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="text-[11px] font-bold text-primary uppercase tracking-wider">
-                                {paper.subjectCode || paper.subject || 'PAPER'}
+                    {groupedPapers[subjectName].map((paper) => {
+                      const paperId = paper._id || paper.id;
+                      return (
+                        <div
+                          key={paperId}
+                          className="bg-light-surface/90 dark:bg-dark-surface/90 backdrop-blur-md border border-light-border dark:border-dark-border rounded-2xl p-5 flex flex-col justify-between transition-all duration-200 hover:scale-[1.02] hover:border-primary/40 shadow-sm group"
+                        >
+                          <div>
+                            {/* Header Row */}
+                            <div className="flex items-center gap-3 mb-3">
+                              <div className="w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/15 text-primary flex items-center justify-center shrink-0 border border-primary/20">
+                                <GraduationCap className="w-5 h-5 stroke-[2]" />
                               </div>
-                              <h4 className="text-base font-bold text-light-foreground dark:text-dark-foreground truncate font-sans">
-                                {paper.title}
-                              </h4>
+                              <div className="min-w-0 flex-1">
+                                <div className="text-[11px] font-bold text-primary uppercase tracking-wider">
+                                  {paper.subjectCode || paper.subject || 'PAPER'}
+                                </div>
+                                <h4 className="text-base font-bold text-light-foreground dark:text-dark-foreground truncate font-sans">
+                                  {paper.title}
+                                </h4>
+                              </div>
                             </div>
+
+                            {/* Description */}
+                            {paper.description && (
+                              <p className="text-xs text-light-muted dark:text-dark-muted line-clamp-2 mb-4 font-sans leading-relaxed">
+                                {paper.description}
+                              </p>
+                            )}
                           </div>
 
-                          {/* Description */}
-                          {paper.description && (
-                            <p className="text-xs text-light-muted dark:text-dark-muted line-clamp-2 mb-4 font-sans leading-relaxed">
-                              {paper.description}
-                            </p>
-                          )}
-                        </div>
+                          {/* Action Row: View PDF Button */}
+                          <div className="pt-3 border-t border-light-border dark:border-dark-border mt-2 flex items-center justify-end">
+                            <button
+                              type="button"
+                              onClick={() => handleViewPdf(paperId)}
+                              className="h-9 px-4 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary hover:bg-primary hover:text-primary-foreground text-light-foreground dark:text-dark-foreground border border-light-border dark:border-dark-border hover:border-primary transition-all text-xs font-bold flex items-center justify-center gap-2 active:scale-95 shadow-sm"
+                            >
+                              <Eye className="w-4 h-4 stroke-[2]" />
+                              <span>View PDF</span>
+                            </button>
+                          </div>
 
-                        {/* Action Row: Open in New Tab Button */}
-                        <div className="pt-3 border-t border-light-border dark:border-dark-border mt-2 flex items-center justify-end">
-                          <button
-                            type="button"
-                            onClick={() => handleViewPdfInNewTab(paper._id || paper.id)}
-                            disabled={loadingPdfId === (paper._id || paper.id)}
-                            title="Open PDF in new tab"
-                            className="w-9 h-9 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary hover:bg-primary hover:text-primary-foreground text-light-foreground dark:text-dark-foreground border border-light-border dark:border-dark-border hover:border-primary transition-all flex items-center justify-center active:scale-95 disabled:opacity-50"
-                          >
-                            {loadingPdfId === (paper._id || paper.id) ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <ExternalLink className="w-4 h-4 stroke-[2]" />
-                            )}
-                          </button>
                         </div>
-
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                 </section>

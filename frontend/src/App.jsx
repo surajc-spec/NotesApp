@@ -8,6 +8,7 @@ import Home from './pages/Home';
 import Notes from './pages/Notes';
 import QuestionPapers from './pages/QuestionPapers';
 import Dashboard from './pages/Dashboard';
+import PdfViewerPage from './pages/PdfViewerPage';
 import Login from './pages/Login';
 import Register from './pages/Register';
 
@@ -55,6 +56,7 @@ const AppContent = () => {
           <Route path="/notes" element={<Notes />} />
           <Route path="/question-papers" element={<QuestionPapers />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/pdf-viewer" element={<PdfViewerPage />} />
           <Route path="/profile" element={<DummyPage title="User Profile" />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
