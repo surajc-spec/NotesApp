@@ -25,6 +25,7 @@ const PdfViewerPage = () => {
   const [pdfDoc, setPdfDoc] = useState(null);
   const [documentDetails, setDocumentDetails] = useState(null);
   const [pageNum, setPageNum] = useState(1);
+  const [pageInput, setPageInput] = useState('1');
   const [numPages, setNumPages] = useState(0);
   const [scale, setScale] = useState(1.2);
   const [loading, setLoading] = useState(true);
@@ -38,6 +39,11 @@ const PdfViewerPage = () => {
 
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
+
+  // Sync pageInput when pageNum changes
+  useEffect(() => {
+    setPageInput(String(pageNum));
+  }, [pageNum]);
 
   // Fetch PDF Data from Backend
   useEffect(() => {
@@ -253,12 +259,22 @@ const PdfViewerPage = () => {
     if (pageNum < numPages) setPageNum(prev => prev + 1);
   };
 
+  const handlePageInputSubmit = (e) => {
+    if (e) e.preventDefault();
+    const parsed = parseInt(pageInput, 10);
+    if (!isNaN(parsed) && parsed >= 1 && parsed <= numPages) {
+      setPageNum(parsed);
+    } else {
+      setPageInput(String(pageNum));
+    }
+  };
+
   const handleZoomIn = () => {
-    setScale(prev => Math.min(prev + 0.2, 2.5));
+    setScale(prev => Math.min(prev + 0.25, 3.0));
   };
 
   const handleZoomOut = () => {
-    setScale(prev => Math.max(prev - 0.2, 0.6));
+    setScale(prev => Math.max(prev - 0.25, 0.5));
   };
 
   return (
@@ -282,130 +298,161 @@ const PdfViewerPage = () => {
         </div>
       )}
 
-      {/* TOP CONTROL HEADER BAR */}
-      <div className="bg-light-surface/95 dark:bg-dark-surface/95 backdrop-blur-md border-b border-light-border dark:border-dark-border px-6 py-4 sticky top-[72px] z-30 shadow-sm">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
-          
-          {/* Left: Back & Details */}
-          <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={handleBack}
-              className="h-10 px-4 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border hover:border-primary text-light-foreground dark:text-dark-foreground text-xs font-bold rounded-xl transition-all flex items-center gap-2 active:scale-95 shrink-0"
-            >
-              <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
-              <span>Back</span>
-            </button>
-
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
-                  type === 'question-paper'
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                    : 'bg-primary/10 text-primary border border-primary/20'
-                }`}>
-                  {type === 'question-paper' ? 'Question Paper' : 'Study Note'}
-                </span>
-                {documentDetails?.subjectCode && (
-                  <span className="text-xs font-bold text-light-muted dark:text-dark-muted">
-                    • {documentDetails.subjectCode}
-                  </span>
-                )}
-                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400">
-                  <Lock className="w-3 h-3" /> Protected Canvas View
-                </span>
-              </div>
-              <h1 className="text-lg font-bold text-light-foreground dark:text-dark-foreground truncate font-sans mt-0.5">
-                {documentDetails?.title || (type === 'question-paper' ? 'Question Paper Preview' : 'Note Preview')}
-              </h1>
-            </div>
-          </div>
-
-          {/* Right: Controls (Page Navigation, Zoom, Fullscreen) */}
-          <div className="flex items-center gap-3 shrink-0 flex-wrap">
+      {/* TOP CONTROL HEADER BAR (Shown in normal mode) */}
+      {!isFullscreen && (
+        <div className="bg-light-surface/95 dark:bg-dark-surface/95 backdrop-blur-md border-b border-light-border dark:border-dark-border px-6 py-4 sticky top-[72px] z-30 shadow-sm">
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
             
-            {/* Page Navigation */}
-            {numPages > 0 && (
-              <div className="flex items-center bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-xl p-1 text-xs font-bold">
-                <button
-                  type="button"
-                  onClick={handlePrevPage}
-                  disabled={pageNum <= 1}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-primary/10 hover:text-primary disabled:opacity-30 disabled:hover:bg-transparent"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <span className="px-3 text-light-foreground dark:text-dark-foreground">
-                  {pageNum} / {numPages}
-                </span>
-                <button
-                  type="button"
-                  onClick={handleNextPage}
-                  disabled={pageNum >= numPages}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-primary/10 hover:text-primary disabled:opacity-30 disabled:hover:bg-transparent"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            )}
+            {/* Left: Back & Details */}
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={handleBack}
+                className="h-10 px-4 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border hover:border-primary text-light-foreground dark:text-dark-foreground text-xs font-bold rounded-xl transition-all flex items-center gap-2 active:scale-95 shrink-0"
+              >
+                <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
+                <span>Back</span>
+              </button>
 
-            {/* Zoom Controls */}
-            {pdfDoc && (
-              <div className="flex items-center bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-xl p-1 text-xs font-bold">
-                <button
-                  type="button"
-                  onClick={handleZoomOut}
-                  title="Zoom Out"
-                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-primary/10 hover:text-primary"
-                >
-                  <ZoomOut className="w-4 h-4" />
-                </button>
-                <span className="px-2 text-light-foreground dark:text-dark-foreground">
-                  {Math.round(scale * 100)}%
-                </span>
-                <button
-                  type="button"
-                  onClick={handleZoomIn}
-                  title="Zoom In"
-                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-primary/10 hover:text-primary"
-                >
-                  <ZoomIn className="w-4 h-4" />
-                </button>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                    type === 'question-paper'
+                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                      : 'bg-primary/10 text-primary border border-primary/20'
+                  }`}>
+                    {type === 'question-paper' ? 'Question Paper' : 'Study Note'}
+                  </span>
+                  {documentDetails?.subjectCode && (
+                    <span className="text-xs font-bold text-light-muted dark:text-dark-muted">
+                      • {documentDetails.subjectCode}
+                    </span>
+                  )}
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400">
+                    <Lock className="w-3 h-3" /> Protected View
+                  </span>
+                </div>
+                <h1 className="text-lg font-bold text-light-foreground dark:text-dark-foreground truncate font-sans mt-0.5">
+                  {documentDetails?.title || (type === 'question-paper' ? 'Question Paper Preview' : 'Note Preview')}
+                </h1>
               </div>
-            )}
+            </div>
 
-            {/* Fullscreen Button */}
+            {/* Right: Fullscreen Trigger */}
             <button
               type="button"
               onClick={toggleFullscreen}
-              className="h-10 px-4 bg-primary text-primary-foreground font-bold text-xs rounded-xl shadow-[0_4px_20px_rgba(54,215,157,0.35)] hover:bg-emerald-400 transition-all flex items-center gap-2 active:scale-95"
+              className="h-10 px-5 bg-primary text-primary-foreground font-bold text-xs rounded-xl shadow-[0_4px_20px_rgba(54,215,157,0.35)] hover:bg-emerald-400 transition-all flex items-center gap-2 active:scale-95 shrink-0"
             >
-              {isFullscreen ? (
-                <>
-                  <Minimize className="w-4 h-4 stroke-[2.5]" />
-                  <span>Exit Fullscreen</span>
-                </>
-              ) : (
-                <>
-                  <Maximize className="w-4 h-4 stroke-[2.5]" />
-                  <span>Fullscreen View</span>
-                </>
-              )}
+              <Maximize className="w-4 h-4 stroke-[2.5]" />
+              <span>Fullscreen View</span>
             </button>
 
           </div>
-
         </div>
-      </div>
+      )}
 
       {/* CANVAS RENDERING CONTAINER */}
       <div className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full flex flex-col items-center">
         <div 
           ref={containerRef}
-          className={`flex-1 bg-light-surface/90 dark:bg-dark-surface/90 border border-light-border dark:border-dark-border rounded-2xl shadow-2xl overflow-auto flex flex-col items-center justify-center p-6 relative transition-all w-full ${
-            isFullscreen ? 'fixed inset-0 z-50 rounded-none border-none p-6 bg-black' : 'min-h-[75vh]'
+          className={`flex-1 bg-light-surface/90 dark:bg-dark-surface/90 border border-light-border dark:border-dark-border rounded-2xl shadow-2xl overflow-auto flex flex-col items-center justify-start p-6 relative transition-all w-full ${
+            isFullscreen ? 'fixed inset-0 z-50 rounded-none border-none p-4 bg-zinc-950' : 'min-h-[78vh]'
           }`}
         >
+
+          {/* FLOATING CONTROL TOOLBAR (Visible in BOTH Normal and Fullscreen modes) */}
+          {pdfDoc && (
+            <div className="sticky top-2 z-30 mb-4 bg-dark-surface/90 backdrop-blur-md border border-dark-border text-white px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-4 flex-wrap max-w-full justify-center animate-fadeIn">
+              
+              {/* Direct Page Jumper Form */}
+              <form onSubmit={handlePageInputSubmit} className="flex items-center gap-2 text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={handlePrevPage}
+                  disabled={pageNum <= 1}
+                  title="Previous Page"
+                  className="w-8 h-8 rounded-xl bg-dark-surface-secondary border border-dark-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+
+                <div className="flex items-center gap-1.5 bg-dark-surface-secondary px-3 py-1.5 rounded-xl border border-dark-border">
+                  <span>Page</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={numPages}
+                    value={pageInput}
+                    onChange={(e) => setPageInput(e.target.value)}
+                    onBlur={handlePageInputSubmit}
+                    className="w-12 h-6 text-center font-extrabold bg-dark-surface border border-dark-border rounded-lg text-primary focus:outline-none focus:ring-1 focus:ring-primary text-xs"
+                  />
+                  <span>of {numPages}</span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleNextPage}
+                  disabled={pageNum >= numPages}
+                  title="Next Page"
+                  className="w-8 h-8 rounded-xl bg-dark-surface-secondary border border-dark-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </form>
+
+              {/* Divider */}
+              <div className="w-px h-6 bg-dark-border" />
+
+              {/* Zoom Controls */}
+              <div className="flex items-center gap-2 text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={handleZoomOut}
+                  title="Zoom Out"
+                  className="w-8 h-8 rounded-xl bg-dark-surface-secondary border border-dark-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all"
+                >
+                  <ZoomOut className="w-4 h-4" />
+                </button>
+
+                <span className="w-14 text-center font-extrabold text-primary">
+                  {Math.round(scale * 100)}%
+                </span>
+
+                <button
+                  type="button"
+                  onClick={handleZoomIn}
+                  title="Zoom In"
+                  className="w-8 h-8 rounded-xl bg-dark-surface-secondary border border-dark-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all"
+                >
+                  <ZoomIn className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Fullscreen Toggle Button inside Fullscreen Container */}
+              <div className="w-px h-6 bg-dark-border" />
+
+              <button
+                type="button"
+                onClick={toggleFullscreen}
+                className="h-8 px-3.5 bg-primary text-primary-foreground font-bold text-xs rounded-xl hover:bg-emerald-400 transition-all flex items-center gap-1.5 active:scale-95 shadow-md"
+              >
+                {isFullscreen ? (
+                  <>
+                    <Minimize className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span>Exit Fullscreen</span>
+                  </>
+                ) : (
+                  <>
+                    <Maximize className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span>Fullscreen</span>
+                  </>
+                )}
+              </button>
+
+            </div>
+          )}
 
           {/* Window Blur Protection Overlay */}
           {isWindowBlurred && (
@@ -420,7 +467,7 @@ const PdfViewerPage = () => {
 
           {/* Loading State */}
           {loading && (
-            <div className="flex flex-col items-center justify-center gap-4 py-20">
+            <div className="flex flex-col items-center justify-center gap-4 py-20 my-auto">
               <Loader2 className="w-12 h-12 text-primary animate-spin" />
               <p className="text-sm font-bold text-light-foreground dark:text-dark-foreground animate-pulse">
                 Rendering protected PDF canvas...
@@ -451,7 +498,7 @@ const PdfViewerPage = () => {
 
           {/* Page Rendering Spinner Indicator */}
           {renderingPage && (
-            <div className="absolute top-4 right-4 bg-primary/10 text-primary border border-primary/20 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 z-10 shadow-sm backdrop-blur-md">
+            <div className="absolute top-4 right-4 bg-primary/10 text-primary border border-primary/20 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 z-20 shadow-sm backdrop-blur-md">
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
               <span>Rendering...</span>
             </div>
