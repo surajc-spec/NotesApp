@@ -132,4 +132,18 @@ async function userLogout(req, res) {
     });
 }
 
-module.exports = { userRegister, userLogin, userLogout };
+async function getAllUsers(req, res) {
+    try {
+        const users = await userModel.find().select("-password").sort({ createdAt: -1 }).lean();
+        return res.status(200).json({
+            message: "Users fetched successfully",
+            count: users.length,
+            users,
+        });
+    } catch (error) {
+        console.error("Error fetching users:", error);
+        return res.status(500).json({ message: "Failed to fetch users" });
+    }
+}
+
+module.exports = { userRegister, userLogin, userLogout, getAllUsers };

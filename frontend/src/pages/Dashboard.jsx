@@ -5,13 +5,15 @@ import {
   Upload, 
   FileText, 
   GraduationCap, 
+  Users,
   Trash2, 
   CheckCircle2, 
   AlertCircle, 
   Loader2, 
   FileUp, 
   Search,
-  ShieldAlert
+  ShieldAlert,
+  UserCheck
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import CustomSelect from '../components/CustomSelect';
@@ -47,13 +49,19 @@ const Dashboard = () => {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
 
-  const [activeTab, setActiveTab] = useState('notes'); // 'notes' | 'question-papers' | 'manage'
+  const [activeTab, setActiveTab] = useState('notes'); // 'notes' | 'question-papers' | 'manage' | 'users'
 
   // Metrics
   const [stats, setStats] = useState({
     notesCount: 0,
     papersCount: 0,
+    usersCount: 0,
   });
+
+  // Users Tab Data
+  const [registeredUsers, setRegisteredUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [searchUser, setSearchUser] = useState('');
 
   // Manage Tab Data
   const [manageNotes, setManageNotes] = useState([]);
@@ -80,8 +88,27 @@ const Dashboard = () => {
   useEffect(() => {
     if (isAdmin) {
       fetchManageData();
+      fetchUsersData();
     }
   }, [user]);
+
+  const fetchUsersData = async () => {
+    setUsersLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      const res = await fetch('/api/auth/users', { headers, credentials: 'include' });
+      const data = await res.json();
+      const list = data.users || [];
+      setRegisteredUsers(list);
+      setStats(prev => ({ ...prev, usersCount: list.length }));
+    } catch (err) {
+      console.error('Error fetching registered users:', err);
+    } finally {
+      setUsersLoading(false);
+    }
+  };
 
   const fetchManageData = async () => {
     setManageLoading(true);
@@ -101,10 +128,11 @@ const Dashboard = () => {
 
       setManageNotes(notesList);
       setManagePapers(papersList);
-      setStats({
+      setStats(prev => ({
+        ...prev,
         notesCount: notesList.length,
         papersCount: papersList.length,
-      });
+      }));
     } catch (err) {
       console.error('Error fetching admin dashboard data:', err);
     } finally {
@@ -339,6 +367,12 @@ const Dashboard = () => {
     );
   }
 
+  const filteredUsers = registeredUsers.filter(u =>
+    (u.name || '').toLowerCase().includes(searchUser.toLowerCase()) ||
+    (u.email || '').toLowerCase().includes(searchUser.toLowerCase()) ||
+    (u.branch || '').toLowerCase().includes(searchUser.toLowerCase())
+  );
+
   const filteredManageNotes = manageNotes.filter(n =>
     (n.title || '').toLowerCase().includes(searchManage.toLowerCase()) ||
     (n.subject || '').toLowerCase().includes(searchManage.toLowerCase())
@@ -354,23 +388,31 @@ const Dashboard = () => {
       <div className="max-w-container mx-auto px-6 sm:px-8 lg:px-10 pt-10">
         
         {/* HEADER & METRICS */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-primary/10 dark:bg-primary/15 border border-primary/20 flex items-center justify-center text-primary shrink-0 shadow-sm">
               <LayoutDashboard className="w-7 h-7 stroke-[2.5]" />
             </div>
             <div>
               <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-light-foreground dark:text-dark-foreground font-sans">
-                Admin Upload Dashboard
+                Admin Dashboard
               </h1>
               <p className="text-sm text-light-muted dark:text-dark-muted mt-1 font-sans">
-                Publish study notes &amp; question papers to NoteShare
+                Manage NoteShare platform notes, question papers &amp; users
               </p>
             </div>
           </div>
 
           {/* Quick Metrics Bar */}
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="px-5 py-3 rounded-2xl bg-light-surface/90 dark:bg-dark-surface/90 border border-light-border dark:border-dark-border flex items-center gap-3">
+              <Users className="w-5 h-5 text-sky-400" />
+              <div>
+                <div className="text-xs text-light-muted dark:text-dark-muted font-medium">Registered Users</div>
+                <div className="text-lg font-bold text-light-foreground dark:text-dark-foreground">{stats.usersCount}</div>
+              </div>
+            </div>
+
             <div className="px-5 py-3 rounded-2xl bg-light-surface/90 dark:bg-dark-surface/90 border border-light-border dark:border-dark-border flex items-center gap-3">
               <FileText className="w-5 h-5 text-primary" />
               <div>
@@ -415,6 +457,19 @@ const Dashboard = () => {
           >
             <GraduationCap className="w-4 h-4" />
             <span>Upload Question Papers</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { setActiveTab('users'); fetchUsersData(); }}
+            className={`h-[44px] px-6 text-sm font-bold rounded-btn transition-all duration-200 flex items-center gap-2 whitespace-nowrap ${
+              activeTab === 'users'
+                ? 'bg-primary text-primary-foreground shadow-[0_4px_20px_rgba(54,215,157,0.35)]'
+                : 'bg-light-surface-secondary dark:bg-dark-surface-secondary text-light-muted dark:text-dark-muted hover:text-light-foreground dark:hover:text-dark-foreground border border-light-border dark:border-dark-border'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            <span>Registered Users ({stats.usersCount})</span>
           </button>
 
           <button
@@ -651,7 +706,102 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* TAB 3: MANAGE & DELETE CONTENT */}
+        {/* TAB 3: REGISTERED USERS TAB */}
+        {activeTab === 'users' && (
+          <div className="space-y-6">
+            
+            {/* Search Filter Bar */}
+            <div className="flex items-center justify-between gap-4">
+              <div className="relative w-full max-w-md">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-light-muted dark:text-dark-muted">
+                  <Search className="w-4 h-4" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search registered users by name, email, or branch..."
+                  value={searchUser}
+                  onChange={(e) => setSearchUser(e.target.value)}
+                  className="w-full h-[46px] pl-10 pr-4 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-field text-sm text-light-foreground dark:text-dark-foreground placeholder-light-muted dark:placeholder-dark-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={fetchUsersData}
+                className="h-[46px] px-5 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border text-sm font-bold rounded-btn transition-all hover:bg-light-surface-tertiary dark:hover:bg-dark-surface-tertiary shrink-0"
+              >
+                Refresh Users List
+              </button>
+            </div>
+
+            {/* Users Table / List Container */}
+            <div className="bg-light-surface/90 dark:bg-dark-surface/90 border border-light-border dark:border-dark-border rounded-2xl p-6 shadow-sm space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-light-border dark:border-dark-border">
+                <div className="flex items-center gap-2 text-lg font-bold text-light-foreground dark:text-dark-foreground font-sans">
+                  <UserCheck className="w-5 h-5 text-sky-400" />
+                  <span>Registered Users ({filteredUsers.length})</span>
+                </div>
+              </div>
+
+              {usersLoading ? (
+                <div className="py-12 text-center text-light-muted dark:text-dark-muted">
+                  <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+                </div>
+              ) : filteredUsers.length === 0 ? (
+                <p className="text-sm text-light-muted dark:text-dark-muted py-6 text-center">
+                  No registered users found.
+                </p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm border-collapse">
+                    <thead>
+                      <tr className="border-b border-light-border dark:border-dark-border text-xs uppercase font-extrabold tracking-wider text-light-muted dark:text-dark-muted">
+                        <th className="py-3 px-4">User Name</th>
+                        <th className="py-3 px-4">Email</th>
+                        <th className="py-3 px-4">Branch</th>
+                        <th className="py-3 px-4">Semester</th>
+                        <th className="py-3 px-4">Role</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-light-border dark:divide-dark-border">
+                      {filteredUsers.map((u) => {
+                        const userId = u._id || u.id;
+                        return (
+                          <tr key={userId} className="hover:bg-light-surface-secondary/50 dark:hover:bg-dark-surface-secondary/50 transition-colors">
+                            <td className="py-3.5 px-4 font-bold text-light-foreground dark:text-dark-foreground">
+                              {u.name}
+                            </td>
+                            <td className="py-3.5 px-4 text-light-muted dark:text-dark-muted">
+                              {u.email}
+                            </td>
+                            <td className="py-3.5 px-4 text-light-foreground dark:text-dark-foreground font-medium">
+                              {u.branch || 'N/A'}
+                            </td>
+                            <td className="py-3.5 px-4 text-light-muted dark:text-dark-muted">
+                              Sem {u.semester || 'N/A'}
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${
+                                u.role === 'admin' 
+                                  ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' 
+                                  : 'bg-primary/10 text-primary border border-primary/20'
+                              }`}>
+                                {u.role === 'admin' ? '👑 Admin' : 'Student'}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+          </div>
+        )}
+
+        {/* TAB 4: MANAGE & DELETE CONTENT */}
         {activeTab === 'manage' && (
           <div className="space-y-8">
             
@@ -673,7 +823,7 @@ const Dashboard = () => {
               <button
                 type="button"
                 onClick={fetchManageData}
-                className="h-[46px] px-5 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border text-sm font-bold rounded-btn transition-all hover:bg-light-surface-tertiary dark:hover:bg-dark-surface-tertiary"
+                className="h-[46px] px-5 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border text-sm font-bold rounded-btn transition-all hover:bg-light-surface-tertiary dark:hover:bg-dark-surface-tertiary shrink-0"
               >
                 Refresh List
               </button>
