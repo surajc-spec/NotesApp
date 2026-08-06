@@ -108,7 +108,7 @@ const PdfViewerModal = ({ isOpen, onClose, note, pdfUrl }) => {
               <EyeOff className="w-10 h-10" />
             </div>
             <h2 className="text-3xl font-extrabold tracking-tight text-white mb-3">
-              📷 Screenshot is Blocked
+              Screenshot is Blocked
             </h2>
             <p className="text-sm text-gray-400 max-w-md leading-relaxed">
               Taking screenshots or printing protected study materials is restricted on NoteShare for security and copyright compliance.
