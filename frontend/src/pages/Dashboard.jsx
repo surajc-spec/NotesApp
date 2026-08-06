@@ -430,9 +430,10 @@ const Dashboard = () => {
     }
   };
 
-  // Download PDF Handler for Dashboard
+  // Download PDF Handler for Dashboard (Fetches Blob to force local PC download)
   const handleDownload = async (id, isQuestionPaper = false, title = 'Document') => {
     setDownloadLoadingId(id);
+    setMessage({ type: '', text: '' });
     try {
       const token = localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
@@ -448,13 +449,32 @@ const Dashboard = () => {
         throw new Error(data.message || 'Failed to fetch PDF download link.');
       }
 
-      const link = document.createElement('a');
-      link.href = data.pdfUrl;
-      link.target = '_blank';
-      link.download = `${title}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const safeTitle = (title || 'document').replace(/[^a-zA-Z0-9_\-\s]/g, '_').trim();
+      const fileName = `${safeTitle}.pdf`;
+
+      try {
+        // Fetch file blob to force local PC download via same-origin Object URL
+        const fileRes = await fetch(data.pdfUrl);
+        if (!fileRes.ok) throw new Error('Could not fetch file content from Cloudflare R2.');
+
+        const blob = await fileRes.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = blobUrl;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        setTimeout(() => window.URL.revokeObjectURL(blobUrl), 2000);
+      } catch (blobErr) {
+        console.warn('Blob fetch failed, falling back to direct window open:', blobErr);
+        window.open(data.pdfUrl, '_blank');
+      }
+
+      setMessage({ type: 'success', text: `Downloading ${fileName}...` });
     } catch (err) {
       console.error('Download Error:', err);
       setMessage({ type: 'error', text: err.message || 'Failed to download document.' });
