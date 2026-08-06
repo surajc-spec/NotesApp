@@ -14,7 +14,8 @@ import {
   Search,
   ShieldAlert,
   Files,
-  X
+  X,
+  Download
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import CustomSelect from '../components/CustomSelect';
@@ -69,6 +70,7 @@ const Dashboard = () => {
   const [managePapers, setManagePapers] = useState([]);
   const [manageLoading, setManageLoading] = useState(false);
   const [deleteLoadingId, setDeleteLoadingId] = useState(null);
+  const [downloadLoadingId, setDownloadLoadingId] = useState(null);
   const [searchManage, setSearchManage] = useState('');
 
   // Single Notes Upload Form State
@@ -425,6 +427,39 @@ const Dashboard = () => {
         type: 'error',
         text: `Bulk upload finished: ${successCount} succeeded, ${failCount} failed. Check details below.`,
       });
+    }
+  };
+
+  // Download PDF Handler for Dashboard
+  const handleDownload = async (id, isQuestionPaper = false, title = 'Document') => {
+    setDownloadLoadingId(id);
+    try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      const endpoint = isQuestionPaper
+        ? `/api/question-papers/${id}/view`
+        : `/api/notes/${id}/view`;
+
+      const res = await fetch(endpoint, { headers, credentials: 'include' });
+      const data = await res.json();
+
+      if (!res.ok || !data.pdfUrl) {
+        throw new Error(data.message || 'Failed to fetch PDF download link.');
+      }
+
+      const link = document.createElement('a');
+      link.href = data.pdfUrl;
+      link.target = '_blank';
+      link.download = `${title}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error('Download Error:', err);
+      setMessage({ type: 'error', text: err.message || 'Failed to download document.' });
+    } finally {
+      setDownloadLoadingId(null);
     }
   };
 
@@ -860,7 +895,7 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* TAB 2: BULK UPLOAD QUESTION PAPERS FORM (Identical design to Notes Upload) */}
+        {/* TAB 2: BULK UPLOAD QUESTION PAPERS FORM */}
         {activeTab === 'question-papers' && (
           <div className="bg-light-surface/90 dark:bg-dark-surface/90 backdrop-blur-md border border-light-border dark:border-dark-border rounded-2xl p-8 sm:p-10 shadow-xl max-w-4xl">
             
@@ -1239,7 +1274,7 @@ const Dashboard = () => {
                   Manage &amp; Delete Content
                 </h2>
                 <p className="text-xs text-light-muted dark:text-dark-muted mt-0.5">
-                  View and delete uploaded study notes or question papers from R2 Cloud &amp; DB
+                  View, download, and delete uploaded study notes or question papers from R2 Cloud &amp; DB
                 </p>
               </div>
 
@@ -1301,7 +1336,7 @@ const Dashboard = () => {
                             <th className="px-5 py-3">Subject</th>
                             <th className="px-5 py-3">Branch &amp; Sem</th>
                             <th className="px-5 py-3">Exam Type</th>
-                            <th className="px-5 py-3 text-right">Action</th>
+                            <th className="px-5 py-3 text-right">Actions</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-light-border dark:divide-dark-border">
@@ -1320,19 +1355,37 @@ const Dashboard = () => {
                                 {note.examType === 'insem' ? 'In-Sem' : 'End-Sem'}
                               </td>
                               <td className="px-5 py-3.5 text-right">
-                                <button
-                                  type="button"
-                                  onClick={() => handleDelete(note._id, false)}
-                                  disabled={deleteLoadingId === note._id}
-                                  className="h-8 px-3 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white border border-red-500/20 font-bold rounded-lg transition-all active:scale-95 disabled:opacity-50 inline-flex items-center gap-1.5"
-                                >
-                                  {deleteLoadingId === note._id ? (
-                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                  ) : (
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  )}
-                                  <span>Delete</span>
-                                </button>
+                                <div className="flex items-center justify-end gap-2">
+                                  {/* Download Icon Button */}
+                                  <button
+                                    type="button"
+                                    title="Download PDF"
+                                    onClick={() => handleDownload(note._id, false, note.title)}
+                                    disabled={downloadLoadingId === note._id}
+                                    className="w-8 h-8 rounded-lg bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground border border-primary/20 flex items-center justify-center transition-all active:scale-95 disabled:opacity-50"
+                                  >
+                                    {downloadLoadingId === note._id ? (
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                      <Download className="w-4 h-4 stroke-[2]" />
+                                    )}
+                                  </button>
+
+                                  {/* Delete Icon Button */}
+                                  <button
+                                    type="button"
+                                    title="Delete Note"
+                                    onClick={() => handleDelete(note._id, false)}
+                                    disabled={deleteLoadingId === note._id}
+                                    className="w-8 h-8 rounded-lg bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white border border-red-500/20 flex items-center justify-center transition-all active:scale-95 disabled:opacity-50"
+                                  >
+                                    {deleteLoadingId === note._id ? (
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="w-4 h-4 stroke-[2]" />
+                                    )}
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           ))}
@@ -1362,7 +1415,7 @@ const Dashboard = () => {
                             <th className="px-5 py-3">Subject</th>
                             <th className="px-5 py-3">Branch &amp; Sem</th>
                             <th className="px-5 py-3">Exam Type</th>
-                            <th className="px-5 py-3 text-right">Action</th>
+                            <th className="px-5 py-3 text-right">Actions</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-light-border dark:divide-dark-border">
@@ -1381,19 +1434,37 @@ const Dashboard = () => {
                                 {paper.examType === 'insem' ? 'In-Sem' : 'End-Sem'}
                               </td>
                               <td className="px-5 py-3.5 text-right">
-                                <button
-                                  type="button"
-                                  onClick={() => handleDelete(paper._id, true)}
-                                  disabled={deleteLoadingId === paper._id}
-                                  className="h-8 px-3 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white border border-red-500/20 font-bold rounded-lg transition-all active:scale-95 disabled:opacity-50 inline-flex items-center gap-1.5"
-                                >
-                                  {deleteLoadingId === paper._id ? (
-                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                  ) : (
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  )}
-                                  <span>Delete</span>
-                                </button>
+                                <div className="flex items-center justify-end gap-2">
+                                  {/* Download Icon Button */}
+                                  <button
+                                    type="button"
+                                    title="Download Question Paper"
+                                    onClick={() => handleDownload(paper._id, true, paper.title)}
+                                    disabled={downloadLoadingId === paper._id}
+                                    className="w-8 h-8 rounded-lg bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground border border-primary/20 flex items-center justify-center transition-all active:scale-95 disabled:opacity-50"
+                                  >
+                                    {downloadLoadingId === paper._id ? (
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                      <Download className="w-4 h-4 stroke-[2]" />
+                                    )}
+                                  </button>
+
+                                  {/* Delete Icon Button */}
+                                  <button
+                                    type="button"
+                                    title="Delete Question Paper"
+                                    onClick={() => handleDelete(paper._id, true)}
+                                    disabled={deleteLoadingId === paper._id}
+                                    className="w-8 h-8 rounded-lg bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white border border-red-500/20 flex items-center justify-center transition-all active:scale-95 disabled:opacity-50"
+                                  >
+                                    {deleteLoadingId === paper._id ? (
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="w-4 h-4 stroke-[2]" />
+                                    )}
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           ))}
