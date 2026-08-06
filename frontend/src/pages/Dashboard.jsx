@@ -46,6 +46,20 @@ const getYearFromSem = (sem) => {
   return 'First Year';
 };
 
+// Safe JSON parser to prevent HTML <!DOCTYPE> SyntaxError crashes
+const parseJsonResponse = async (res) => {
+  const contentType = res.headers ? res.headers.get('content-type') : null;
+  if (contentType && contentType.includes('application/json')) {
+    return await res.json();
+  }
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`Server returned status ${res.status}. Please try again.`);
+  }
+};
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -111,7 +125,7 @@ const Dashboard = () => {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
       const res = await fetch('/api/auth/users', { headers, credentials: 'include' });
-      const data = await res.json();
+      const data = await parseJsonResponse(res);
       const list = data.users || [];
       setRegisteredUsers(list);
       setStats(prev => ({ ...prev, usersCount: list.length }));
@@ -130,12 +144,12 @@ const Dashboard = () => {
 
       // Fetch Notes
       const notesRes = await fetch('/api/notes/view-notes?limit=50', { headers, credentials: 'include' });
-      const notesData = await notesRes.json();
+      const notesData = await parseJsonResponse(notesRes);
       const notesList = notesData.notes || [];
 
       // Fetch Question Papers
       const papersRes = await fetch('/api/question-papers/view-question-papers?limit=50', { headers, credentials: 'include' });
-      const papersData = await papersRes.json();
+      const papersData = await parseJsonResponse(papersRes);
       const papersList = papersData.questionPapers || [];
 
       setManageNotes(notesList);
@@ -239,7 +253,7 @@ const Dashboard = () => {
         }),
       });
 
-      const uploadUrlData = await uploadUrlRes.json();
+      const uploadUrlData = await parseJsonResponse(uploadUrlRes);
       if (!uploadUrlRes.ok || !uploadUrlData.uploadUrl) {
         throw new Error(uploadUrlData.message || 'Failed to generate upload URL.');
       }
@@ -255,7 +269,7 @@ const Dashboard = () => {
         throw new Error('Cloud storage upload failed.');
       }
 
-      // 3. Save Document Metadata in DB
+      // 3. Save Document Metadata in DB (using /api/notes/create-note or /api/notes/create-notes)
       const createRes = await fetch('/api/notes/create-note', {
         method: 'POST',
         headers: authHeaders,
@@ -273,7 +287,7 @@ const Dashboard = () => {
         }),
       });
 
-      const createData = await createRes.json();
+      const createData = await parseJsonResponse(createRes);
       if (!createRes.ok) {
         throw new Error(createData.message || 'Failed to save note metadata.');
       }
@@ -357,7 +371,7 @@ const Dashboard = () => {
           }),
         });
 
-        const uploadUrlData = await uploadUrlRes.json();
+        const uploadUrlData = await parseJsonResponse(uploadUrlRes);
         if (!uploadUrlRes.ok || !uploadUrlData.uploadUrl) {
           throw new Error(uploadUrlData.message || 'Failed to generate upload URL.');
         }
@@ -393,7 +407,7 @@ const Dashboard = () => {
           }),
         });
 
-        const createData = await createRes.json();
+        const createData = await parseJsonResponse(createRes);
         if (!createRes.ok) {
           throw new Error(createData.message || 'Failed to save question paper metadata.');
         }
@@ -443,7 +457,7 @@ const Dashboard = () => {
         : `/api/notes/${id}/view`;
 
       const res = await fetch(endpoint, { headers, credentials: 'include' });
-      const data = await res.json();
+      const data = await parseJsonResponse(res);
 
       if (!res.ok || !data.pdfUrl) {
         throw new Error(data.message || 'Failed to fetch PDF download link.');
@@ -453,7 +467,6 @@ const Dashboard = () => {
       const fileName = `${safeTitle}.pdf`;
 
       try {
-        // Fetch file blob to force local PC download via same-origin Object URL
         const fileRes = await fetch(data.pdfUrl);
         if (!fileRes.ok) throw new Error('Could not fetch file content from Cloudflare R2.');
 
@@ -505,7 +518,7 @@ const Dashboard = () => {
         credentials: 'include',
       });
 
-      const data = await res.json();
+      const data = await parseJsonResponse(res);
 
       if (!res.ok) {
         throw new Error(data.message || 'Failed to delete item.');
