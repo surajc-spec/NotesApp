@@ -19,10 +19,43 @@ const DesktopOnlyOverlay = () => {
     return () => window.removeEventListener('resize', checkDevice);
   }, []);
 
+  // Lock mobile body scroll completely when overlay is active
+  useEffect(() => {
+    if (isMobileDevice) {
+      const originalOverflow = document.body.style.overflow;
+      const originalPosition = document.body.style.position;
+      const originalTouchAction = document.body.style.touchAction;
+
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.height = '100%';
+      document.body.style.touchAction = 'none';
+
+      const preventTouch = (e) => {
+        e.preventDefault();
+      };
+
+      document.addEventListener('touchmove', preventTouch, { passive: false });
+
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        document.body.style.position = originalPosition;
+        document.body.style.width = '';
+        document.body.style.height = '';
+        document.body.style.touchAction = originalTouchAction;
+        document.removeEventListener('touchmove', preventTouch);
+      };
+    }
+  }, [isMobileDevice]);
+
   if (!isMobileDevice) return null;
 
   return (
-    <div className="fixed inset-0 z-[99999] bg-light-background dark:bg-dark-background text-light-foreground dark:text-dark-foreground flex flex-col items-center justify-center p-6 sm:p-8 text-center select-none transition-colors duration-300">
+    <div 
+      onTouchMove={(e) => e.preventDefault()}
+      className="fixed inset-0 z-[99999] bg-light-background dark:bg-dark-background text-light-foreground dark:text-dark-foreground flex flex-col items-center justify-center p-6 sm:p-8 text-center select-none overflow-hidden touch-none overscroll-none transition-colors duration-300"
+    >
       <div className="w-full max-w-md bg-light-surface/95 dark:bg-dark-surface/95 backdrop-blur-md border border-light-border dark:border-dark-border rounded-3xl p-8 sm:p-10 shadow-2xl flex flex-col items-center space-y-6 animate-fadeIn">
         
         {/* Glowing Icon Badge */}
