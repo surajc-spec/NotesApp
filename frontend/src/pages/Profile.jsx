@@ -7,7 +7,8 @@ import {
   AlertCircle, 
   Loader2, 
   Save, 
-  ArrowRight
+  ArrowRight,
+  LogOut
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import CustomSelect from '../components/CustomSelect';
@@ -40,7 +41,7 @@ const getYearFromSem = (sem) => {
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, logout } = useAuth();
 
   const [name, setName] = useState(user?.name || '');
   const [branch, setBranch] = useState(user?.branch || 'Information Technology');
@@ -118,7 +119,7 @@ const Profile = () => {
 
       setMessage({
         type: 'success',
-        text: `Academic profile updated! Notes & question papers are now tailored to ${data.user.branch} • ${data.user.year} (${data.user.examType === 'insem' ? 'In-Sem' : data.user.examType === 'endsem' ? 'End-Sem' : 'All Exams'}).`,
+        text: `Academic profile updated! Notes & question papers are now tailored to ${data.user.branch} - ${data.user.year} (${data.user.examType === 'insem' ? 'In-Sem' : data.user.examType === 'endsem' ? 'End-Sem' : 'All Exams'}).`,
       });
     } catch (err) {
       console.error(err);
@@ -128,18 +129,35 @@ const Profile = () => {
     }
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   return (
     <div className="min-h-[calc(100vh-72px)] bg-light-background dark:bg-dark-background text-light-foreground dark:text-dark-foreground py-8 sm:py-12 transition-colors duration-300">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* PAGE HEADER */}
-        <div className="mb-8 text-center sm:text-left">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-light-foreground dark:text-dark-foreground font-sans">
-            User Profile &amp; Preferences
-          </h1>
-          <p className="text-xs sm:text-sm text-light-muted dark:text-dark-muted mt-1 font-sans">
-            Manage your branch, academic semester, and exam preferences
-          </p>
+        <div className="mb-8 text-center sm:text-left flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-light-foreground dark:text-dark-foreground font-sans">
+              User Profile &amp; Preferences
+            </h1>
+            <p className="text-xs sm:text-sm text-light-muted dark:text-dark-muted mt-1 font-sans">
+              Manage your branch, academic semester, and exam preferences
+            </p>
+          </div>
+
+          {/* Top Header Red Logout Action Button */}
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="h-10 px-5 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold text-xs rounded-xl transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-md shrink-0 self-center sm:self-auto"
+          >
+            <LogOut className="w-4 h-4 stroke-[2.5]" />
+            <span>Log Out</span>
+          </button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
@@ -175,7 +193,7 @@ const Profile = () => {
               <div className="p-3.5 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border text-left">
                 <div className="text-[10px] uppercase font-bold text-light-muted dark:text-dark-muted tracking-wider">Academic Year &amp; Semester</div>
                 <div className="text-sm font-bold text-light-foreground dark:text-dark-foreground mt-0.5">
-                  Semester {user.semester || 1} • <span className="text-primary">{user.year || getYearFromSem(user.semester)}</span>
+                  Semester {user.semester || 1} - <span className="text-primary">{user.year || getYearFromSem(user.semester)}</span>
                 </div>
               </div>
 
@@ -205,6 +223,16 @@ const Profile = () => {
                 <span>View Question Papers</span>
                 <ArrowRight className="w-4 h-4 ml-auto" />
               </Link>
+
+              {/* Bold Red Logout Button */}
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="w-full h-11 px-4 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold text-xs rounded-xl transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.98] shadow-md border-none mt-4"
+              >
+                <LogOut className="w-4 h-4 stroke-[2.5]" />
+                <span>Log Out</span>
+              </button>
             </div>
 
           </div>
@@ -366,7 +394,7 @@ const Profile = () => {
                 ) : (
                   <>
                     <Save className="w-4 h-4 stroke-[2.5]" />
-                      <span>Update Academic Profile</span>
+                    <span>Update Academic Profile</span>
                   </>
                 )}
               </button>
