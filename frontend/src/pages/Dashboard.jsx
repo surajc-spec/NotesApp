@@ -631,10 +631,8 @@ const Dashboard = () => {
             }`}
           >
             <Files className="w-4 h-4" />
-            <span>Bulk Upload Papers</span>
-            <span className="ml-1 px-2 py-0.5 rounded-full text-[10px] uppercase font-extrabold bg-amber-400/20 text-amber-300 border border-amber-400/30">
-              BULK
-            </span>
+            <span>Upload Papers</span>
+          
           </button>
 
           <button
@@ -910,7 +908,7 @@ const Dashboard = () => {
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold text-light-foreground dark:text-dark-foreground">
-                    Bulk Upload Question Papers
+                    Upload Question Papers
                   </h2>
                   <p className="text-xs text-light-muted dark:text-dark-muted mt-0.5">
                     Select multiple question paper PDF files at once (e.g. 5, 10, 20 files) for batch upload to Cloudflare R2
@@ -1145,7 +1143,7 @@ const Dashboard = () => {
                 ) : (
                   <>
                     <Files className="w-5 h-5 stroke-[2.5]" />
-                    <span>Bulk Upload {selectedBulkFiles.length} Question Paper(s) to R2</span>
+                    <span>Upload {selectedBulkFiles.length} Question Paper(s) to R2</span>
                   </>
                 )}
               </button>
