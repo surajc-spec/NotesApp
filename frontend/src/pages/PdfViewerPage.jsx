@@ -34,8 +34,11 @@ const PdfViewerPage = () => {
   const [renderingPage, setRenderingPage] = useState(false);
   const [error, setError] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isPdfDarkMode, setIsPdfDarkMode] = useState(false); // PDF Invert Theme Toggle
+  const [isPdfDarkMode, setIsPdfDarkMode] = useState(false);
   
+  // Explicit boolean variable for active notes viewer security
+  const [isNotesOpened, setIsNotesOpened] = useState(false);
+
   // Anti-Screenshot Protection State
   const [isScreenshotBlocked, setIsScreenshotBlocked] = useState(false);
   const [isWindowBlurred, setIsWindowBlurred] = useState(false);
@@ -53,6 +56,7 @@ const PdfViewerPage = () => {
     if (!id) {
       setError('No document ID specified.');
       setLoading(false);
+      setIsNotesOpened(false);
       return;
     }
 
@@ -71,62 +75,91 @@ const PdfViewerPage = () => {
     };
   }, []);
 
-  // Strict Anti-Screenshot & Key Interceptor (Capture Phase for Fullscreen support)
+  // Set isNotesOpened boolean state when PDF document is loaded or active
   useEffect(() => {
+    if (pdfDoc && !loading && !error) {
+      setIsNotesOpened(true);
+    } else {
+      setIsNotesOpened(false);
+    }
+  }, [pdfDoc, loading, error]);
+
+  // Strict Anti-Screenshot & Print Shortcut Blocker (Active when isNotesOpened === true)
+  useEffect(() => {
+    if (!isNotesOpened) return;
+
     const triggerScreenshotBlock = () => {
       setIsScreenshotBlocked(true);
+
+      // Immediately clear / overwrite system clipboard to remove captured screenshots
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText('Screenshot is blocked on NoteShare for security and copyright protection.');
+        }
+      } catch (err) {
+        // Clipboard API may require user gesture on some browsers
+      }
+
       setTimeout(() => {
         setIsScreenshotBlocked(false);
       }, 3000);
     };
 
-    const handleKeyDown = (e) => {
-      // PrintScreen key detection
-      if (e.key === 'PrintScreen' || e.keyCode === 44 || e.code === 'PrintScreen') {
-        e.preventDefault();
-        e.stopPropagation();
-        triggerScreenshotBlock();
-        return false;
+    const isScreenshotShortcut = (e) => {
+      const key = e.key || '';
+      const code = e.code || '';
+      const keyCode = e.keyCode || 0;
+
+      // PrintScreen key detection (all platforms)
+      if (key === 'PrintScreen' || code === 'PrintScreen' || keyCode === 44) {
+        return true;
       }
 
-      // Snipping Tool / OS Screen Capture (Win + Shift + S / Meta + Shift + S / Cmd + Shift + 3/4)
-      if ((e.metaKey || e.winKey || e.ctrlKey) && e.shiftKey && (e.key === 'S' || e.key === 's' || e.key === '3' || e.key === '4')) {
-        e.preventDefault();
-        e.stopPropagation();
-        triggerScreenshotBlock();
-        return false;
+      // Windows Snipping Tool (Win + Shift + S) or Meta + Shift + S or Ctrl + Shift + S
+      if ((e.metaKey || e.winKey || e.ctrlKey) && e.shiftKey && (key === 'S' || key === 's' || code === 'KeyS')) {
+        return true;
+      }
+
+      // Mac OS Screenshots (Cmd + Shift + 3 / 4 / 5)
+      if (e.metaKey && e.shiftKey && (key === '3' || key === '4' || key === '5' || keyCode === 51 || keyCode === 52 || keyCode === 53)) {
+        return true;
       }
 
       // Ctrl + P or Cmd + P (Print)
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
-        e.preventDefault();
-        e.stopPropagation();
-        triggerScreenshotBlock();
-        return false;
+      if ((e.ctrlKey || e.metaKey) && (key === 'p' || key === 'P' || code === 'KeyP')) {
+        return true;
       }
 
       // Ctrl + S or Cmd + S (Save Page)
-      if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
-        e.preventDefault();
-        e.stopPropagation();
-        triggerScreenshotBlock();
-        return false;
+      if ((e.ctrlKey || e.metaKey) && (key === 's' || key === 'S' || code === 'KeyS')) {
+        return true;
       }
 
-      // DevTools (F12 or Ctrl+Shift+I)
-      if (e.key === 'F12' || ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'I' || e.key === 'i'))) {
+      // F12 or DevTools (Ctrl + Shift + I / Cmd + Option + I)
+      if (key === 'F12' || code === 'F12' || keyCode === 123 || ((e.ctrlKey || e.metaKey) && e.shiftKey && (key === 'I' || key === 'i' || code === 'KeyI'))) {
+        return true;
+      }
+
+      return false;
+    };
+
+    const handleKeyDown = (e) => {
+      if (isScreenshotShortcut(e)) {
         e.preventDefault();
         e.stopPropagation();
+        if (e.stopImmediatePropagation) e.stopImmediatePropagation();
         triggerScreenshotBlock();
         return false;
       }
     };
 
     const handleKeyUp = (e) => {
-      if (e.key === 'PrintScreen' || e.keyCode === 44 || e.code === 'PrintScreen') {
+      if (isScreenshotShortcut(e)) {
         e.preventDefault();
         e.stopPropagation();
+        if (e.stopImmediatePropagation) e.stopImmediatePropagation();
         triggerScreenshotBlock();
+        return false;
       }
     };
 
@@ -138,19 +171,38 @@ const PdfViewerPage = () => {
       setIsWindowBlurred(false);
     };
 
-    // Use Capture Phase (true) so listeners trigger BEFORE browser handles fullscreen keys
+    const preventDefaultAction = (e) => {
+      e.preventDefault();
+      return false;
+    };
+
+    // Attach capture-phase listeners on both window and document to intercept shortcuts before OS
+    window.addEventListener('keydown', handleKeyDown, true);
+    window.addEventListener('keyup', handleKeyUp, true);
     document.addEventListener('keydown', handleKeyDown, true);
     document.addEventListener('keyup', handleKeyUp, true);
+
     window.addEventListener('blur', handleWindowBlur);
     window.addEventListener('focus', handleWindowFocus);
 
+    document.addEventListener('contextmenu', preventDefaultAction);
+    document.addEventListener('copy', preventDefaultAction);
+    document.addEventListener('cut', preventDefaultAction);
+
     return () => {
+      window.removeEventListener('keydown', handleKeyDown, true);
+      window.removeEventListener('keyup', handleKeyUp, true);
       document.removeEventListener('keydown', handleKeyDown, true);
       document.removeEventListener('keyup', handleKeyUp, true);
+
       window.removeEventListener('blur', handleWindowBlur);
       window.removeEventListener('focus', handleWindowFocus);
+
+      document.removeEventListener('contextmenu', preventDefaultAction);
+      document.removeEventListener('copy', preventDefaultAction);
+      document.removeEventListener('cut', preventDefaultAction);
     };
-  }, []);
+  }, [isNotesOpened]);
 
   const fetchPdfData = async () => {
     setLoading(true);
@@ -221,7 +273,6 @@ const PdfViewerPage = () => {
         const canvas = canvasRef.current;
         if (!canvas) return;
 
-        // Multiply viewport scale by devicePixelRatio to prevent text blurriness on all screens
         const pixelRatio = window.devicePixelRatio || 1;
         const viewport = page.getViewport({ scale: scale * pixelRatio });
         const context = canvas.getContext('2d');
@@ -229,7 +280,6 @@ const PdfViewerPage = () => {
         canvas.height = viewport.height;
         canvas.width = viewport.width;
 
-        // Display dimensions at un-scaled CSS pixels
         canvas.style.width = `${Math.floor(viewport.width / pixelRatio)}px`;
         canvas.style.height = `${Math.floor(viewport.height / pixelRatio)}px`;
 
@@ -266,6 +316,7 @@ const PdfViewerPage = () => {
   };
 
   const handleBack = () => {
+    setIsNotesOpened(false);
     if (window.history.length > 2) {
       navigate(-1);
     } else {
@@ -305,8 +356,8 @@ const PdfViewerPage = () => {
       className="min-h-[calc(100vh-72px)] bg-light-background dark:bg-dark-background text-light-foreground dark:text-dark-foreground flex flex-col select-none transition-colors duration-300"
     >
       
-      {/* BLACK SCREEN OVERLAY (SCREENSHOT IS BLOCKED) */}
-      {isScreenshotBlocked && (
+      {/* BLACK SCREEN OVERLAY (WHEN SCREENSHOT IS BLOCKED) */}
+      {(isScreenshotBlocked || (isNotesOpened && isScreenshotBlocked)) && (
         <div className="fixed inset-0 bg-black z-[9999] flex flex-col items-center justify-center p-8 text-center text-white animate-fadeIn">
           <div className="w-20 h-20 rounded-full bg-red-500/20 border border-red-500/40 text-red-500 flex items-center justify-center mb-6 animate-pulse">
             <EyeOff className="w-10 h-10" />
@@ -383,9 +434,9 @@ const PdfViewerPage = () => {
           }`}
         >
 
-          {/* Window Blur Protection Overlay */}
-          {isWindowBlurred && (
-            <div className="absolute inset-0 bg-black/90 backdrop-blur-xl z-40 flex flex-col items-center justify-center text-center p-6">
+          {/* Window Blur Protection Overlay (Active when isNotesOpened && isWindowBlurred) */}
+          {isNotesOpened && isWindowBlurred && (
+            <div className="absolute inset-0 bg-black z-40 flex flex-col items-center justify-center text-center p-6">
               <ShieldAlert className="w-12 h-12 text-amber-400 mb-3 animate-pulse" />
               <h3 className="text-xl font-bold text-white">Content Protected</h3>
               <p className="text-xs text-gray-400 mt-1 max-w-sm">
@@ -439,6 +490,7 @@ const PdfViewerPage = () => {
             style={{
               filter: isPdfDarkMode ? 'invert(0.92) hue-rotate(180deg) contrast(1.15)' : 'none',
               transition: 'filter 0.3s ease',
+              display: (isNotesOpened && isWindowBlurred) ? 'none' : 'block'
             }}
             className="shadow-2xl rounded-xl max-w-full my-auto transition-all"
           />

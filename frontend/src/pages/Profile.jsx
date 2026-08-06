@@ -366,7 +366,7 @@ const Profile = () => {
                 ) : (
                   <>
                     <Save className="w-4 h-4 stroke-[2.5]" />
-                    <span>Update Academic Profile</span>
+                      <span>Update Academic Profile</span>
                   </>
                 )}
               </button>
