@@ -438,11 +438,9 @@ const PdfViewerPage = () => {
           {/* BLACK SCREEN OVERLAY (INSIDE CONTAINER SO IT IS 100% VISIBLE IN FULLSCREEN MODE) */}
           {isScreenshotBlocked && (
             <div className="fixed inset-0 bg-black z-[9999] flex flex-col items-center justify-center p-8 text-center text-white animate-fadeIn">
-              <div className="w-20 h-20 rounded-full bg-red-500/20 border border-red-500/40 text-red-500 flex items-center justify-center mb-6 animate-pulse">
-                <EyeOff className="w-10 h-10" />
-              </div>
+            
               <h2 className="text-3xl font-extrabold tracking-tight text-white mb-3">
-                📷 Screenshot is Blocked
+                Screenshot is Blocked
               </h2>
               <p className="text-sm text-gray-400 max-w-md leading-relaxed">
                 Taking screenshots or printing protected study materials is restricted on NoteShare for security and copyright compliance.
@@ -453,7 +451,7 @@ const PdfViewerPage = () => {
           {/* Window Blur Protection Overlay (Active when isNotesOpened && isWindowBlurred) */}
           {isNotesOpened && isWindowBlurred && (
             <div className="absolute inset-0 bg-black z-[9998] flex flex-col items-center justify-center text-center p-6">
-              <ShieldAlert className="w-12 h-12 text-amber-400 mb-3 animate-pulse" />
+              
               <h3 className="text-xl font-bold text-white">Content Protected</h3>
               <p className="text-xs text-gray-400 mt-1 max-w-sm">
                 Click inside NoteShare window to resume reading.
