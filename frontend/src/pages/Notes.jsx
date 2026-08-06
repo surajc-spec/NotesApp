@@ -274,9 +274,6 @@ const Notes = () => {
                   
                   {/* Subject Group Header */}
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-primary/10 dark:bg-primary/15 border border-primary/20 text-primary font-bold flex items-center justify-center shrink-0">
-                      <Hash className="w-4 h-4 stroke-[2.5]" />
-                    </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3">
                         <h3 className="text-xl sm:text-2xl font-bold text-light-foreground dark:text-dark-foreground tracking-tight uppercase font-sans truncate">
