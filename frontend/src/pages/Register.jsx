@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, UserPlus, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, UserPlus, AlertCircle, Info } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import CustomSelect from '../components/CustomSelect';
 
@@ -53,7 +53,6 @@ const Register = () => {
 
     const { name, email, password, confirmPassword, branch, semester } = formData;
 
-    // Basic validation
     if (!name || !email || !password || !confirmPassword || !branch || !semester) {
       setError('Please fill in all required fields.');
       return;
@@ -104,7 +103,6 @@ const Register = () => {
         throw new Error(data.message || 'Failed to register. Please try again.');
       }
 
-      // Save user & token to AuthContext & localStorage
       login(data);
       navigate('/notes');
     } catch (err) {
@@ -118,17 +116,23 @@ const Register = () => {
     <div className="min-h-[calc(100vh-72px)] flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-light-background dark:bg-dark-background transition-colors duration-300">
       <div className="w-full max-w-lg">
         
-        {/* Card Container with Glassmorphism */}
+        {/* Card Container */}
         <div className="bg-light-surface/90 dark:bg-dark-surface/90 backdrop-blur-md border border-light-border dark:border-dark-border rounded-2xl shadow-xl p-8 sm:p-10 transition-colors">
           
           {/* Header */}
-          <div className="text-center mb-8">
+          <div className="text-center mb-6">
             <h1 className="text-3xl font-bold tracking-tight text-light-foreground dark:text-dark-foreground">
               Create an Account
             </h1>
             <p className="text-sm text-light-muted dark:text-dark-muted mt-2">
-              Join NoteShare to access notes & question papers
+              Join NoteShare to access notes &amp; question papers
             </p>
+          </div>
+
+          {/* Profile Semester Note */}
+          <div className="mb-6 p-3.5 rounded-xl bg-primary/10 border border-primary/20 text-center text-xs font-semibold text-primary flex items-center justify-center gap-2">
+            <Info className="w-4 h-4 shrink-0" />
+            <span>You can update semester and year in Profile section</span>
           </div>
 
           {/* Error Alert */}
@@ -252,7 +256,7 @@ const Register = () => {
                 />
               </div>
 
-              {/* Semester Dropdown (1–8) */}
+              {/* Semester Dropdown (1-8) */}
               <div>
                 <label htmlFor="semester" className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
                   Semester
