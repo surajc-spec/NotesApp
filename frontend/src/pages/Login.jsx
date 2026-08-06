@@ -94,9 +94,9 @@ const Login = () => {
           </div>
 
           {/* Profile Semester Note */}
-          <div className="mb-6 p-3.5 rounded-xl bg-primary/10 border border-primary/20 text-center text-xs font-semibold text-primary flex items-center justify-center gap-2">
-            <Info className="w-4 h-4 shrink-0" />
-            <span>You can update semester and year in Profile section</span>
+          <div className="mb-6 p-3.5 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border text-center text-xs font-semibold text-light-muted dark:text-dark-muted flex items-center justify-center gap-2">
+            <Info className="w-4 h-4 text-primary shrink-0" />
+            <span>Academic details can be updated anytime from your profile.</span>
           </div>
 
           {/* Error Alert */}
