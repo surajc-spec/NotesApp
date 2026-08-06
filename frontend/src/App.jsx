@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import DesktopOnlyOverlay from './components/DesktopOnlyOverlay';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import Home from './pages/Home';
@@ -16,6 +17,7 @@ import Register from './pages/Register';
 const AppContent = () => {
   return (
     <div className="min-h-screen flex flex-col justify-between bg-light-background dark:bg-dark-background text-light-foreground dark:text-dark-foreground transition-colors duration-300">
+      <DesktopOnlyOverlay />
       <Navbar />
       <main className="flex-1">
         <Routes>
