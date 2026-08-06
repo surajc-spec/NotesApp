@@ -29,15 +29,16 @@ const PdfViewerPage = () => {
   const [pageNum, setPageNum] = useState(1);
   const [pageInput, setPageInput] = useState('1');
   const [numPages, setNumPages] = useState(0);
-  const [scale, setScale] = useState(1.5); // Default crisp scale
+  const [scale, setScale] = useState(1.5);
   const [loading, setLoading] = useState(true);
   const [renderingPage, setRenderingPage] = useState(false);
   const [error, setError] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPdfDarkMode, setIsPdfDarkMode] = useState(false);
   
-  // Explicit boolean variable for active notes viewer security
+  // Explicit boolean security variables requested by user
   const [isNotesOpened, setIsNotesOpened] = useState(false);
+  const [isFullScreenModeOn, setIsFullScreenModeOn] = useState(false);
 
   // Anti-Screenshot Protection State
   const [isScreenshotBlocked, setIsScreenshotBlocked] = useState(false);
@@ -63,19 +64,28 @@ const PdfViewerPage = () => {
     fetchPdfData();
   }, [type, id]);
 
-  // Fullscreen Listener
+  // Fullscreen Listener to track isFullScreenModeOn
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      const isFS = !!document.fullscreenElement;
+      setIsFullscreen(isFS);
+      setIsFullScreenModeOn(isFS);
     };
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
     };
   }, []);
 
-  // Set isNotesOpened boolean state when PDF document is loaded or active
+  // Set isNotesOpened boolean state when PDF document is active
   useEffect(() => {
     if (pdfDoc && !loading && !error) {
       setIsNotesOpened(true);
@@ -84,20 +94,21 @@ const PdfViewerPage = () => {
     }
   }, [pdfDoc, loading, error]);
 
-  // Strict Anti-Screenshot & Print Shortcut Blocker (Active when isNotesOpened === true)
+  // Strict Anti-Screenshot & Print Shortcut Blocker
+  // Active in both Normal Mode (isNotesOpened) and Fullscreen Mode (isNotesOpened && isFullScreenModeOn)
   useEffect(() => {
     if (!isNotesOpened) return;
 
     const triggerScreenshotBlock = () => {
       setIsScreenshotBlocked(true);
 
-      // Immediately clear / overwrite system clipboard to remove captured screenshots
+      // Immediately clear / overwrite system clipboard
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText('Screenshot is blocked on NoteShare for security and copyright protection.');
         }
       } catch (err) {
-        // Clipboard API may require user gesture on some browsers
+        // Clipboard API fallback
       }
 
       setTimeout(() => {
@@ -115,7 +126,7 @@ const PdfViewerPage = () => {
         return true;
       }
 
-      // Windows Snipping Tool (Win + Shift + S) or Meta + Shift + S or Ctrl + Shift + S
+      // Windows Snipping Tool (Win + Shift + S) / Meta + Shift + S / Ctrl + Shift + S
       if ((e.metaKey || e.winKey || e.ctrlKey) && e.shiftKey && (key === 'S' || key === 's' || code === 'KeyS')) {
         return true;
       }
@@ -125,17 +136,17 @@ const PdfViewerPage = () => {
         return true;
       }
 
-      // Ctrl + P or Cmd + P (Print)
+      // Ctrl + P / Cmd + P (Print)
       if ((e.ctrlKey || e.metaKey) && (key === 'p' || key === 'P' || code === 'KeyP')) {
         return true;
       }
 
-      // Ctrl + S or Cmd + S (Save Page)
+      // Ctrl + S / Cmd + S (Save Page)
       if ((e.ctrlKey || e.metaKey) && (key === 's' || key === 'S' || code === 'KeyS')) {
         return true;
       }
 
-      // F12 or DevTools (Ctrl + Shift + I / Cmd + Option + I)
+      // F12 / DevTools (Ctrl + Shift + I / Cmd + Option + I)
       if (key === 'F12' || code === 'F12' || keyCode === 123 || ((e.ctrlKey || e.metaKey) && e.shiftKey && (key === 'I' || key === 'i' || code === 'KeyI'))) {
         return true;
       }
@@ -176,11 +187,15 @@ const PdfViewerPage = () => {
       return false;
     };
 
-    // Attach capture-phase listeners on both window and document to intercept shortcuts before OS
-    window.addEventListener('keydown', handleKeyDown, true);
-    window.addEventListener('keyup', handleKeyUp, true);
-    document.addEventListener('keydown', handleKeyDown, true);
-    document.addEventListener('keyup', handleKeyUp, true);
+    // Targets to attach listeners: window, document, and containerRef (fullscreen node)
+    const targets = [window, document];
+    if (containerRef.current) targets.push(containerRef.current);
+    if (document.fullscreenElement) targets.push(document.fullscreenElement);
+
+    targets.forEach(target => {
+      target.addEventListener('keydown', handleKeyDown, true);
+      target.addEventListener('keyup', handleKeyUp, true);
+    });
 
     window.addEventListener('blur', handleWindowBlur);
     window.addEventListener('focus', handleWindowFocus);
@@ -190,10 +205,10 @@ const PdfViewerPage = () => {
     document.addEventListener('cut', preventDefaultAction);
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown, true);
-      window.removeEventListener('keyup', handleKeyUp, true);
-      document.removeEventListener('keydown', handleKeyDown, true);
-      document.removeEventListener('keyup', handleKeyUp, true);
+      targets.forEach(target => {
+        target.removeEventListener('keydown', handleKeyDown, true);
+        target.removeEventListener('keyup', handleKeyUp, true);
+      });
 
       window.removeEventListener('blur', handleWindowBlur);
       window.removeEventListener('focus', handleWindowFocus);
@@ -202,7 +217,7 @@ const PdfViewerPage = () => {
       document.removeEventListener('copy', preventDefaultAction);
       document.removeEventListener('cut', preventDefaultAction);
     };
-  }, [isNotesOpened]);
+  }, [isNotesOpened, isFullScreenModeOn]);
 
   const fetchPdfData = async () => {
     setLoading(true);
@@ -356,21 +371,6 @@ const PdfViewerPage = () => {
       className="min-h-[calc(100vh-72px)] bg-light-background dark:bg-dark-background text-light-foreground dark:text-dark-foreground flex flex-col select-none transition-colors duration-300"
     >
       
-      {/* BLACK SCREEN OVERLAY (WHEN SCREENSHOT IS BLOCKED) */}
-      {(isScreenshotBlocked || (isNotesOpened && isScreenshotBlocked)) && (
-        <div className="fixed inset-0 bg-black z-[9999] flex flex-col items-center justify-center p-8 text-center text-white animate-fadeIn">
-          <div className="w-20 h-20 rounded-full bg-red-500/20 border border-red-500/40 text-red-500 flex items-center justify-center mb-6 animate-pulse">
-            <EyeOff className="w-10 h-10" />
-          </div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-white mb-3">
-            📷 Screenshot is Blocked
-          </h2>
-          <p className="text-sm text-gray-400 max-w-md leading-relaxed">
-            Taking screenshots or printing protected study materials is restricted on NoteShare for security and copyright compliance.
-          </p>
-        </div>
-      )}
-
       {/* TOP CONTROL HEADER BAR (Shown in normal mode) */}
       {!isFullscreen && (
         <div className="bg-light-surface/95 dark:bg-dark-surface/95 backdrop-blur-md border-b border-light-border dark:border-dark-border px-6 py-4 sticky top-[72px] z-30 shadow-sm">
@@ -425,18 +425,34 @@ const PdfViewerPage = () => {
         </div>
       )}
 
-      {/* CANVAS RENDERING CONTAINER */}
+      {/* CANVAS RENDERING CONTAINER (Acts as root when Fullscreen is requested) */}
       <div className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full flex flex-col items-center">
         <div 
           ref={containerRef}
-          className={`flex-1 bg-light-surface/90 dark:bg-dark-surface/90 border border-light-border dark:border-dark-border rounded-2xl shadow-2xl overflow-auto flex flex-col items-center justify-between p-6 relative transition-all w-full ${
-            isFullscreen ? 'fixed inset-0 z-50 rounded-none border-none p-4 bg-zinc-950' : 'min-h-[78vh]'
+          tabIndex={-1}
+          className={`flex-1 bg-light-surface/90 dark:bg-dark-surface/90 border border-light-border dark:border-dark-border rounded-2xl shadow-2xl overflow-auto flex flex-col items-center justify-between p-6 relative transition-all w-full focus:outline-none ${
+            isFullscreen ? 'fixed inset-0 z-[999] rounded-none border-none p-4 bg-zinc-950' : 'min-h-[78vh]'
           }`}
         >
 
+          {/* BLACK SCREEN OVERLAY (INSIDE CONTAINER SO IT IS 100% VISIBLE IN FULLSCREEN MODE) */}
+          {isScreenshotBlocked && (
+            <div className="fixed inset-0 bg-black z-[9999] flex flex-col items-center justify-center p-8 text-center text-white animate-fadeIn">
+              <div className="w-20 h-20 rounded-full bg-red-500/20 border border-red-500/40 text-red-500 flex items-center justify-center mb-6 animate-pulse">
+                <EyeOff className="w-10 h-10" />
+              </div>
+              <h2 className="text-3xl font-extrabold tracking-tight text-white mb-3">
+                📷 Screenshot is Blocked
+              </h2>
+              <p className="text-sm text-gray-400 max-w-md leading-relaxed">
+                Taking screenshots or printing protected study materials is restricted on NoteShare for security and copyright compliance.
+              </p>
+            </div>
+          )}
+
           {/* Window Blur Protection Overlay (Active when isNotesOpened && isWindowBlurred) */}
           {isNotesOpened && isWindowBlurred && (
-            <div className="absolute inset-0 bg-black z-40 flex flex-col items-center justify-center text-center p-6">
+            <div className="absolute inset-0 bg-black z-[9998] flex flex-col items-center justify-center text-center p-6">
               <ShieldAlert className="w-12 h-12 text-amber-400 mb-3 animate-pulse" />
               <h3 className="text-xl font-bold text-white">Content Protected</h3>
               <p className="text-xs text-gray-400 mt-1 max-w-sm">
@@ -490,7 +506,7 @@ const PdfViewerPage = () => {
             style={{
               filter: isPdfDarkMode ? 'invert(0.92) hue-rotate(180deg) contrast(1.15)' : 'none',
               transition: 'filter 0.3s ease',
-              display: (isNotesOpened && isWindowBlurred) ? 'none' : 'block'
+              display: (isNotesOpened && (isWindowBlurred || isScreenshotBlocked)) ? 'none' : 'block'
             }}
             className="shadow-2xl rounded-xl max-w-full my-auto transition-all"
           />
