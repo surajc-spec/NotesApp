@@ -204,6 +204,93 @@ async function userLogin(req, res) {
   }
 }
 
+/**
+ * Step 1: Send Password Reset OTP
+ */
+async function forgotPassword(req, res) {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email address is required" });
+    }
+
+    const lowerEmail = email.toLowerCase();
+    const user = await userModel.findOne({ email: lowerEmail });
+
+    if (!user) {
+      return res.status(404).json({ message: "No account registered with this email address." });
+    }
+
+    // Generate 6-digit OTP
+    const otp = crypto.randomInt(100000, 999999).toString();
+
+    // Save/update OTP
+    await otpModel.findOneAndUpdate(
+      { email: lowerEmail },
+      { otp, createdAt: new Date() },
+      { upsert: true, new: true }
+    );
+
+    // Send email via Resend
+    await emailService.sendPasswordResetOtpEmail(lowerEmail, otp);
+
+    return res.status(200).json({
+      message: "Password reset OTP sent to your email successfully!",
+    });
+  } catch (error) {
+    console.error("Forgot Password Error:", error);
+    return res.status(500).json({ message: "Failed to send password reset code." });
+  }
+}
+
+/**
+ * Step 2: Reset Password with Verified OTP
+ */
+async function resetPassword(req, res) {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ message: "Email, OTP code, and new password are required." });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: "New password must be at least 6 characters long." });
+    }
+
+    const lowerEmail = email.toLowerCase();
+
+    // Verify OTP
+    const otpDoc = await otpModel.findOne({ email: lowerEmail });
+    if (!otpDoc || otpDoc.otp !== String(otp).trim()) {
+      return res.status(400).json({ message: "Invalid or expired OTP code. Please request a new code." });
+    }
+
+    // Update password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const updatedUser = await userModel.findOneAndUpdate(
+      { email: lowerEmail },
+      { password: hashedPassword },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User account not found." });
+    }
+
+    // Delete verified OTP
+    await otpModel.deleteOne({ email: lowerEmail });
+
+    return res.status(200).json({
+      message: "Password reset successfully! You can now login with your new password.",
+    });
+  } catch (error) {
+    console.error("Reset Password Error:", error);
+    return res.status(500).json({ message: "Failed to reset password." });
+  }
+}
+
 async function userLogout(req, res) {
   res.clearCookie("token");
   return res.status(200).json({
@@ -277,4 +364,13 @@ async function updateProfile(req, res) {
   }
 }
 
-module.exports = { sendOtp, userRegister, userLogin, userLogout, getAllUsers, updateProfile };
+module.exports = {
+  sendOtp,
+  userRegister,
+  userLogin,
+  forgotPassword,
+  resetPassword,
+  userLogout,
+  getAllUsers,
+  updateProfile,
+};

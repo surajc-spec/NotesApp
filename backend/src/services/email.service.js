@@ -64,8 +64,6 @@ async function sendContactFormEmail({ name, email, subject, message }) {
 
                     <p style="font-size:13px; font-weight:700; color:#6D7A74; text-transform:uppercase; letter-spacing:0.5px; margin:0 0 10px 0;">Message Content:</p>
                     <div style="background-color:#F4F8F6; border-left:4px solid #36D79D; border-radius:8px; padding:18px; font-size:14px; line-height:1.6; color:#1B211E; white-space:pre-wrap;">${message}</div>
-
-                  
                   </td>
                 </tr>
 
@@ -88,9 +86,9 @@ async function sendContactFormEmail({ name, email, subject, message }) {
   return data;
 }
 
-/**
- * Send OTP Verification email via Resend (Solid Primary Color Template with Copy Code Button)
- */
+
+//  Send Registration OTP Verification email via Resend
+ 
 async function sendOtpEmail(email, otpCode) {
   if (!resend) {
     throw new Error('Resend API key is missing in environment variables');
@@ -128,7 +126,7 @@ async function sendOtpEmail(email, otpCode) {
                       Please enter the following 6-digit verification code to complete your NoteShare registration:
                     </p>
 
-                    <!-- OTP Container with 1-Click Select & Copy Pill -->
+                    <!-- OTP Container -->
                     <div style="background-color:#F4F8F6; border:2px solid #36D79D; border-radius:18px; padding:24px 16px; margin:0 0 28px 0; box-shadow:0 4px 16px rgba(54, 215, 157, 0.15); user-select:all; -webkit-user-select:all; -moz-user-select:all; cursor:pointer;">
                       <div style="font-family:'Courier New', Courier, monospace; font-size:42px; font-weight:800; letter-spacing:14px; color:#0F241C; text-indent:14px; user-select:all; -webkit-user-select:all; -moz-user-select:all;">
                         ${otpCode}
@@ -146,7 +144,81 @@ async function sendOtpEmail(email, otpCode) {
                 <tr>
                   <td style="background-color:#EEF3F0; padding:24px 32px; text-align:center; border-top:1px solid #DEE4E1; font-size:12px; color:#6D7A74; line-height:1.6;">
                     If you didn't request this code, you can safely ignore this email.<br />
-                    Need help? Contact <a href="mailto:noteshare07@gmail.com" style="color:#0F241C; text-decoration:underline; font-weight:700;">support@noteshare.online</a><br />
+                    Need help? Contact <a href="mailto:noteshare07@gmail.com" style="color:#0F241C; text-decoration:underline; font-weight:700;">noteshare07@gmail.com</a><br />
+                    <span style="display:inline-block; margin-top:8px; color:#96A49E;">NoteShare Academic Platform &copy; 2026</span>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `,
+  });
+
+  return data;
+}
+
+/**
+ * Send Password Reset OTP email via Resend
+ */
+async function sendPasswordResetOtpEmail(email, otpCode) {
+  if (!resend) {
+    throw new Error('Resend API key is missing in environment variables');
+  }
+
+  const data = await resend.emails.send({
+    from: 'NoteShare Security <otp@noteshare.online>',
+    to: email,
+    subject: `NoteShare password reset code: ${otpCode}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="margin:0; padding:0; background-color:#F4F8F6; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing:antialiased;">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color:#F4F8F6; padding:40px 16px;">
+          <tr>
+            <td align="center">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width:520px; background-color:#ffffff; border-radius:24px; overflow:hidden; border:1px solid #DEE4E1; box-shadow:0 12px 30px -10px rgba(0, 0, 0, 0.08);">
+                
+                <!-- Solid Primary Header -->
+                <tr>
+                  <td style="background-color:#36D79D; padding:36px 32px; text-align:center;">
+                    <h1 style="color:#0F241C; font-size:26px; font-weight:800; margin:0; letter-spacing:-0.02em;">Password Reset Request</h1>
+                    <p style="color:#0F241C; font-size:14px; margin:8px 0 0 0; opacity:0.85; font-weight:600;">Reset your NoteShare account password securely</p>
+                  </td>
+                </tr>
+
+                <!-- Content Area -->
+                <tr>
+                  <td style="padding:36px 32px; text-align:center; color:#1B211E;">
+                    <p style="font-size:15px; color:#6D7A74; margin:0 0 28px 0; line-height:1.5;">
+                      You requested a password reset for your NoteShare account. Please enter the following 6-digit code to choose a new password:
+                    </p>
+
+                    <!-- OTP Container -->
+                    <div style="background-color:#F4F8F6; border:2px solid #36D79D; border-radius:18px; padding:24px 16px; margin:0 0 28px 0; box-shadow:0 4px 16px rgba(54, 215, 157, 0.15); user-select:all; -webkit-user-select:all; -moz-user-select:all; cursor:pointer;">
+                      <div style="font-family:'Courier New', Courier, monospace; font-size:42px; font-weight:800; letter-spacing:14px; color:#0F241C; text-indent:14px; user-select:all; -webkit-user-select:all; -moz-user-select:all;">
+                        ${otpCode}
+                      </div>
+                    </div>
+
+                    <!-- Security Alert Badge -->
+                    <div style="background-color:#fffbe6; border:1px solid #fef08a; border-radius:12px; padding:14px 16px; font-size:13px; color:#854d0e; display:inline-block; width:100%; box-sizing:border-box;">
+                      Valid for <strong>10 minutes</strong>. If you did not request a password reset, please ignore this email.
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                  <td style="background-color:#EEF3F0; padding:24px 32px; text-align:center; border-top:1px solid #DEE4E1; font-size:12px; color:#6D7A74; line-height:1.6;">
+                    Need help? Contact <a href="mailto:noteshare07@gmail.com" style="color:#0F241C; text-decoration:underline; font-weight:700;">noteshare07@gmail.com</a><br />
                     <span style="display:inline-block; margin-top:8px; color:#96A49E;">NoteShare Academic Platform &copy; 2026</span>
                   </td>
                 </tr>
@@ -166,4 +238,5 @@ async function sendOtpEmail(email, otpCode) {
 module.exports = {
   sendContactFormEmail,
   sendOtpEmail,
+  sendPasswordResetOtpEmail,
 };
