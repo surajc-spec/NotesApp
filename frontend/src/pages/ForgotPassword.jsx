@@ -26,6 +26,23 @@ const ForgotPassword = () => {
     return () => clearInterval(timer);
   }, [resendCooldown]);
 
+  // Helper for safe response parsing
+  const parseResponse = async (response) => {
+    let data = {};
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      const text = await response.text();
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error('Backend service is starting up on Render. Please wait 10 seconds and try again.');
+      }
+    }
+    return data;
+  };
+
   // Step 1: Send Password Reset OTP
   const handleSendResetOtp = async (e) => {
     if (e) e.preventDefault();
@@ -46,7 +63,7 @@ const ForgotPassword = () => {
         body: JSON.stringify({ email: email.trim() }),
       });
 
-      const data = await response.json();
+      const data = await parseResponse(response);
 
       if (!response.ok) {
         throw new Error(data.message || 'Failed to send password reset code.');
@@ -91,7 +108,7 @@ const ForgotPassword = () => {
         }),
       });
 
-      const data = await response.json();
+      const data = await parseResponse(response);
 
       if (!response.ok) {
         throw new Error(data.message || 'Failed to reset password.');
