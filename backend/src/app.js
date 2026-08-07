@@ -7,6 +7,7 @@ const cors = require("cors");
 
 const noteRoutes = require("../src/routes/notes.routes");
 const questionPaperRoutes = require("../src/routes/questionPapers.routes");
+const contactRoutes = require("../src/routes/contact.routes");
 
 const app = express();
 
@@ -39,5 +40,6 @@ app.use(
 app.use('/api/auth', authRoutes)
 app.use("/api/notes", noteRoutes);
 app.use("/api/question-papers", questionPaperRoutes);
+app.use("/api/contact", contactRoutes);
 
 module.exports = app;

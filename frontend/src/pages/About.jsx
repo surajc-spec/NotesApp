@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, ShieldCheck, Zap, GraduationCap, CheckCircle2 } from 'lucide-react';
+
 
 const About = () => {
   return (
@@ -8,9 +8,7 @@ const About = () => {
         
         {/* Header Hero */}
         <div className="text-center space-y-4 mb-14">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-extrabold uppercase tracking-wider">
-            <BookOpen className="w-4 h-4" /> About NoteShare
-          </div>
+         
           <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight font-sans text-light-foreground dark:text-dark-foreground">
             Simplifying Academic Learning
           </h1>
@@ -23,9 +21,6 @@ const About = () => {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12">
           
           <div className="bg-light-surface/90 dark:bg-dark-surface/90 backdrop-blur-md border border-light-border dark:border-dark-border rounded-2xl p-6 shadow-sm space-y-3">
-            <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-              <GraduationCap className="w-6 h-6 stroke-[2.5]" />
-            </div>
             <h3 className="text-lg font-bold text-light-foreground dark:text-dark-foreground">
               Targeted Library
             </h3>
@@ -35,9 +30,6 @@ const About = () => {
           </div>
 
           <div className="bg-light-surface/90 dark:bg-dark-surface/90 backdrop-blur-md border border-light-border dark:border-dark-border rounded-2xl p-6 shadow-sm space-y-3">
-            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-              <ShieldCheck className="w-6 h-6 stroke-[2.5]" />
-            </div>
             <h3 className="text-lg font-bold text-light-foreground dark:text-dark-foreground">
               Protected Viewing
             </h3>
@@ -47,9 +39,6 @@ const About = () => {
           </div>
 
           <div className="bg-light-surface/90 dark:bg-dark-surface/90 backdrop-blur-md border border-light-border dark:border-dark-border rounded-2xl p-6 shadow-sm space-y-3">
-            <div className="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
-              <Zap className="w-6 h-6 stroke-[2.5]" />
-            </div>
             <h3 className="text-lg font-bold text-light-foreground dark:text-dark-foreground">
               Instant Speed
             </h3>
@@ -63,7 +52,7 @@ const About = () => {
         {/* Short & Simple Summary Box */}
         <div className="bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-2xl p-6 sm:p-8 space-y-4">
           <h2 className="text-xl font-bold text-light-foreground dark:text-dark-foreground flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-primary" /> Our Goal
+             Our Goal
           </h2>
           <p className="text-xs sm:text-sm text-light-muted dark:text-dark-muted leading-relaxed font-sans">
             We aim to eliminate the stress of searching for quality study materials during exam preparation. With NoteShare, every student gets instant, organized, and secure access to high-quality notes created for their exact curriculum.
