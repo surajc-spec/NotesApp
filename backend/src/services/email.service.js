@@ -11,7 +11,7 @@ async function sendContactFormEmail({ name, email, subject, message }) {
     throw new Error('Resend API key is missing in environment variables');
   }
 
-  const destinationEmail = process.env.OFFICIAL_CONTACT_EMAIL || 'surajchougule378@gmail.com';
+  const destinationEmail = process.env.OFFICIAL_CONTACT_EMAIL || 'noteshare07@gmail.com';
   const mailSubject = subject ? ` ${subject}` : '[NoteShare Contact] New Message';
 
   const data = await resend.emails.send({
