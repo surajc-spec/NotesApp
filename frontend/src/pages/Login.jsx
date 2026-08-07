@@ -156,7 +156,7 @@ const Login = () => {
           {/* Academic Info Note */}
           <div className="mb-6 p-3 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border text-center text-xs font-semibold text-light-muted dark:text-dark-muted flex items-center justify-center gap-2">
             <Info className="w-4 h-4 text-primary shrink-0" />
-            <span>Academic details can be updated anytime from profile.</span>
+            <span>Academic details can be updated anytime from your profile. If you don't see any notes, please check your academic details in your profile.</span>
           </div>
 
           {/* Error Alert */}
