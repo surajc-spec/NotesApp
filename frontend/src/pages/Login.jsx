@@ -131,19 +131,18 @@ const Login = () => {
             </p>
           </div>
 
-          {/* Google Sign In Button */}
-          <div className="mb-6 flex justify-center">
-            <div className="w-full flex justify-center overflow-hidden rounded-xl shadow-sm border border-light-border dark:border-dark-border">
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={() => setError('Google sign in was cancelled or failed.')}
-                useOneTap
-                theme="outline"
-                shape="pill"
-                text="continue_with"
-                width="100%"
-              />
-            </div>
+          {/* Clean Google Sign In Button */}
+          <div className="mb-6 flex justify-center w-full">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError('Google sign in was cancelled or failed.')}
+              useOneTap
+              theme="outline"
+              shape="pill"
+              text="continue_with"
+              size="large"
+              width="360"
+            />
           </div>
 
           {/* Divider */}

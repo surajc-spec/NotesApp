@@ -223,21 +223,20 @@ const Register = () => {
             </p>
           </div>
 
-          {/* Google Sign Up Button */}
+          {/* Clean Google Sign Up Button */}
           {step === 1 && (
             <>
-              <div className="mb-6 flex justify-center">
-                <div className="w-full flex justify-center overflow-hidden rounded-xl shadow-sm border border-light-border dark:border-dark-border">
-                  <GoogleLogin
-                    onSuccess={handleGoogleSuccess}
-                    onError={() => setError('Google sign up was cancelled or failed.')}
-                    useOneTap
-                    theme="outline"
-                    shape="pill"
-                    text="signup_with"
-                    width="100%"
-                  />
-                </div>
+              <div className="mb-6 flex justify-center w-full">
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={() => setError('Google sign up was cancelled or failed.')}
+                  useOneTap
+                  theme="outline"
+                  shape="pill"
+                  text="signup_with"
+                  size="large"
+                  width="360"
+                />
               </div>
 
               {/* Divider */}
