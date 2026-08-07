@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, UserPlus, AlertCircle, Info, MailCheck, ShieldCheck, RefreshCw } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle, Info, MailCheck, ShieldCheck, RefreshCw } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import CustomSelect from '../components/CustomSelect';
 
@@ -21,6 +21,11 @@ const SEMESTER_OPTIONS = [
   { label: 'Semester 8', value: 8 },
 ];
 
+const EXAM_TYPE_OPTIONS = [
+  { label: 'In-Sem Exam', value: 'insem' },
+  { label: 'End-Sem Exam', value: 'endsem' },
+];
+
 const Register = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -29,7 +34,7 @@ const Register = () => {
     name: '',
     email: '',
     password: '',
-    confirmPassword: '',
+    examType: 'insem',
     branch: '',
     semester: '',
     otp: '',
@@ -37,7 +42,6 @@ const Register = () => {
 
   const [step, setStep] = useState(1); // Step 1: User Info | Step 2: OTP Entry
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -68,15 +72,10 @@ const Register = () => {
     setError('');
     setSuccessMessage('');
 
-    const { name, email, password, confirmPassword, branch, semester } = formData;
+    const { name, email, password, examType, branch, semester } = formData;
 
-    if (!name || !email || !password || !confirmPassword || !branch || !semester) {
+    if (!name || !email || !password || !examType || !branch || !semester) {
       setError('Please fill in all required fields.');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match. Please verify your password.');
       return;
     }
 
@@ -116,7 +115,7 @@ const Register = () => {
     setError('');
     setSuccessMessage('');
 
-    const { name, email, password, branch, semester, otp } = formData;
+    const { name, email, password, examType, branch, semester, otp } = formData;
 
     if (!otp || otp.trim().length !== 6) {
       setError('Please enter the valid 6-digit verification code.');
@@ -136,6 +135,7 @@ const Register = () => {
           password,
           branch,
           semester: Number(semester),
+          examType,
           otp: otp.trim(),
         }),
       });
@@ -236,7 +236,7 @@ const Register = () => {
                 />
               </div>
 
-              {/* Grid for Password & Confirm Password */}
+              {/* Grid for Password & Exam Type Dropdown */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
                   <label htmlFor="password" className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
@@ -264,28 +264,18 @@ const Register = () => {
                 </div>
 
                 <div>
-                  <label htmlFor="confirmPassword" className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
-                    Confirm Password
+                  <label htmlFor="examType" className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
+                    Exam Type
                   </label>
-                  <div className="relative">
-                    <input
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      required
-                      placeholder="••••••••"
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
-                      className="w-full h-[50px] pl-5 pr-12 py-3 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-field text-sm text-light-foreground dark:text-dark-foreground placeholder-light-muted dark:placeholder-dark-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword((prev) => !prev)}
-                      className="absolute inset-y-0 right-0 pr-4 flex items-center text-light-muted dark:text-dark-muted hover:text-light-foreground dark:hover:text-dark-foreground focus:outline-none"
-                    >
-                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
-                  </div>
+                  <CustomSelect
+                    id="examType"
+                    name="examType"
+                    required
+                    value={formData.examType}
+                    onChange={handleChange}
+                    options={EXAM_TYPE_OPTIONS}
+                    placeholder="Select Exam Type"
+                  />
                 </div>
               </div>
 
