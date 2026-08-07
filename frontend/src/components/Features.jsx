@@ -4,22 +4,21 @@ import { BookOpen, Users, Eye, ShieldCheck } from 'lucide-react';
 
 const FEATURES_DATA = [
   {
-    icon: BookOpen,
+   
     title: 'Curated Materials',
     description: 'Access verified study materials structured for maximum retention.',
   },
   {
-    icon: Users,
     title: 'Student Network',
     description: 'Collaborate with top students from various branches and years.',
   },
   {
-    icon: Eye,
+  
     title: 'Preview Only',
     description: 'Read notes inside the platform through a protected preview experience.',
   },
   {
-    icon: ShieldCheck,
+  
     title: 'Secure & Private',
     description: 'Your data is encrypted and you control who sees your content.',
   },
@@ -53,11 +52,6 @@ const Features = () => {
                 transition={{ duration: 0.4, delay: index * 0.1, ease: 'easeOut' }}
                 className="bg-light-surface/90 dark:bg-dark-surface/90 backdrop-blur-md border border-light-border dark:border-dark-border rounded-2xl p-7 flex flex-col items-center text-center transition-all duration-200 hover:scale-[1.03] hover:border-primary/40 group shadow-sm"
               >
-                {/* Circular Green Icon Badge */}
-                <div className="w-12 h-12 rounded-full bg-primary/10 dark:bg-primary/15 border border-primary/20 flex items-center justify-center text-primary shrink-0 transition-transform duration-300 group-hover:scale-110">
-                  <IconComponent className="w-6 h-6 stroke-[2]" />
-                </div>
-
                 {/* Card Title */}
                 <h3 className="text-lg font-bold text-light-foreground dark:text-dark-foreground mt-6 mb-2.5 font-sans">
                   {feature.title}

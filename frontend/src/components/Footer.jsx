@@ -35,6 +35,14 @@ const Footer = () => {
                   Question Papers
                 </Link>
               </li>
+              <li>
+                <Link 
+                  to="/feedback" 
+                  className="hover:text-primary transition-colors duration-200 inline-block"
+                >
+                  Student Reviews
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -57,6 +65,14 @@ const Footer = () => {
                   className="hover:text-primary transition-colors duration-200 inline-flex items-center gap-2"
                 >
                   <span>Contact Us</span>
+                </Link>
+              </li>
+              <li>
+                <Link 
+                  to="/feedback" 
+                  className="hover:text-primary transition-colors duration-200 inline-flex items-center gap-2"
+                >
+                  <span>Give Feedback</span>
                 </Link>
               </li>
               <li>
