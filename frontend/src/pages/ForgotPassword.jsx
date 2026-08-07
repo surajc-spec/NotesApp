@@ -134,9 +134,7 @@ const ForgotPassword = () => {
           
           {/* Header */}
           <div className="text-center mb-6">
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-3">
-              <KeyRound className="w-6 h-6 stroke-[2.5]" />
-            </div>
+           
             <h1 className="text-2xl font-bold tracking-tight text-light-foreground dark:text-dark-foreground">
               {step === 1 ? 'Forgot Password?' : 'Reset Password'}
             </h1>
