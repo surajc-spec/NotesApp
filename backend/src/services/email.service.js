@@ -12,7 +12,7 @@ async function sendContactFormEmail({ name, email, subject, message }) {
   }
 
   const destinationEmail = process.env.OFFICIAL_CONTACT_EMAIL || 'surajchougule378@gmail.com';
-  const mailSubject = subject ? `[NoteShare Contact] ${subject}` : '[NoteShare Contact] New Message';
+  const mailSubject = subject ? ` ${subject}` : '[NoteShare Contact] New Message';
 
   const data = await resend.emails.send({
     from: 'NoteShare Contact <support@noteshare.online>',
@@ -65,9 +65,7 @@ async function sendContactFormEmail({ name, email, subject, message }) {
                     <p style="font-size:13px; font-weight:700; color:#6D7A74; text-transform:uppercase; letter-spacing:0.5px; margin:0 0 10px 0;">Message Content:</p>
                     <div style="background-color:#F4F8F6; border-left:4px solid #36D79D; border-radius:8px; padding:18px; font-size:14px; line-height:1.6; color:#1B211E; white-space:pre-wrap;">${message}</div>
 
-                    <div style="margin-top:28px; padding-top:20px; border-top:1px solid #DEE4E1; text-align:center;">
-                      <p style="font-size:12px; color:#6D7A74; margin:0;">💡 Replying to this email will send your response directly to <strong>${email}</strong>.</p>
-                    </div>
+                  
                   </td>
                 </tr>
 
@@ -134,11 +132,6 @@ async function sendOtpEmail(email, otpCode) {
                     <div style="background-color:#F4F8F6; border:2px solid #36D79D; border-radius:18px; padding:24px 16px; margin:0 0 28px 0; box-shadow:0 4px 16px rgba(54, 215, 157, 0.15); user-select:all; -webkit-user-select:all; -moz-user-select:all; cursor:pointer;">
                       <div style="font-family:'Courier New', Courier, monospace; font-size:42px; font-weight:800; letter-spacing:14px; color:#0F241C; text-indent:14px; user-select:all; -webkit-user-select:all; -moz-user-select:all;">
                         ${otpCode}
-                      </div>
-                      
-                      <!-- Inline Copy Badge Button -->
-                      <div style="margin-top:14px; display:inline-block; background-color:#36D79D; color:#0F241C; font-weight:800; font-size:12px; padding:8px 18px; border-radius:20px; letter-spacing:0.5px; text-transform:uppercase;">
-                        📋 Tap or double-click code to copy
                       </div>
                     </div>
 
