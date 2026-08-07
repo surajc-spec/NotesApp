@@ -45,7 +45,7 @@ const Testimonials = () => {
             Student Reviews &amp; Testimonials
           </h2>
           <p className="mt-4 text-base sm:text-lg text-light-muted dark:text-dark-muted font-normal max-w-2xl mx-auto">
-            See what engineering students have to say about their experience using NoteShare.
+            See how NoteShare is helping engineering students boost their SGPA and ace university exams.
           </p>
         </div>
 
