@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, LogIn as LogInIcon, AlertCircle, Info } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../contexts/AuthContext';
 
 const Login = () => {
@@ -24,6 +25,22 @@ const Login = () => {
     if (error) setError('');
   };
 
+  const parseResponse = async (response) => {
+    let data = {};
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      const text = await response.text();
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error('Backend is waking up or deploying. Please try again in 10 seconds.');
+      }
+    }
+    return data;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -45,18 +62,7 @@ const Login = () => {
         body: JSON.stringify(formData),
       });
 
-      let data = {};
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        data = await response.json();
-      } else {
-        const text = await response.text();
-        try {
-          data = JSON.parse(text);
-        } catch {
-          throw new Error('Backend is waking up or starting. Please try again in a few seconds.');
-        }
-      }
+      const data = await parseResponse(response);
 
       if (!response.ok) {
         throw new Error(data.message || 'Failed to login. Please try again.');
@@ -71,6 +77,38 @@ const Login = () => {
       }
     } catch (err) {
       setError(err.message || 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ credential: credentialResponse.credential }),
+      });
+
+      const data = await parseResponse(response);
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Google authentication failed.');
+      }
+
+      login(data);
+
+      if (data.user?.role === 'admin') {
+        navigate('/dashboard');
+      } else {
+        navigate('/notes');
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to sign in with Google.');
     } finally {
       setLoading(false);
     }
@@ -93,10 +131,33 @@ const Login = () => {
             </p>
           </div>
 
-          {/* Profile Semester Note */}
-          <div className="mb-6 p-3.5 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border text-center text-xs font-semibold text-light-muted dark:text-dark-muted flex items-center justify-center gap-2">
+          {/* Google Sign In Button */}
+          <div className="mb-6 flex justify-center">
+            <div className="w-full flex justify-center overflow-hidden rounded-xl shadow-sm border border-light-border dark:border-dark-border">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => setError('Google sign in was cancelled or failed.')}
+                useOneTap
+                theme="outline"
+                shape="pill"
+                text="continue_with"
+                width="100%"
+              />
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="relative mb-6 flex items-center justify-center">
+            <div className="border-t border-light-border dark:border-dark-border w-full"></div>
+            <span className="bg-light-surface dark:bg-dark-surface px-3 text-xs uppercase font-bold text-light-muted dark:text-dark-muted absolute">
+              or email
+            </span>
+          </div>
+
+          {/* Academic Info Note */}
+          <div className="mb-6 p-3 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border text-center text-xs font-semibold text-light-muted dark:text-dark-muted flex items-center justify-center gap-2">
             <Info className="w-4 h-4 text-primary shrink-0" />
-            <span>Academic details can be updated anytime from your profile.</span>
+            <span>Academic details can be updated anytime from profile.</span>
           </div>
 
           {/* Error Alert */}
@@ -108,7 +169,7 @@ const Login = () => {
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
             
             {/* Email Address */}
             <div>
@@ -166,7 +227,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-[50px] px-6 text-base font-bold text-primary-foreground bg-primary hover:bg-emerald-400 rounded-btn transition-all duration-200 ease-out flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 mt-8"
+              className="w-full h-[50px] px-6 text-base font-bold text-primary-foreground bg-primary hover:bg-emerald-400 rounded-btn transition-all duration-200 ease-out flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 mt-6"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />

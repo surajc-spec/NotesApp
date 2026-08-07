@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, AlertCircle, Info, MailCheck, ShieldCheck, RefreshCw } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../contexts/AuthContext';
 import CustomSelect from '../components/CustomSelect';
 
@@ -66,6 +67,54 @@ const Register = () => {
     if (error) setError('');
   };
 
+  const parseResponse = async (response) => {
+    let data = {};
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      const text = await response.text();
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error('Backend is waking up or deploying. Please try again in 10 seconds.');
+      }
+    }
+    return data;
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ credential: credentialResponse.credential }),
+      });
+
+      const data = await parseResponse(response);
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Google authentication failed.');
+      }
+
+      login(data);
+
+      if (data.user?.role === 'admin') {
+        navigate('/dashboard');
+      } else {
+        navigate('/notes');
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to register with Google.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Step 1: Send OTP to Email
   const handleSendOtp = async (e) => {
     if (e) e.preventDefault();
@@ -93,7 +142,7 @@ const Register = () => {
         body: JSON.stringify({ email }),
       });
 
-      const data = await response.json();
+      const data = await parseResponse(response);
 
       if (!response.ok) {
         throw new Error(data.message || 'Failed to send OTP code. Please try again.');
@@ -140,7 +189,7 @@ const Register = () => {
         }),
       });
 
-      const data = await response.json();
+      const data = await parseResponse(response);
 
       if (!response.ok) {
         throw new Error(data.message || 'Registration failed. Please try again.');
@@ -173,6 +222,33 @@ const Register = () => {
                 : `Enter the 6-digit code sent to ${formData.email}`}
             </p>
           </div>
+
+          {/* Google Sign Up Button */}
+          {step === 1 && (
+            <>
+              <div className="mb-6 flex justify-center">
+                <div className="w-full flex justify-center overflow-hidden rounded-xl shadow-sm border border-light-border dark:border-dark-border">
+                  <GoogleLogin
+                    onSuccess={handleGoogleSuccess}
+                    onError={() => setError('Google sign up was cancelled or failed.')}
+                    useOneTap
+                    theme="outline"
+                    shape="pill"
+                    text="signup_with"
+                    width="100%"
+                  />
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="relative mb-6 flex items-center justify-center">
+                <div className="border-t border-light-border dark:border-dark-border w-full"></div>
+                <span className="bg-light-surface dark:bg-dark-surface px-3 text-xs uppercase font-bold text-light-muted dark:text-dark-muted absolute">
+                  or email registration
+                </span>
+              </div>
+            </>
+          )}
 
           {/* Academic Info Banner */}
           {step === 1 && (

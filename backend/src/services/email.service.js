@@ -221,7 +221,7 @@ async function sendPasswordResetOtpEmail(email, otpCode) {
                     Need help? Contact <a href="mailto:noteshare07@gmail.com" style="color:#0F241C; text-decoration:underline; font-weight:700;">support@noteshare.online</a><br />
                     <span style="display:inline-block; margin-top:8px; color:#96A49E;">NoteShare Academic Platform &copy; 2026</span>
                   </td>
-                </tr>
+                </tr> 
 
               </table>
             </td>

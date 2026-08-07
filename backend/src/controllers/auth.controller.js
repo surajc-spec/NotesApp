@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const { OAuth2Client } = require("google-auth-library");
 const userModel = require("../models/user.model");
 const otpModel = require("../models/otp.model");
 const emailService = require("../services/email.service");
@@ -6,6 +7,9 @@ const getYearFromSemester = require("../utils/getYearFromSemester");
 const jwt = require("jsonwebtoken");
 const config = require("../config/config");
 const bcrypt = require("bcrypt");
+
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "716013392134-kdmod01eh84c9e3r28lc8qo5hjfq3v0q.apps.googleusercontent.com";
+const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 /**
  * Send OTP for registration verification
@@ -205,6 +209,84 @@ async function userLogin(req, res) {
 }
 
 /**
+ * Google OAuth Login / Register Controller
+ */
+async function googleAuth(req, res) {
+  try {
+    const { credential } = req.body;
+
+    if (!credential) {
+      return res.status(400).json({ message: "Google ID token credential is required" });
+    }
+
+    // Verify Google ID Token
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email) {
+      return res.status(400).json({ message: "Invalid Google token payload" });
+    }
+
+    const { email, name } = payload;
+    const lowerEmail = email.toLowerCase();
+
+    let user = await userModel.findOne({ email: lowerEmail });
+
+    // Auto-register if new user
+    if (!user) {
+      const randomPassword = crypto.randomBytes(16).toString("hex");
+      const hashedPassword = await bcrypt.hash(randomPassword, 10);
+
+      user = await userModel.create({
+        name: name || lowerEmail.split("@")[0],
+        email: lowerEmail,
+        password: hashedPassword,
+        branch: "Computer Engineering",
+        semester: 1,
+        year: 1,
+        examType: "insem",
+        role: "user",
+      });
+    }
+
+    const token = jwt.sign(
+      {
+        id: user._id,
+        role: user.role,
+      },
+      config.JWT_SECRET
+    );
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+    });
+
+    return res.status(200).json({
+      message: "Google authentication successful",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        branch: user.branch,
+        semester: user.semester,
+        year: user.year,
+        examType: user.examType || "insem",
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error("Google Auth Error:", error);
+    return res.status(500).json({ message: "Google authentication failed. Please try again." });
+  }
+}
+
+/**
  * Step 1: Send Password Reset OTP
  */
 async function forgotPassword(req, res) {
@@ -368,6 +450,7 @@ module.exports = {
   sendOtp,
   userRegister,
   userLogin,
+  googleAuth,
   forgotPassword,
   resetPassword,
   userLogout,
