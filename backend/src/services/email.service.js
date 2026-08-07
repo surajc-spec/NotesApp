@@ -146,7 +146,7 @@ async function sendOtpEmail(email, otpCode) {
                 <tr>
                   <td style="background-color:#EEF3F0; padding:24px 32px; text-align:center; border-top:1px solid #DEE4E1; font-size:12px; color:#6D7A74; line-height:1.6;">
                     If you didn't request this code, you can safely ignore this email.<br />
-                    Need help? Contact <a href="mailto:support@noteshare.online" style="color:#0F241C; text-decoration:underline; font-weight:700;">support@noteshare.online</a><br />
+                    Need help? Contact <a href="mailto:noteshare07@gmail.com" style="color:#0F241C; text-decoration:underline; font-weight:700;">support@noteshare.online</a><br />
                     <span style="display:inline-block; margin-top:8px; color:#96A49E;">NoteShare Academic Platform &copy; 2026</span>
                   </td>
                 </tr>
