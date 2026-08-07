@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, UserPlus, AlertCircle, Info } from 'lucide-react';
+import { Eye, EyeOff, UserPlus, AlertCircle, Info, MailCheck, ShieldCheck, RefreshCw } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import CustomSelect from '../components/CustomSelect';
 
@@ -32,24 +32,41 @@ const Register = () => {
     confirmPassword: '',
     branch: '',
     semester: '',
+    otp: '',
   });
 
+  const [step, setStep] = useState(1); // Step 1: User Info | Step 2: OTP Entry
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  // Resend OTP Cooldown Timer
+  useEffect(() => {
+    let timer;
+    if (resendCooldown > 0) {
+      timer = setInterval(() => {
+        setResendCooldown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   const handleChange = (e) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
     }));
     if (error) setError('');
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // Step 1: Send OTP to Email
+  const handleSendOtp = async (e) => {
+    if (e) e.preventDefault();
     setError('');
+    setSuccessMessage('');
 
     const { name, email, password, confirmPassword, branch, semester } = formData;
 
@@ -71,11 +88,47 @@ const Register = () => {
     setLoading(true);
 
     try {
+      const response = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to send OTP code. Please try again.');
+      }
+
+      setStep(2);
+      setSuccessMessage(`A 6-digit verification code was sent to ${email}. Please check your inbox.`);
+      setResendCooldown(60); // 60s cooldown
+    } catch (err) {
+      setError(err.message || 'Failed to send verification code. Please check your connection.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Step 2: Submit Registration with Verified OTP
+  const handleFinalRegister = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccessMessage('');
+
+    const { name, email, password, branch, semester, otp } = formData;
+
+    if (!otp || otp.trim().length !== 6) {
+      setError('Please enter the valid 6-digit verification code.');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
           name,
@@ -83,24 +136,14 @@ const Register = () => {
           password,
           branch,
           semester: Number(semester),
+          otp: otp.trim(),
         }),
       });
 
-      let data = {};
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        data = await response.json();
-      } else {
-        const text = await response.text();
-        try {
-          data = JSON.parse(text);
-        } catch {
-          throw new Error('Backend is waking up or starting. Please try again in a few seconds.');
-        }
-      }
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to register. Please try again.');
+        throw new Error(data.message || 'Registration failed. Please try again.');
       }
 
       login(data);
@@ -122,18 +165,30 @@ const Register = () => {
           {/* Header */}
           <div className="text-center mb-6">
             <h1 className="text-3xl font-bold tracking-tight text-light-foreground dark:text-dark-foreground">
-              Create an Account
+              {step === 1 ? 'Create an Account' : 'Verify Email Address'}
             </h1>
             <p className="text-sm text-light-muted dark:text-dark-muted mt-2">
-              Join NoteShare to access notes &amp; question papers
+              {step === 1
+                ? 'Join NoteShare to access notes & question papers'
+                : `Enter the 6-digit code sent to ${formData.email}`}
             </p>
           </div>
 
-          {/* Profile Semester Note */}
-          <div className="mb-6 p-3.5 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border text-center text-xs font-semibold text-light-muted dark:text-dark-muted flex items-center justify-center gap-2">
-            <Info className="w-4 h-4 text-primary shrink-0" />
-            <span>Academic details can be updated anytime from your profile.</span>
-          </div>
+          {/* Academic Info Banner */}
+          {step === 1 && (
+            <div className="mb-6 p-3.5 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border text-center text-xs font-semibold text-light-muted dark:text-dark-muted flex items-center justify-center gap-2">
+              <Info className="w-4 h-4 text-primary shrink-0" />
+              <span>Academic details can be updated anytime from your profile.</span>
+            </div>
+          )}
+
+          {/* Success Banner */}
+          {successMessage && (
+            <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-sm flex items-start gap-3 animate-fadeIn">
+              <MailCheck className="w-5 h-5 shrink-0 mt-0.5" />
+              <span>{successMessage}</span>
+            </div>
+          )}
 
           {/* Error Alert */}
           {error && (
@@ -143,153 +198,208 @@ const Register = () => {
             </div>
           )}
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            
-            {/* Full Name */}
-            <div>
-              <label htmlFor="name" className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
-                Full Name
-              </label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                required
-                placeholder="John Doe"
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full h-[50px] px-5 py-3 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-field text-sm text-light-foreground dark:text-dark-foreground placeholder-light-muted dark:placeholder-dark-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-              />
-            </div>
-
-            {/* Email Address */}
-            <div>
-              <label htmlFor="email" className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
-                Email Address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                placeholder="name@example.com"
-                value={formData.email}
-                onChange={handleChange}
-                className="w-full h-[50px] px-5 py-3 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-field text-sm text-light-foreground dark:text-dark-foreground placeholder-light-muted dark:placeholder-dark-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-              />
-            </div>
-
-            {/* Grid for Password & Confirm Password */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              {/* Password */}
-              <div>
-                <label htmlFor="password" className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
-                  Password
-                </label>
-                <div className="relative">
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    placeholder="••••••••"
-                    value={formData.password}
-                    onChange={handleChange}
-                    className="w-full h-[50px] pl-5 pr-12 py-3 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-field text-sm text-light-foreground dark:text-dark-foreground placeholder-light-muted dark:placeholder-dark-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(prev => !prev)}
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-light-muted dark:text-dark-muted hover:text-light-foreground dark:hover:text-dark-foreground focus:outline-none"
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Confirm Password */}
-              <div>
-                <label htmlFor="confirmPassword" className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
-                  Confirm Password
-                </label>
-                <div className="relative">
-                  <input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    required
-                    placeholder="••••••••"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    className="w-full h-[50px] pl-5 pr-12 py-3 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-field text-sm text-light-foreground dark:text-dark-foreground placeholder-light-muted dark:placeholder-dark-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(prev => !prev)}
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-light-muted dark:text-dark-muted hover:text-light-foreground dark:hover:text-dark-foreground focus:outline-none"
-                    aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
-                  >
-                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Grid for Branch & Semester Custom Dropdowns */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          {/* STEP 1: Registration Form */}
+          {step === 1 && (
+            <form onSubmit={handleSendOtp} className="space-y-5">
               
-              {/* Branch Dropdown */}
+              {/* Full Name */}
               <div>
-                <label htmlFor="branch" className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
-                  Branch
+                <label htmlFor="name" className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
+                  Full Name
                 </label>
-                <CustomSelect
-                  id="branch"
-                  name="branch"
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
                   required
-                  value={formData.branch}
+                  placeholder="John Doe"
+                  value={formData.name}
                   onChange={handleChange}
-                  options={BRANCH_OPTIONS}
-                  placeholder="Select Branch"
+                  className="w-full h-[50px] px-5 py-3 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-field text-sm text-light-foreground dark:text-dark-foreground placeholder-light-muted dark:placeholder-dark-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                 />
               </div>
 
-              {/* Semester Dropdown (1-8) */}
+              {/* Email Address */}
               <div>
-                <label htmlFor="semester" className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
-                  Semester
+                <label htmlFor="email" className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
+                  Email Address
                 </label>
-                <CustomSelect
-                  id="semester"
-                  name="semester"
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
                   required
-                  value={formData.semester}
+                  placeholder="name@example.com"
+                  value={formData.email}
                   onChange={handleChange}
-                  options={SEMESTER_OPTIONS}
-                  placeholder="Select Semester"
+                  className="w-full h-[50px] px-5 py-3 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-field text-sm text-light-foreground dark:text-dark-foreground placeholder-light-muted dark:placeholder-dark-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                 />
               </div>
 
-            </div>
+              {/* Grid for Password & Confirm Password */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                  <label htmlFor="password" className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="password"
+                      name="password"
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      placeholder="••••••••"
+                      value={formData.password}
+                      onChange={handleChange}
+                      className="w-full h-[50px] pl-5 pr-12 py-3 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-field text-sm text-light-foreground dark:text-dark-foreground placeholder-light-muted dark:placeholder-dark-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="absolute inset-y-0 right-0 pr-4 flex items-center text-light-muted dark:text-dark-muted hover:text-light-foreground dark:hover:text-dark-foreground focus:outline-none"
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
 
-            {/* Primary Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full h-[50px] px-6 text-base font-bold text-primary-foreground bg-primary hover:bg-emerald-400 rounded-btn transition-all duration-200 ease-out flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 mt-8"
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>
-                  <UserPlus className="w-5 h-5 stroke-[2.5]" />
-                  <span>Sign Up</span>
-                </>
-              )}
-            </button>
-          </form>
+                <div>
+                  <label htmlFor="confirmPassword" className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
+                    Confirm Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      required
+                      placeholder="••••••••"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      className="w-full h-[50px] pl-5 pr-12 py-3 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-field text-sm text-light-foreground dark:text-dark-foreground placeholder-light-muted dark:placeholder-dark-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      className="absolute inset-y-0 right-0 pr-4 flex items-center text-light-muted dark:text-dark-muted hover:text-light-foreground dark:hover:text-dark-foreground focus:outline-none"
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Grid for Branch & Semester Custom Dropdowns */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                  <label htmlFor="branch" className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
+                    Branch
+                  </label>
+                  <CustomSelect
+                    id="branch"
+                    name="branch"
+                    required
+                    value={formData.branch}
+                    onChange={handleChange}
+                    options={BRANCH_OPTIONS}
+                    placeholder="Select Branch"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="semester" className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
+                    Semester
+                  </label>
+                  <CustomSelect
+                    id="semester"
+                    name="semester"
+                    required
+                    value={formData.semester}
+                    onChange={handleChange}
+                    options={SEMESTER_OPTIONS}
+                    placeholder="Select Semester"
+                  />
+                </div>
+              </div>
+
+              {/* Step 1 Button: Send OTP */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full h-[50px] px-6 text-base font-bold text-primary-foreground bg-primary hover:bg-emerald-400 rounded-btn transition-all duration-200 ease-out flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 mt-6"
+              >
+                {loading ? (
+                  <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <MailCheck className="w-5 h-5 stroke-[2.5]" />
+                    <span>Send Verification Code</span>
+                  </>
+                )}
+              </button>
+            </form>
+          )}
+
+          {/* STEP 2: Enter OTP & Complete Registration */}
+          {step === 2 && (
+            <form onSubmit={handleFinalRegister} className="space-y-6">
+              <div>
+                <label htmlFor="otp" className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2 text-center">
+                  Enter 6-Digit Verification Code
+                </label>
+                <input
+                  id="otp"
+                  name="otp"
+                  type="text"
+                  maxLength={6}
+                  required
+                  autoFocus
+                  placeholder="123456"
+                  value={formData.otp}
+                  onChange={handleChange}
+                  className="w-full h-[60px] text-center text-2xl font-mono tracking-[12px] font-extrabold bg-light-surface-secondary dark:bg-dark-surface-secondary border-2 border-primary rounded-field text-light-foreground dark:text-dark-foreground focus:outline-none focus:ring-4 focus:ring-primary/20 transition-all"
+                />
+              </div>
+
+              {/* Step 2 Buttons */}
+              <div className="space-y-3">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full h-[50px] px-6 text-base font-bold text-primary-foreground bg-primary hover:bg-emerald-400 rounded-btn transition-all duration-200 ease-out flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? (
+                    <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <ShieldCheck className="w-5 h-5 stroke-[2.5]" />
+                      <span>Verify &amp; Create Account</span>
+                    </>
+                  )}
+                </button>
+
+                <div className="flex items-center justify-between pt-2 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="text-light-muted dark:text-dark-muted hover:text-light-foreground dark:hover:text-dark-foreground font-semibold underline"
+                  >
+                    ← Edit Registration Details
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={resendCooldown > 0 || loading}
+                    onClick={handleSendOtp}
+                    className="text-primary hover:underline font-bold disabled:opacity-40 disabled:no-underline flex items-center gap-1"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>{resendCooldown > 0 ? `Resend Code (${resendCooldown}s)` : 'Resend Code'}</span>
+                  </button>
+                </div>
+              </div>
+            </form>
+          )}
 
           {/* Footer Link */}
           <div className="mt-8 text-center text-sm text-light-muted dark:text-dark-muted">

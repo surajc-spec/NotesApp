@@ -41,6 +41,41 @@ async function sendContactFormEmail({ name, email, subject, message }) {
   return data;
 }
 
+/**
+ * Send OTP Verification email via Resend
+ */
+async function sendOtpEmail(email, otpCode) {
+  if (!resend) {
+    throw new Error('Resend API key is missing in environment variables');
+  }
+
+  const data = await resend.emails.send({
+    from: 'NoteShare Security <otp@noteshare.online>',
+    to: email,
+    subject: 'Your NoteShare Verification Code',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.06);">
+        <div style="background-color: #059669; color: #ffffff; padding: 24px; text-center;">
+          <h1 style="margin: 0; font-size: 22px; font-weight: 800; tracking-tight: -0.02em;">NoteShare Account Verification</h1>
+        </div>
+        <div style="padding: 32px 24px; text-align: center; color: #1e293b;">
+          <p style="font-size: 15px; margin-top: 0; color: #475569;">Use the following 6-digit verification code to complete your NoteShare registration:</p>
+          <div style="margin: 28px 0; background-color: #f0fdf4; border: 2px dashed #059669; padding: 18px; border-radius: 12px; display: inline-block;">
+            <span style="font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #059669; font-family: monospace;">${otpCode}</span>
+          </div>
+          <p style="font-size: 13px; color: #64748b; margin-bottom: 0;">This code is valid for <strong>10 minutes</strong>. Do not share this code with anyone.</p>
+        </div>
+        <div style="background-color: #f8fafc; padding: 16px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8;">
+          © 2026 NoteShare Academic Platform. All rights reserved.
+        </div>
+      </div>
+    `,
+  });
+
+  return data;
+}
+
 module.exports = {
   sendContactFormEmail,
+  sendOtpEmail,
 };

@@ -4,6 +4,7 @@ const authController = require('../controllers/auth.controller')
 const rateLimitMiddleware = require('../middlewares/rateLimit.middleware')
 const { authAdmin, authUser } = require('../middlewares/auth.middleware')
 
+router.post('/send-otp', rateLimitMiddleware.registerLimiter, authController.sendOtp)
 router.post('/register', rateLimitMiddleware.registerLimiter, authController.userRegister)
 router.post('/login', rateLimitMiddleware.loginLimiter, authController.userLogin)
 router.get('/users', authAdmin, authController.getAllUsers)
