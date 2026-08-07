@@ -13,6 +13,7 @@ import PdfViewerPage from './pages/PdfViewerPage';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import About from './pages/About';
 
 const AppContent = () => {
   return (
@@ -29,6 +30,7 @@ const AppContent = () => {
           <Route path="/profile" element={<Profile />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/about" element={<About />} />
         </Routes>
       </main>
       <Footer />
