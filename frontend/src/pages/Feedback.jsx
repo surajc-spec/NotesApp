@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Star, MessageSquarePlus, CheckCircle2, AlertCircle, ArrowLeft } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Star, MessageSquarePlus, CheckCircle2, AlertCircle, ArrowLeft, Lock } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import CustomSelect from '../components/CustomSelect';
 
@@ -22,7 +22,6 @@ const SEMESTER_OPTIONS = [
 ];
 
 const Feedback = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
 
   const [rating, setRating] = useState(5);
@@ -39,6 +38,11 @@ const Feedback = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!user) {
+      setError('Please log in to submit your review.');
+      return;
+    }
 
     if (!comment || !comment.trim()) {
       setError('Please write a short review or feedback comment.');
@@ -87,7 +91,34 @@ const Feedback = () => {
         {/* Main Card */}
         <div className="bg-light-surface/90 dark:bg-dark-surface/90 backdrop-blur-md border border-light-border dark:border-dark-border rounded-2xl shadow-xl p-8 sm:p-10 transition-colors">
           
-          {submitted ? (
+          {!user ? (
+            /* Login Required State */
+            <div className="text-center py-6 animate-fadeIn">
+              <div className="w-16 h-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4 border border-primary/20">
+                <Lock className="w-8 h-8 stroke-[2.5]" />
+              </div>
+              <h2 className="text-2xl font-bold text-light-foreground dark:text-dark-foreground mb-2">
+                Authentication Required
+              </h2>
+              <p className="text-xs sm:text-sm text-light-muted dark:text-dark-muted mb-8 max-w-sm mx-auto leading-relaxed">
+                Please log in or register an account to submit your feedback and review for NoteShare.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Link
+                  to="/login"
+                  className="px-6 py-3.5 text-sm font-bold text-primary-foreground bg-primary hover:bg-emerald-400 rounded-btn transition-all hover:scale-[1.03] active:scale-[0.97]"
+                >
+                  Login to Continue
+                </Link>
+                <Link
+                  to="/register"
+                  className="px-6 py-3.5 text-sm font-bold text-light-foreground dark:text-dark-foreground bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-btn transition-all hover:bg-light-border dark:hover:bg-dark-border"
+                >
+                  Create Account
+                </Link>
+              </div>
+            </div>
+          ) : submitted ? (
             /* Success State */
             <div className="text-center py-6 animate-fadeIn">
               <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto mb-4 border border-emerald-500/20">

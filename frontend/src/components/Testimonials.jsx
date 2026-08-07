@@ -119,7 +119,7 @@ const Testimonials = () => {
             </p>
             <Link
               to="/feedback"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-bold text-primary-foreground bg-primary hover:bg-emerald-400 rounded-btn transition-all shadow-glow hover:scale-105 active:scale-95"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-bold text-primary-foreground bg-primary hover:bg-emerald-400 rounded-btn transition-all hover:scale-105 active:scale-95"
             >
               <MessageSquarePlus className="w-4 h-4 stroke-[2.5]" />
               <span>Give First Review</span>
@@ -132,7 +132,7 @@ const Testimonials = () => {
           <div className="mt-12 sm:mt-16 text-center">
             <Link
               to="/feedback"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-bold text-primary-foreground bg-primary hover:bg-emerald-400 rounded-btn transition-all duration-200 shadow-glow hover:scale-[1.03] active:scale-[0.97]"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-bold text-primary-foreground bg-primary hover:bg-emerald-400 rounded-btn transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
             >
               <MessageSquarePlus className="w-4 h-4 stroke-[2.5]" />
               <span>Share Your Experience &amp; Review NoteShare</span>
