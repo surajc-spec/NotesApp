@@ -32,9 +32,9 @@ async function sendContactFormEmail({ name, email, subject, message }) {
             <td align="center">
               <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width:540px; background-color:#ffffff; border-radius:20px; overflow:hidden; border:1px solid #DEE4E1; box-shadow:0 10px 25px -5px rgba(0, 0, 0, 0.05);">
                 
-                <!-- Primary Header -->
+                <!-- Solid Primary Header -->
                 <tr>
-                  <td style="background:linear-gradient(135deg, #36D79D 0%, #20AD7C 100%); padding:32px 28px; text-align:center;">
+                  <td style="background-color:#36D79D; padding:32px 28px; text-align:center;">
                     <h1 style="color:#0F241C; font-size:24px; font-weight:800; margin:0; letter-spacing:-0.02em;">New Contact Form Message</h1>
                     <p style="color:#0F241C; font-size:14px; opacity:0.85; margin:6px 0 0 0; font-weight:600;">NoteShare Support Notification</p>
                   </td>
@@ -91,7 +91,7 @@ async function sendContactFormEmail({ name, email, subject, message }) {
 }
 
 /**
- * Send OTP Verification email via Resend (Redesigned Primary Color Template)
+ * Send OTP Verification email via Resend (Solid Primary Color Template with Copy Code Button)
  */
 async function sendOtpEmail(email, otpCode) {
   if (!resend) {
@@ -115,9 +115,9 @@ async function sendOtpEmail(email, otpCode) {
             <td align="center">
               <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width:520px; background-color:#ffffff; border-radius:24px; overflow:hidden; border:1px solid #DEE4E1; box-shadow:0 12px 30px -10px rgba(0, 0, 0, 0.08);">
                 
-                <!-- Primary Brand Header -->
+                <!-- Solid Primary Header -->
                 <tr>
-                  <td style="background:linear-gradient(135deg, #36D79D 0%, #20AD7C 100%); padding:36px 32px; text-align:center;">
+                  <td style="background-color:#36D79D; padding:36px 32px; text-align:center;">
                     <h1 style="color:#0F241C; font-size:26px; font-weight:800; margin:0; letter-spacing:-0.02em;">Account Verification</h1>
                     <p style="color:#0F241C; font-size:14px; margin:8px 0 0 0; opacity:0.85; font-weight:600;">Verify your email to access academic study notes</p>
                   </td>
@@ -130,14 +130,16 @@ async function sendOtpEmail(email, otpCode) {
                       Please enter the following 6-digit verification code to complete your NoteShare registration:
                     </p>
 
-                    <!-- Redesigned Primary OTP Container -->
-                    <div style="background-color:#F4F8F6; border:2px solid #36D79D; border-radius:18px; padding:24px 16px; margin:0 0 28px 0; box-shadow:0 4px 16px rgba(54, 215, 157, 0.15);">
-                      <div style="font-family:'Courier New', Courier, monospace; font-size:42px; font-weight:800; letter-spacing:14px; color:#0F241C; text-indent:14px;">
+                    <!-- OTP Container with 1-Click Select & Copy Pill -->
+                    <div style="background-color:#F4F8F6; border:2px solid #36D79D; border-radius:18px; padding:24px 16px; margin:0 0 28px 0; box-shadow:0 4px 16px rgba(54, 215, 157, 0.15); user-select:all; -webkit-user-select:all; -moz-user-select:all; cursor:pointer;">
+                      <div style="font-family:'Courier New', Courier, monospace; font-size:42px; font-weight:800; letter-spacing:14px; color:#0F241C; text-indent:14px; user-select:all; -webkit-user-select:all; -moz-user-select:all;">
                         ${otpCode}
                       </div>
-                      <p style="font-size:12px; color:#1B211E; font-weight:700; margin:10px 0 0 0;">
-                        Enter this 6-digit code on the registration page
-                      </p>
+                      
+                      <!-- Inline Copy Badge Button -->
+                      <div style="margin-top:14px; display:inline-block; background-color:#36D79D; color:#0F241C; font-weight:800; font-size:12px; padding:8px 18px; border-radius:20px; letter-spacing:0.5px; text-transform:uppercase;">
+                        📋 Tap or double-click code to copy
+                      </div>
                     </div>
 
                     <!-- Security Alert Badge -->
