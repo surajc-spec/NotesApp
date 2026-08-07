@@ -8,7 +8,7 @@ const jwt = require("jsonwebtoken");
 const config = require("../config/config");
 const bcrypt = require("bcrypt");
 
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "716013392134-kdmod01eh84c9e3r28lc8qo5hjfq3v0q.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 /**
