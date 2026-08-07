@@ -161,9 +161,9 @@ async function sendOtpEmail(email, otpCode) {
   return data;
 }
 
-/**
- * Send Password Reset OTP email via Resend
- */
+
+ // Send Password Reset OTP email via Resend
+ 
 async function sendPasswordResetOtpEmail(email, otpCode) {
   if (!resend) {
     throw new Error('Resend API key is missing in environment variables');
@@ -172,7 +172,7 @@ async function sendPasswordResetOtpEmail(email, otpCode) {
   const data = await resend.emails.send({
     from: 'NoteShare Security <otp@noteshare.online>',
     to: email,
-    subject: `NoteShare password reset code: ${otpCode}`,
+    subject: `NoteShare password reset code`,
     html: `
       <!DOCTYPE html>
       <html>
@@ -218,7 +218,7 @@ async function sendPasswordResetOtpEmail(email, otpCode) {
                 <!-- Footer -->
                 <tr>
                   <td style="background-color:#EEF3F0; padding:24px 32px; text-align:center; border-top:1px solid #DEE4E1; font-size:12px; color:#6D7A74; line-height:1.6;">
-                    Need help? Contact <a href="mailto:noteshare07@gmail.com" style="color:#0F241C; text-decoration:underline; font-weight:700;">noteshare07@gmail.com</a><br />
+                    Need help? Contact <a href="mailto:noteshare07@gmail.com" style="color:#0F241C; text-decoration:underline; font-weight:700;">support@noteshare.online</a><br />
                     <span style="display:inline-block; margin-top:8px; color:#96A49E;">NoteShare Academic Platform &copy; 2026</span>
                   </td>
                 </tr>
