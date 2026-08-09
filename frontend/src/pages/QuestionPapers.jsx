@@ -118,9 +118,7 @@ const QuestionPapers = () => {
           
           {/* Left Title & Subtitle */}
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-primary/10 dark:bg-primary/15 border border-primary/20 flex items-center justify-center text-primary shrink-0 shadow-sm">
-              <GraduationCap className="w-7 h-7 stroke-[2.5]" />
-            </div>
+          
             <div>
               <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-light-foreground dark:text-dark-foreground font-sans">
                 Question Papers
@@ -259,7 +257,7 @@ const QuestionPapers = () => {
             </div>
 
             {/* RIGHT SIDEBAR */}
-            <div className="hidden lg:block lg:col-span-4 xl:col-span-3 sticky top-24">
+            {/* <div className="hidden lg:block lg:col-span-4 xl:col-span-3 sticky top-24">
               <div className="bg-light-surface/90 dark:bg-dark-surface/90 border border-light-border dark:border-dark-border rounded-2xl p-5 shadow-sm space-y-3">
                 <div className="text-[10px] font-extrabold uppercase tracking-wider text-light-muted dark:text-dark-muted">
                   SPONSORED
@@ -268,7 +266,7 @@ const QuestionPapers = () => {
                   Ad placement
                 </div>
               </div>
-            </div>
+            </div> */}
 
           </div>
         )}
