@@ -1,10 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Star, MessageSquarePlus, Quote, GraduationCap, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Star, MessageSquarePlus, Quote, GraduationCap, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Testimonials = () => {
   const [testimonials, setTestimonials] = useState([]);
   const [loading, setLoading] = useState(true);
+  const scrollRef = useRef(null);
+
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
 
   useEffect(() => {
     const fetchTestimonials = async () => {
@@ -26,6 +30,31 @@ const Testimonials = () => {
     fetchTestimonials();
   }, []);
 
+  // Update scroll button state
+  const checkScrollState = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      setCanScrollLeft(scrollLeft > 5);
+      setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 5);
+    }
+  };
+
+  useEffect(() => {
+    checkScrollState();
+    window.addEventListener('resize', checkScrollState);
+    return () => window.removeEventListener('resize', checkScrollState);
+  }, [testimonials]);
+
+  const handleScroll = (direction) => {
+    if (scrollRef.current) {
+      const scrollAmount = 380; // Approximate card width + gap
+      scrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth',
+      });
+    }
+  };
+
   return (
     <section className="py-16 sm:py-24 bg-light-background dark:bg-dark-background transition-colors duration-300 relative overflow-hidden border-b border-light-border/60 dark:border-dark-border/60">
       
@@ -34,14 +63,43 @@ const Testimonials = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
-        {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-light-foreground dark:text-dark-foreground tracking-tight">
-            Student Reviews &amp; Testimonials
-          </h2>
-          <p className="mt-4 text-base sm:text-lg text-light-muted dark:text-dark-muted font-normal max-w-2xl mx-auto">
-            See how NoteShare is helping engineering students boost their SGPA and ace university exams.
-          </p>
+        {/* Section Header with Navigation Controls */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 sm:mb-14 gap-6">
+          <div className="text-left max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-wider mb-4">
+              <GraduationCap className="w-4 h-4" />
+              <span>Student Feedback</span>
+            </div>
+
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-light-foreground dark:text-dark-foreground tracking-tight">
+              Student Reviews &amp; Testimonials
+            </h2>
+            <p className="mt-4 text-base sm:text-lg text-light-muted dark:text-dark-muted font-normal">
+              See how NoteShare is helping engineering students boost their SGPA and ace university exams.
+            </p>
+          </div>
+
+          {/* Forward & Backward Carousel Buttons */}
+          {testimonials.length > 0 && (
+            <div className="flex items-center gap-3 shrink-0">
+              <button
+                onClick={() => handleScroll('left')}
+                disabled={!canScrollLeft}
+                aria-label="Scroll backward"
+                className="w-12 h-12 rounded-full border border-light-border dark:border-dark-border bg-light-surface/90 dark:bg-dark-surface/90 text-light-foreground dark:text-dark-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary flex items-center justify-center transition-all duration-200 disabled:opacity-30 disabled:hover:bg-light-surface dark:disabled:hover:bg-dark-surface disabled:hover:text-light-foreground dark:disabled:hover:text-dark-foreground disabled:hover:border-light-border dark:disabled:hover:border-dark-border disabled:cursor-not-allowed shadow-sm"
+              >
+                <ChevronLeft className="w-6 h-6 stroke-[2.5]" />
+              </button>
+              <button
+                onClick={() => handleScroll('right')}
+                disabled={!canScrollRight}
+                aria-label="Scroll forward"
+                className="w-12 h-12 rounded-full border border-light-border dark:border-dark-border bg-light-surface/90 dark:bg-dark-surface/90 text-light-foreground dark:text-dark-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary flex items-center justify-center transition-all duration-200 disabled:opacity-30 disabled:hover:bg-light-surface dark:disabled:hover:bg-dark-surface disabled:hover:text-light-foreground dark:disabled:hover:text-dark-foreground disabled:hover:border-light-border dark:disabled:hover:border-dark-border disabled:cursor-not-allowed shadow-sm"
+              >
+                <ChevronRight className="w-6 h-6 stroke-[2.5]" />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Loading Spinner */}
@@ -50,12 +108,16 @@ const Testimonials = () => {
             <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
         ) : testimonials.length > 0 ? (
-          /* Real Testimonials Grid */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
+          /* Horizontal Scroll Carousel Track */
+          <div
+            ref={scrollRef}
+            onScroll={checkScrollState}
+            className="flex gap-6 overflow-x-auto scroll-smooth scrollbar-none py-4 px-1 snap-x snap-mandatory"
+          >
             {testimonials.map((item) => (
               <div
                 key={item._id}
-                className="group relative bg-light-surface/80 dark:bg-dark-surface/80 backdrop-blur-md border border-light-border dark:border-dark-border hover:border-primary/50 dark:hover:border-primary/50 rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between hover:-translate-y-1"
+                className="w-[300px] sm:w-[360px] md:w-[380px] shrink-0 snap-start group relative bg-light-surface/90 dark:bg-dark-surface/90 backdrop-blur-md border border-light-border dark:border-dark-border hover:border-primary/50 dark:hover:border-primary/50 rounded-2xl p-6 sm:p-7 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between hover:-translate-y-1"
               >
                 <div>
                   {/* Quote Icon & Stars */}
@@ -103,7 +165,7 @@ const Testimonials = () => {
             ))}
           </div>
         ) : (
-          /* Empty State (Shown when no feedback has been submitted yet) */
+          /* Empty State */
           <div className="max-w-md mx-auto text-center py-8 px-6 bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border rounded-2xl">
             <MessageSquarePlus className="w-12 h-12 text-primary mx-auto mb-3 opacity-80" />
             <h3 className="text-lg font-bold text-light-foreground dark:text-dark-foreground mb-1">
@@ -122,7 +184,7 @@ const Testimonials = () => {
           </div>
         )}
 
-        {/* CTA Button below grid when testimonials exist */}
+        {/* CTA Button below carousel */}
         {testimonials.length > 0 && (
           <div className="mt-12 sm:mt-16 text-center">
             <Link
