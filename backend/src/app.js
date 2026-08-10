@@ -38,6 +38,11 @@ app.use(
   })
 );
 
+// Lightweight health check endpoint for 24/7 keep-alive cron pinging
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 app.use('/api/auth', authRoutes)
 app.use("/api/notes", noteRoutes);
 app.use("/api/question-papers", questionPaperRoutes);
