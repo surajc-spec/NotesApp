@@ -66,11 +66,6 @@ const Testimonials = () => {
         {/* Section Header with Navigation Controls */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 sm:mb-14 gap-6">
           <div className="text-left max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-wider mb-4">
-              <GraduationCap className="w-4 h-4" />
-              <span>Student Feedback</span>
-            </div>
-
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-light-foreground dark:text-dark-foreground tracking-tight">
               Student Reviews &amp; Testimonials
             </h2>
@@ -112,7 +107,7 @@ const Testimonials = () => {
           <div
             ref={scrollRef}
             onScroll={checkScrollState}
-            className="flex gap-6 overflow-x-auto scroll-smooth scrollbar-none py-4 px-1 snap-x snap-mandatory"
+            className="flex gap-6 overflow-x-auto scroll-smooth no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden py-4 px-1 snap-x snap-mandatory"
           >
             {testimonials.map((item) => (
               <div
