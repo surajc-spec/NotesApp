@@ -389,21 +389,13 @@ const PdfViewerPage = () => {
 
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
-                    type === 'question-paper'
-                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                      : 'bg-primary/10 text-primary border border-primary/20'
-                  }`}>
-                    {type === 'question-paper' ? 'Question Paper' : 'Study Note'}
-                  </span>
+             
                   {documentDetails?.subjectCode && (
                     <span className="text-xs font-bold text-light-muted dark:text-dark-muted">
                       • {documentDetails.subjectCode}
                     </span>
                   )}
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400">
-                    <Lock className="w-3 h-3" /> Protected Canvas View
-                  </span>
+               
                 </div>
                 <h1 className="text-lg font-bold text-light-foreground dark:text-dark-foreground truncate font-sans mt-0.5">
                   {documentDetails?.title || (type === 'question-paper' ? 'Question Paper Preview' : 'Note Preview')}
