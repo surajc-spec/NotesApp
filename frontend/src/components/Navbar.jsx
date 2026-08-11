@@ -79,7 +79,7 @@ const Navbar = () => {
               <img
                 src="/favicon2.png"
                 alt="NoteShare Logo"
-                className="w-10 h-10 object-contain rounded-xl transition-transform duration-300 group-hover:scale-105"
+                className="w-10 h-10 object-contain  transition-transform duration-300 group-hover:scale-105"
               />
               <span className="text-xl font-bold tracking-tight text-light-foreground dark:text-dark-foreground font-sans">
                 NoteShare
