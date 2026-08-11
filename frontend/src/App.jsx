@@ -27,7 +27,7 @@ const AppContent = () => {
 
   // Initialize and track Google Analytics 4 pageviews
   useEffect(() => {
-    const gaId = import.meta.env.VITE_GA_MEASUREMENT_ID || "G-T2PXGN3M6H";
+    const gaId = import.meta.env.VITE_GA_MEASUREMENT_ID;
     if (gaId) {
       if (!window.gaInitialized) {
         ReactGA.initialize(gaId);
