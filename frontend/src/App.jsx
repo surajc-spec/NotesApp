@@ -1,5 +1,6 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import ReactGA from 'react-ga4';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import DesktopOnlyOverlay from './components/DesktopOnlyOverlay';
@@ -22,6 +23,20 @@ import Feedback from './pages/Feedback';
 import RestrictedAccess from './pages/RestrictedAccess';
 
 const AppContent = () => {
+  const location = useLocation();
+
+  // Initialize and track Google Analytics 4 pageviews
+  useEffect(() => {
+    const gaId = import.meta.env.VITE_GA_MEASUREMENT_ID;
+    if (gaId) {
+      if (!window.gaInitialized) {
+        ReactGA.initialize(gaId);
+        window.gaInitialized = true;
+      }
+      ReactGA.send({ hitType: 'pageview', page: location.pathname + location.search });
+    }
+  }, [location]);
+
   return (
     <div className="min-h-screen flex flex-col justify-between bg-light-background dark:bg-dark-background text-light-foreground dark:text-dark-foreground transition-colors duration-300">
       <DesktopOnlyOverlay />
