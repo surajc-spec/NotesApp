@@ -9,12 +9,16 @@ const noteRoutes = require("../src/routes/notes.routes");
 const questionPaperRoutes = require("../src/routes/questionPapers.routes");
 const contactRoutes = require("../src/routes/contact.routes");
 const feedbackRoutes = require("../src/routes/feedback.routes");
+const { antiScraperMiddleware, honeypotTrapHandler } = require("./middlewares/antiScraper.middleware");
 
 const app = express();
 
 app.use(express.json())
 app.use(cookieParser())
 app.use(compression());
+
+// Anti-Scraper Security Middleware (Blocks Python/Curl/Bot user-agents & Banned IPs)
+app.use(antiScraperMiddleware);
 
 // Enable CORS for localhost and production deployed domains
 const allowedOrigins = [
@@ -42,6 +46,9 @@ app.use(
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Security Honeypot Trap (Bans any automated scraper that hits this endpoint)
+app.get('/api/security/v1/trap', honeypotTrapHandler);
 
 app.use('/api/auth', authRoutes)
 app.use("/api/notes", noteRoutes);

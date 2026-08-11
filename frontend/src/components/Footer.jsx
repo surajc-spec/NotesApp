@@ -100,6 +100,17 @@ const Footer = () => {
           <p className="text-xs text-light-muted dark:text-dark-muted font-sans">
             &copy; 2026 Suraj Chougule All rights reserved.
           </p>
+
+          {/* Invisible Security Honeypot Link (Traps automated web scrapers) */}
+          <a
+            href="/api/security/v1/trap"
+            style={{ display: 'none', visibility: 'hidden', position: 'absolute', left: '-9999px' }}
+            aria-hidden="true"
+            tabIndex={-1}
+            rel="nofollow"
+          >
+            System Security Verification
+          </a>
         </div>
 
       </div>
