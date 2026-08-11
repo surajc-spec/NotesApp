@@ -98,22 +98,22 @@ NoteShare was benchmarked under heavy simulated load using **k6** (100 Virtual C
 ### Backend (`backend/.env`):
 ```env
 PORT=3000
-MONGO_URI=mongodb+srv://...
+MONGO_URI=mongodb+srv://your_username:your_password@cluster.mongodb.net/your_database
 JWT_SECRET=your_jwt_secret_key
 R2_ACCOUNT_ID=your_cloudflare_r2_account_id
-R2_ACCESS_KEY_ID=your_r2_access_key
-R2_SECRET_ACCESS_KEY=your_r2_secret_key
-R2_ENDPOINT=https://<account_id>.r2.cloudflarestorage.com
+R2_ACCESS_KEY_ID=your_r2_access_key_id
+R2_SECRET_ACCESS_KEY=your_r2_secret_access_key
+R2_ENDPOINT=https://your_account_id.r2.cloudflarestorage.com
 R2_BUCKET_NAME=noteshare
-RESEND_API_KEY=re_SEJX...
+RESEND_API_KEY=re_your_resend_api_key
 OFFICIAL_CONTACT_EMAIL=noteshare07@gmail.com
-GOOGLE_CLIENT_ID=716013392134-...apps.googleusercontent.com
+GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
 ```
 
 ### Frontend (`frontend/.env`):
 ```env
-VITE_GOOGLE_CLIENT_ID=716013392134-...apps.googleusercontent.com
-VITE_GA_MEASUREMENT_ID=G-T2PXGN3M6H
+VITE_GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+VITE_GA_MEASUREMENT_ID=G-YOUR_GA_MEASUREMENT_ID
 ```
 
 ---
