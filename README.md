@@ -15,7 +15,7 @@ graph TD
     subgraph Frontend Security & Analytics
         ReactApp -->|Pageviews & Events| GA4[Google Analytics 4]
         ReactApp -->|DevTools / Mobile / Minimized Check| SecGuard[Desktop Security Guard]
-        SecGuard -->|Redirect if Violation| RestrictedRoute[/restricted Security Route]
+        SecGuard -->|Redirect if Violation| RestrictedRoute["/restricted Security Route"]
     end
 
     ReactApp -->|REST API Requests| WAF[Anti-Scraper Middleware Layer]
