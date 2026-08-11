@@ -171,5 +171,5 @@ npm run dev
 
 ## License & Author
 
-Developed by **Suraj Chougule** & NoteShare Team.  
+Developed by **Suraj Chougule**.  
 All Rights Reserved © 2026 NoteShare.
