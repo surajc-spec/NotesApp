@@ -86,16 +86,11 @@ const RestrictedAccess = () => {
             <div className="w-24 h-24 rounded-3xl bg-red-500/10 border-2 border-red-500/30 text-red-500 flex items-center justify-center shadow-lg">
               <ShieldAlert className="w-12 h-12 stroke-[2.2]" />
             </div>
-            <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center shadow-md">
-              <Lock className="w-5 h-5" />
-            </div>
           </div>
 
           {/* Title & Badge */}
           <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-black uppercase tracking-wider">
-              <span>Security Access Restriction</span>
-            </div>
+         
 
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-light-foreground dark:text-dark-foreground font-sans">
               Desktop Full-Screen Mode Required
