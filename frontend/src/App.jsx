@@ -19,6 +19,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsAndConditions from './pages/TermsAndConditions';
 import Contact from './pages/Contact';
 import Feedback from './pages/Feedback';
+import RestrictedAccess from './pages/RestrictedAccess';
 
 const AppContent = () => {
   return (
@@ -41,6 +42,7 @@ const AppContent = () => {
           <Route path="/terms" element={<TermsAndConditions />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/feedback" element={<Feedback />} />
+          <Route path="/restricted" element={<RestrictedAccess />} />
         </Routes>
       </main>
       <Footer />
