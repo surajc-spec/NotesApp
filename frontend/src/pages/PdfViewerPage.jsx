@@ -631,7 +631,7 @@ const PdfViewerPage = () => {
 
           {/* CONTINUOUS VERTICAL SCROLL LIST CONTAINER (INNER SCROLL VIEWPORT) */}
           {pdfDoc && !loading && (
-            <div className="w-full h-full overflow-y-auto p-4 sm:p-6 pb-24 sm:pb-28 flex flex-col items-center space-y-4 scroll-smooth">
+            <div className="w-full h-full overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden p-4 sm:p-6 pb-24 sm:pb-28 flex flex-col items-center space-y-4 scroll-smooth">
               {Array.from({ length: numPages }, (_, index) => index + 1).map((pageNumber) => (
                 <PdfPageItem
                   key={`page-${pageNumber}`}
