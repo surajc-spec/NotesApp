@@ -15,7 +15,7 @@ import {
   EyeOff,
   Moon,
   Sun,
-  Expand,
+  ArrowLeftRight,
   Scan
 } from 'lucide-react';
 
@@ -306,6 +306,60 @@ const PdfViewerPage = () => {
     };
   }, [isNotesOpened, isFullScreenModeOn]);
 
+  // Calculate & Set "Fit to Width" Scale (Microsoft Edge PDF Reader Style)
+  const handleFitToWidth = useCallback(async () => {
+    if (!pdfDoc || !containerRef.current) return;
+
+    try {
+      const page = await pdfDoc.getPage(1);
+      const defaultViewport = page.getViewport({ scale: 1.0 });
+      
+      // Account for scrollbar and container horizontal padding
+      const availableWidth = containerRef.current.clientWidth - 48; 
+
+      if (availableWidth <= 0) return;
+
+      const fitWidthScale = availableWidth / defaultViewport.width;
+      
+      // Clamp scale safely between 0.5 and 3.0
+      const finalScale = Math.max(0.5, Math.min(fitWidthScale, 3.0));
+      setScale(parseFloat(finalScale.toFixed(2)));
+    } catch (err) {
+      console.error('Fit to width calculation error:', err);
+    }
+  }, [pdfDoc]);
+
+  // Calculate & Set "Fit Page" Scale (Height & Width Fit)
+  const handleFitPage = useCallback(async () => {
+    if (!pdfDoc || !containerRef.current) return;
+
+    try {
+      const page = await pdfDoc.getPage(1);
+      const defaultViewport = page.getViewport({ scale: 1.0 });
+      
+      const containerWidth = containerRef.current.clientWidth - 48;
+      const containerHeight = containerRef.current.clientHeight - 130;
+
+      if (containerWidth <= 0 || containerHeight <= 0) return;
+
+      const fitWidthScale = containerWidth / defaultViewport.width;
+      const fitHeightScale = containerHeight / defaultViewport.height;
+
+      const optimalFitScale = Math.min(fitWidthScale, fitHeightScale);
+      const finalScale = Math.max(0.5, Math.min(optimalFitScale, 2.5));
+      setScale(parseFloat(finalScale.toFixed(2)));
+    } catch (err) {
+      console.error('Fit page calculation error:', err);
+    }
+  }, [pdfDoc]);
+
+  // Auto-fit to width when PDF is loaded
+  useEffect(() => {
+    if (pdfDoc) {
+      handleFitToWidth();
+    }
+  }, [pdfDoc, handleFitToWidth]);
+
   const fetchPdfData = async () => {
     setLoading(true);
     setError('');
@@ -367,45 +421,18 @@ const PdfViewerPage = () => {
     }
   };
 
-  // Calculate & Set "Fit to Screen" Scale
-  const handleFitToScreen = useCallback(async () => {
-    if (!pdfDoc || !containerRef.current) return;
-
-    try {
-      const page = await pdfDoc.getPage(1);
-      const defaultViewport = page.getViewport({ scale: 1.0 });
-      
-      const containerWidth = containerRef.current.clientWidth - 48; // accounting for padding
-      const containerHeight = containerRef.current.clientHeight - 130; // accounting for padding & bottom toolbar
-
-      if (containerWidth <= 0 || containerHeight <= 0) return;
-
-      const fitWidthScale = containerWidth / defaultViewport.width;
-      const fitHeightScale = containerHeight / defaultViewport.height;
-
-      // Fit scale calculation for optimal screen fitting
-      const optimalFitScale = Math.min(fitWidthScale, fitHeightScale);
-      
-      // Clamp between 0.6 and 2.5
-      const finalScale = Math.max(0.6, Math.min(optimalFitScale, 2.5));
-      setScale(parseFloat(finalScale.toFixed(2)));
-    } catch (err) {
-      console.error('Fit to screen calculation error:', err);
-    }
-  }, [pdfDoc]);
-
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
 
     if (!document.fullscreenElement) {
       containerRef.current.requestFullscreen().then(() => {
-        setTimeout(handleFitToScreen, 300);
+        setTimeout(handleFitToWidth, 300);
       }).catch(err => {
         console.error(`Fullscreen error: ${err.message}`);
       });
     } else {
       document.exitFullscreen().then(() => {
-        setTimeout(handleFitToScreen, 300);
+        setTimeout(handleFitToWidth, 300);
       });
     }
   };
@@ -662,15 +689,26 @@ const PdfViewerPage = () => {
               {/* Divider */}
               <div className="w-px h-6 bg-dark-border" />
 
-              {/* Fit to Screen Button */}
+              {/* Fit to Width Button (Microsoft Edge Style: [↔] Fit to width) */}
               <button
                 type="button"
-                onClick={handleFitToScreen}
-                title="Fit Page to Screen Width & Height"
+                onClick={handleFitToWidth}
+                title="Fit Page to Width (Microsoft Edge Style)"
                 className="h-8 px-3 rounded-xl bg-dark-surface-secondary border border-dark-border text-gray-200 hover:text-white hover:bg-primary hover:text-primary-foreground hover:border-primary font-bold text-xs transition-all flex items-center gap-1.5 active:scale-95"
               >
-                <Expand className="w-3.5 h-3.5 stroke-[2.5]" />
-                <span>Fit Screen</span>
+                <ArrowLeftRight className="w-3.5 h-3.5 stroke-[2.5]" />
+                <span>Fit to Width</span>
+              </button>
+
+              {/* Fit Page Button (Fit Entire Height & Width) */}
+              <button
+                type="button"
+                onClick={handleFitPage}
+                title="Fit Entire Page in Viewport"
+                className="h-8 px-2.5 rounded-xl bg-dark-surface-secondary border border-dark-border text-gray-400 hover:text-white hover:bg-dark-surface-tertiary font-medium text-xs transition-all flex items-center gap-1 active:scale-95"
+              >
+                <Scan className="w-3.5 h-3.5 stroke-[2]" />
+                <span>Fit Page</span>
               </button>
 
               {/* Divider */}
