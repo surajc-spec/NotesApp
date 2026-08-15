@@ -648,12 +648,12 @@ const PdfViewerPage = () => {
             </div>
           )}
 
-          {/* PERMANENT FLOATING CONTROL TOOLBAR AT THE BOTTOM OF THE VIEWER */}
+          {/* PERMANENT FLOATING CONTROL TOOLBAR AT THE BOTTOM OF THE VIEWER (STRICT SINGLE HORIZONTAL LINE) */}
           {pdfDoc && !loading && (
-            <div className={`absolute ${isFullscreen ? 'bottom-2 sm:bottom-3' : 'bottom-3'} left-1/2 -translate-x-1/2 z-40 bg-dark-surface/95 backdrop-blur-md border border-dark-border text-white px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-2xl shadow-2xl flex items-center gap-2.5 sm:gap-4 flex-wrap max-w-[95%] sm:max-w-full justify-center animate-fadeIn`}>
+            <div className={`absolute ${isFullscreen ? 'bottom-2 sm:bottom-3' : 'bottom-3'} left-1/2 -translate-x-1/2 z-40 bg-dark-surface/95 backdrop-blur-md border border-dark-border text-white px-3 sm:px-4 py-2 rounded-2xl shadow-2xl flex items-center gap-2 sm:gap-3 flex-nowrap whitespace-nowrap overflow-x-auto no-scrollbar max-w-[96vw] sm:max-w-fit justify-center animate-fadeIn`}>
               
               {/* Direct Page Jumper Form & Navigation */}
-              <form onSubmit={handlePageInputSubmit} className="flex items-center gap-1.5 sm:gap-2 text-xs font-bold">
+              <form onSubmit={handlePageInputSubmit} className="flex items-center gap-1.5 sm:gap-2 text-xs font-bold shrink-0">
                 <button
                   type="button"
                   onClick={handlePrevPage}
@@ -690,10 +690,10 @@ const PdfViewerPage = () => {
               </form>
 
               {/* Divider */}
-              <div className="w-px h-6 bg-dark-border hidden sm:block" />
+              <div className="w-px h-6 bg-dark-border shrink-0 hidden sm:block" />
 
               {/* Zoom Controls */}
-              <div className="flex items-center gap-1.5 sm:gap-2 text-xs font-bold">
+              <div className="flex items-center gap-1.5 sm:gap-2 text-xs font-bold shrink-0">
                 <button
                   type="button"
                   onClick={handleZoomOut}
@@ -718,28 +718,28 @@ const PdfViewerPage = () => {
               </div>
 
               {/* Divider */}
-              <div className="w-px h-6 bg-dark-border" />
+              <div className="w-px h-6 bg-dark-border shrink-0" />
 
               {/* Single Toggle Button for Fit to Width / Fit Page (Microsoft Edge Style) */}
               <button
                 type="button"
                 onClick={handleToggleFitMode}
                 title={fitMode === 'width' ? 'Fit to Page' : 'Fit to Width (Microsoft Edge Style)'}
-                className="h-8 px-3 rounded-xl bg-dark-surface-secondary border border-dark-border text-gray-200 hover:text-white hover:bg-primary hover:text-primary-foreground hover:border-primary font-bold text-xs transition-all flex items-center gap-1.5 active:scale-95"
+                className="h-8 px-3 rounded-xl bg-dark-surface-secondary border border-dark-border text-gray-200 hover:text-white hover:bg-primary hover:text-primary-foreground hover:border-primary font-bold text-xs transition-all flex items-center gap-1.5 active:scale-95 shrink-0"
               >
                 <ArrowLeftRight className="w-3.5 h-3.5 stroke-[2.5]" />
                 <span>{fitMode === 'width' ? 'Fit to Width' : 'Fit to Page'}</span>
               </button>
 
               {/* Divider */}
-              <div className="w-px h-6 bg-dark-border hidden sm:block" />
+              <div className="w-px h-6 bg-dark-border shrink-0 hidden sm:block" />
 
               {/* PDF Dark Mode Toggle */}
               <button
                 type="button"
                 onClick={() => setIsPdfDarkMode(prev => !prev)}
                 title={isPdfDarkMode ? 'Switch to Light Reading Mode' : 'Switch to Dark Reading Mode'}
-                className={`h-8 px-3 rounded-xl border font-bold text-xs transition-all flex items-center gap-1.5 active:scale-95 ${
+                className={`h-8 px-3 rounded-xl border font-bold text-xs transition-all flex items-center gap-1.5 active:scale-95 shrink-0 ${
                   isPdfDarkMode
                     ? 'bg-amber-400/20 text-amber-300 border-amber-400/30'
                     : 'bg-dark-surface-secondary text-gray-300 border-dark-border hover:text-white'
@@ -750,13 +750,13 @@ const PdfViewerPage = () => {
               </button>
 
               {/* Divider */}
-              <div className="w-px h-6 bg-dark-border" />
+              <div className="w-px h-6 bg-dark-border shrink-0" />
 
               {/* Fullscreen Toggle Button */}
               <button
                 type="button"
                 onClick={toggleFullscreen}
-                className="h-8 px-3 sm:px-3.5 bg-primary text-primary-foreground font-bold text-xs rounded-xl hover:bg-emerald-400 transition-all flex items-center gap-1.5 active:scale-95 shadow-md"
+                className="h-8 px-3 sm:px-3.5 bg-primary text-primary-foreground font-bold text-xs rounded-xl hover:bg-emerald-400 transition-all flex items-center gap-1.5 active:scale-95 shadow-md shrink-0"
               >
                 {isFullscreen ? (
                   <>
