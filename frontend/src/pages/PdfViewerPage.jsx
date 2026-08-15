@@ -15,8 +15,7 @@ import {
   EyeOff,
   Moon,
   Sun,
-  ArrowLeftRight,
-  Scan
+  ArrowLeftRight
 } from 'lucide-react';
 
 // Single Page Canvas Component for Continuous Vertical PDF Scrolling (Edge Reader Style)
@@ -159,6 +158,9 @@ const PdfViewerPage = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPdfDarkMode, setIsPdfDarkMode] = useState(false);
   
+  // Fit Mode Toggle State: 'width' (Fit to Width) vs 'page' (Fit to Page)
+  const [fitMode, setFitMode] = useState('width');
+
   // Security boolean variables
   const [isNotesOpened, setIsNotesOpened] = useState(false);
   const [isFullScreenModeOn, setIsFullScreenModeOn] = useState(false);
@@ -306,6 +308,26 @@ const PdfViewerPage = () => {
     };
   }, [isNotesOpened, isFullScreenModeOn]);
 
+  // Ctrl + Mouse Wheel Zooming (PDF Canvas Only, prevents browser window zoom)
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        const delta = e.deltaY < 0 ? 0.15 : -0.15;
+        setScale((prev) => Math.min(Math.max(parseFloat((prev + delta).toFixed(2)), 0.5), 3.0));
+      }
+    };
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => {
+      container.removeEventListener('wheel', handleWheel);
+    };
+  }, []);
+
   // Calculate & Set "Fit to Width" Scale (Microsoft Edge PDF Reader Style)
   const handleFitToWidth = useCallback(async () => {
     if (!pdfDoc || !containerRef.current) return;
@@ -314,14 +336,11 @@ const PdfViewerPage = () => {
       const page = await pdfDoc.getPage(1);
       const defaultViewport = page.getViewport({ scale: 1.0 });
       
-      // Account for scrollbar and container horizontal padding
-      const availableWidth = containerRef.current.clientWidth - 48; 
+      const availableWidth = containerRef.current.clientWidth - 48;
 
       if (availableWidth <= 0) return;
 
       const fitWidthScale = availableWidth / defaultViewport.width;
-      
-      // Clamp scale safely between 0.5 and 3.0
       const finalScale = Math.max(0.5, Math.min(fitWidthScale, 3.0));
       setScale(parseFloat(finalScale.toFixed(2)));
     } catch (err) {
@@ -338,7 +357,7 @@ const PdfViewerPage = () => {
       const defaultViewport = page.getViewport({ scale: 1.0 });
       
       const containerWidth = containerRef.current.clientWidth - 48;
-      const containerHeight = containerRef.current.clientHeight - 130;
+      const containerHeight = containerRef.current.clientHeight - 120;
 
       if (containerWidth <= 0 || containerHeight <= 0) return;
 
@@ -353,10 +372,22 @@ const PdfViewerPage = () => {
     }
   }, [pdfDoc]);
 
+  // Single Toggle Function for Fit Mode (Width <-> Page)
+  const handleToggleFitMode = () => {
+    if (fitMode === 'width') {
+      handleFitPage();
+      setFitMode('page');
+    } else {
+      handleFitToWidth();
+      setFitMode('width');
+    }
+  };
+
   // Auto-fit to width when PDF is loaded
   useEffect(() => {
     if (pdfDoc) {
       handleFitToWidth();
+      setFitMode('width');
     }
   }, [pdfDoc, handleFitToWidth]);
 
@@ -540,8 +571,8 @@ const PdfViewerPage = () => {
         <div 
           ref={containerRef}
           tabIndex={-1}
-          className={`flex-1 bg-light-surface/90 dark:bg-dark-surface/90 border border-light-border dark:border-dark-border rounded-2xl shadow-2xl overflow-y-auto flex flex-col items-center p-4 sm:p-6 relative transition-all w-full focus:outline-none scroll-smooth ${
-            isFullscreen ? 'fixed inset-0 z-[999] rounded-none border-none p-4 bg-zinc-950' : 'h-[78vh]'
+          className={`flex-1 bg-light-surface/90 dark:bg-dark-surface/90 border border-light-border dark:border-dark-border rounded-2xl shadow-2xl relative transition-all w-full focus:outline-none overflow-hidden ${
+            isFullscreen ? 'fixed inset-0 z-[999] rounded-none border-none bg-zinc-950' : 'h-[78vh]'
           }`}
         >
 
@@ -569,7 +600,7 @@ const PdfViewerPage = () => {
 
           {/* Loading State */}
           {loading && (
-            <div className="flex flex-col items-center justify-center gap-4 py-20 my-auto">
+            <div className="flex flex-col items-center justify-center gap-4 py-20 my-auto h-full">
               <Loader2 className="w-12 h-12 text-primary animate-spin" />
               <p className="text-sm font-bold text-light-foreground dark:text-dark-foreground animate-pulse">
                 Loading continuous PDF document...
@@ -579,7 +610,7 @@ const PdfViewerPage = () => {
 
           {/* Error State */}
           {error && !loading && (
-            <div className="flex flex-col items-center justify-center p-8 text-center gap-4 my-auto">
+            <div className="flex flex-col items-center justify-center p-8 text-center gap-4 my-auto h-full">
               <div className="w-16 h-16 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center">
                 <AlertCircle className="w-8 h-8" />
               </div>
@@ -598,9 +629,9 @@ const PdfViewerPage = () => {
             </div>
           )}
 
-          {/* CONTINUOUS VERTICAL SCROLL LIST (Edge PDF Reader Experience) */}
+          {/* CONTINUOUS VERTICAL SCROLL LIST CONTAINER (INNER SCROLL VIEWPORT) */}
           {pdfDoc && !loading && (
-            <div className="w-full flex flex-col items-center space-y-4 pb-20">
+            <div className="w-full h-full overflow-y-auto p-4 sm:p-6 pb-24 sm:pb-28 flex flex-col items-center space-y-4 scroll-smooth">
               {Array.from({ length: numPages }, (_, index) => index + 1).map((pageNumber) => (
                 <PdfPageItem
                   key={`page-${pageNumber}`}
@@ -617,23 +648,23 @@ const PdfViewerPage = () => {
             </div>
           )}
 
-          {/* FLOATING CONTROL TOOLBAR AT THE BOTTOM OF THE PAGE */}
+          {/* PERMANENT FLOATING CONTROL TOOLBAR AT THE BOTTOM OF THE VIEWER */}
           {pdfDoc && !loading && (
-            <div className="sticky bottom-4 z-30 bg-dark-surface/95 backdrop-blur-md border border-dark-border text-white px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-3 sm:gap-4 flex-wrap max-w-full justify-center animate-fadeIn">
+            <div className={`absolute ${isFullscreen ? 'bottom-2 sm:bottom-3' : 'bottom-3'} left-1/2 -translate-x-1/2 z-40 bg-dark-surface/95 backdrop-blur-md border border-dark-border text-white px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-2xl shadow-2xl flex items-center gap-2.5 sm:gap-4 flex-wrap max-w-[95%] sm:max-w-full justify-center animate-fadeIn`}>
               
               {/* Direct Page Jumper Form & Navigation */}
-              <form onSubmit={handlePageInputSubmit} className="flex items-center gap-2 text-xs font-bold">
+              <form onSubmit={handlePageInputSubmit} className="flex items-center gap-1.5 sm:gap-2 text-xs font-bold">
                 <button
                   type="button"
                   onClick={handlePrevPage}
                   disabled={pageNum <= 1}
                   title="Previous Page"
-                  className="w-8 h-8 rounded-xl bg-dark-surface-secondary border border-dark-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-dark-surface-secondary border border-dark-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground disabled:opacity-30 disabled:hover:bg-transparent transition-all"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
 
-                <div className="flex items-center gap-1.5 bg-dark-surface-secondary px-3 py-1.5 rounded-xl border border-dark-border">
+                <div className="flex items-center gap-1 sm:gap-1.5 bg-dark-surface-secondary px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl border border-dark-border">
                   <span>Page</span>
                   <input
                     type="number"
@@ -642,7 +673,7 @@ const PdfViewerPage = () => {
                     value={pageInput}
                     onChange={(e) => setPageInput(e.target.value)}
                     onBlur={handlePageInputSubmit}
-                    className="w-12 h-6 text-center font-extrabold bg-dark-surface border border-dark-border rounded-lg text-primary focus:outline-none focus:ring-1 focus:ring-primary text-xs"
+                    className="w-10 sm:w-12 h-6 text-center font-extrabold bg-dark-surface border border-dark-border rounded-lg text-primary focus:outline-none focus:ring-1 focus:ring-primary text-xs"
                   />
                   <span>of {numPages}</span>
                 </div>
@@ -652,27 +683,27 @@ const PdfViewerPage = () => {
                   onClick={handleNextPage}
                   disabled={pageNum >= numPages}
                   title="Next Page"
-                  className="w-8 h-8 rounded-xl bg-dark-surface-secondary border border-dark-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-dark-surface-secondary border border-dark-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground disabled:opacity-30 disabled:hover:bg-transparent transition-all"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </form>
 
               {/* Divider */}
-              <div className="w-px h-6 bg-dark-border" />
+              <div className="w-px h-6 bg-dark-border hidden sm:block" />
 
               {/* Zoom Controls */}
-              <div className="flex items-center gap-2 text-xs font-bold">
+              <div className="flex items-center gap-1.5 sm:gap-2 text-xs font-bold">
                 <button
                   type="button"
                   onClick={handleZoomOut}
                   title="Zoom Out"
-                  className="w-8 h-8 rounded-xl bg-dark-surface-secondary border border-dark-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all"
+                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-dark-surface-secondary border border-dark-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all"
                 >
                   <ZoomOut className="w-4 h-4" />
                 </button>
 
-                <span className="w-14 text-center font-extrabold text-primary">
+                <span className="w-12 sm:w-14 text-center font-extrabold text-primary">
                   {Math.round(scale * 100)}%
                 </span>
 
@@ -680,7 +711,7 @@ const PdfViewerPage = () => {
                   type="button"
                   onClick={handleZoomIn}
                   title="Zoom In"
-                  className="w-8 h-8 rounded-xl bg-dark-surface-secondary border border-dark-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all"
+                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-dark-surface-secondary border border-dark-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all"
                 >
                   <ZoomIn className="w-4 h-4" />
                 </button>
@@ -689,30 +720,19 @@ const PdfViewerPage = () => {
               {/* Divider */}
               <div className="w-px h-6 bg-dark-border" />
 
-              {/* Fit to Width Button (Microsoft Edge Style: [↔] Fit to width) */}
+              {/* Single Toggle Button for Fit to Width / Fit Page (Microsoft Edge Style) */}
               <button
                 type="button"
-                onClick={handleFitToWidth}
-                title="Fit Page to Width (Microsoft Edge Style)"
+                onClick={handleToggleFitMode}
+                title={fitMode === 'width' ? 'Fit to Page' : 'Fit to Width (Microsoft Edge Style)'}
                 className="h-8 px-3 rounded-xl bg-dark-surface-secondary border border-dark-border text-gray-200 hover:text-white hover:bg-primary hover:text-primary-foreground hover:border-primary font-bold text-xs transition-all flex items-center gap-1.5 active:scale-95"
               >
                 <ArrowLeftRight className="w-3.5 h-3.5 stroke-[2.5]" />
-                <span>Fit to Width</span>
-              </button>
-
-              {/* Fit Page Button (Fit Entire Height & Width) */}
-              <button
-                type="button"
-                onClick={handleFitPage}
-                title="Fit Entire Page in Viewport"
-                className="h-8 px-2.5 rounded-xl bg-dark-surface-secondary border border-dark-border text-gray-400 hover:text-white hover:bg-dark-surface-tertiary font-medium text-xs transition-all flex items-center gap-1 active:scale-95"
-              >
-                <Scan className="w-3.5 h-3.5 stroke-[2]" />
-                <span>Fit Page</span>
+                <span>{fitMode === 'width' ? 'Fit to Width' : 'Fit to Page'}</span>
               </button>
 
               {/* Divider */}
-              <div className="w-px h-6 bg-dark-border" />
+              <div className="w-px h-6 bg-dark-border hidden sm:block" />
 
               {/* PDF Dark Mode Toggle */}
               <button
@@ -726,7 +746,7 @@ const PdfViewerPage = () => {
                 }`}
               >
                 {isPdfDarkMode ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-                <span>{isPdfDarkMode ? 'Light PDF' : 'Dark PDF'}</span>
+                <span className="hidden sm:inline">{isPdfDarkMode ? 'Light PDF' : 'Dark PDF'}</span>
               </button>
 
               {/* Divider */}
@@ -736,12 +756,12 @@ const PdfViewerPage = () => {
               <button
                 type="button"
                 onClick={toggleFullscreen}
-                className="h-8 px-3.5 bg-primary text-primary-foreground font-bold text-xs rounded-xl hover:bg-emerald-400 transition-all flex items-center gap-1.5 active:scale-95 shadow-md"
+                className="h-8 px-3 sm:px-3.5 bg-primary text-primary-foreground font-bold text-xs rounded-xl hover:bg-emerald-400 transition-all flex items-center gap-1.5 active:scale-95 shadow-md"
               >
                 {isFullscreen ? (
                   <>
                     <Minimize className="w-3.5 h-3.5 stroke-[2.5]" />
-                    <span>Exit Fullscreen</span>
+                    <span>Exit</span>
                   </>
                 ) : (
                   <>
