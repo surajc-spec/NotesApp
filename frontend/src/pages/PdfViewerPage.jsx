@@ -171,6 +171,16 @@ const PdfViewerPage = () => {
 
   const containerRef = useRef(null);
 
+  // Hide browser body scrollbars while PDF Viewer is active in Normal Mode
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
   // Update pageInput string when pageNum changes from scroll observer
   useEffect(() => {
     setPageInput(String(pageNum));
@@ -519,12 +529,12 @@ const PdfViewerPage = () => {
   return (
     <div 
       onContextMenu={(e) => e.preventDefault()}
-      className="min-h-[calc(100vh-72px)] bg-light-background dark:bg-dark-background text-light-foreground dark:text-dark-foreground flex flex-col select-none transition-colors duration-300"
+      className="h-[calc(100vh-72px)] overflow-hidden bg-light-background dark:bg-dark-background text-light-foreground dark:text-dark-foreground flex flex-col select-none transition-colors duration-300"
     >
       
       {/* TOP CONTROL HEADER BAR (Shown in normal mode) */}
       {!isFullscreen && (
-        <div className="bg-light-surface/95 dark:bg-dark-surface/95 backdrop-blur-md border-b border-light-border dark:border-dark-border px-6 py-4 sticky top-[72px] z-30 shadow-sm">
+        <div className="bg-light-surface/95 dark:bg-dark-surface/95 backdrop-blur-md border-b border-light-border dark:border-dark-border px-6 py-4 sticky top-0 z-30 shadow-sm shrink-0">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
             
             {/* Left: Back & Details */}
@@ -567,12 +577,12 @@ const PdfViewerPage = () => {
       )}
 
       {/* CANVAS RENDERING CONTAINER (Acts as root when Fullscreen is requested) */}
-      <div className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full flex flex-col items-center">
+      <div className="flex-1 p-3 sm:p-4 lg:p-6 max-w-7xl mx-auto w-full flex flex-col items-center overflow-hidden">
         <div 
           ref={containerRef}
           tabIndex={-1}
           className={`flex-1 bg-light-surface/90 dark:bg-dark-surface/90 border border-light-border dark:border-dark-border rounded-2xl shadow-2xl relative transition-all w-full focus:outline-none overflow-hidden ${
-            isFullscreen ? 'fixed inset-0 z-[999] rounded-none border-none bg-zinc-950' : 'h-[78vh]'
+            isFullscreen ? 'fixed inset-0 z-[999] rounded-none border-none bg-zinc-950' : 'h-full overflow-hidden'
           }`}
         >
 
@@ -629,7 +639,7 @@ const PdfViewerPage = () => {
             </div>
           )}
 
-          {/* CONTINUOUS VERTICAL SCROLL LIST CONTAINER (INNER SCROLL VIEWPORT) */}
+          {/* CONTINUOUS VERTICAL SCROLL LIST CONTAINER (INNER SCROLL VIEWPORT WITH HIDDEN SCROLLBAR) */}
           {pdfDoc && !loading && (
             <div className="w-full h-full overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden p-4 sm:p-6 pb-24 sm:pb-28 flex flex-col items-center space-y-4 scroll-smooth">
               {Array.from({ length: numPages }, (_, index) => index + 1).map((pageNumber) => (
