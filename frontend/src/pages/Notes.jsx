@@ -69,30 +69,7 @@ const Notes = () => {
       console.error('Error fetching notes:', err);
       // Fallback demo sample notes if backend DB is empty or during demo testing
       const sampleNotes = [
-        {
-          _id: '1',
-          title: 'asd',
-          subject: 'RF',
-          subjectCode: 'RF101',
-          description: 'rrr',
-          branch: user?.branch || 'Information Technology',
-          year: user?.year || 'Third Year',
-          semester: 5,
-          uploaderName: 'sham',
-          createdAt: new Date('2026-05-28'),
-        },
-        {
-          _id: '2',
-          title: 'se',
-          subject: 'RSDGFV',
-          subjectCode: 'RSDGFV',
-          description: 'ersf',
-          branch: user?.branch || 'Information Technology',
-          year: user?.year || 'Third Year',
-          semester: 5,
-          uploaderName: 'sham',
-          createdAt: new Date('2026-05-28'),
-        },
+       
       ];
       setNotesList(sampleNotes);
       groupNotesBySubject(sampleNotes, subjectFilter, searchQuery);

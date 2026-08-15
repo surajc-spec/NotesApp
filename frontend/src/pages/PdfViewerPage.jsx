@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -14,8 +14,132 @@ import {
   Lock,
   EyeOff,
   Moon,
-  Sun
+  Sun,
+  Expand,
+  Scan
 } from 'lucide-react';
+
+// Single Page Canvas Component for Continuous Vertical PDF Scrolling (Edge Reader Style)
+const PdfPageItem = ({ 
+  pdfDoc, 
+  pageNumber, 
+  scale, 
+  isPdfDarkMode, 
+  isNotesOpened, 
+  isWindowBlurred, 
+  isScreenshotBlocked, 
+  onPageVisible 
+}) => {
+  const canvasRef = useRef(null);
+  const itemRef = useRef(null);
+  const [rendering, setRendering] = useState(false);
+
+  useEffect(() => {
+    if (!pdfDoc) return;
+    let isMounted = true;
+    let renderTask = null;
+
+    const renderPage = async () => {
+      setRendering(true);
+      try {
+        const page = await pdfDoc.getPage(pageNumber);
+        if (!isMounted) return;
+
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        const pixelRatio = window.devicePixelRatio || 1;
+        const viewport = page.getViewport({ scale: scale * pixelRatio });
+        const context = canvas.getContext('2d');
+
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        canvas.style.width = `${Math.floor(viewport.width / pixelRatio)}px`;
+        canvas.style.height = `${Math.floor(viewport.height / pixelRatio)}px`;
+
+        const renderContext = {
+          canvasContext: context,
+          viewport: viewport,
+        };
+
+        renderTask = page.render(renderContext);
+        await renderTask.promise;
+      } catch (err) {
+        if (err.name !== 'RenderingCancelledException') {
+          console.error(`Page ${pageNumber} render error:`, err);
+        }
+      } finally {
+        if (isMounted) setRendering(false);
+      }
+    };
+
+    renderPage();
+
+    return () => {
+      isMounted = false;
+      if (renderTask) {
+        try {
+          renderTask.cancel();
+        } catch (e) {
+          // Ignore cancellation errors
+        }
+      }
+    };
+  }, [pdfDoc, pageNumber, scale]);
+
+  // Observer to track which page is currently visible in the scroll viewport
+  useEffect(() => {
+    if (!itemRef.current || !onPageVisible) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.4) {
+            onPageVisible(pageNumber);
+          }
+        });
+      },
+      { threshold: [0.4, 0.6] }
+    );
+
+    observer.observe(itemRef.current);
+    return () => observer.disconnect();
+  }, [pageNumber, onPageVisible]);
+
+  return (
+    <div
+      ref={itemRef}
+      id={`pdf-page-${pageNumber}`}
+      data-page-number={pageNumber}
+      className="relative my-3 sm:my-4 flex flex-col items-center justify-center shrink-0 w-full"
+    >
+      {/* Page Badge */}
+      <div className="absolute top-3 right-4 bg-dark-surface/80 text-gray-300 text-[11px] font-mono font-bold px-2.5 py-1 rounded-lg border border-dark-border z-10 shadow-md backdrop-blur-sm pointer-events-none">
+        Page {pageNumber}
+      </div>
+
+      {/* Rendering Spinner */}
+      {rendering && (
+        <div className="absolute top-3 left-4 bg-primary/10 text-primary border border-primary/20 px-3 py-1 rounded-xl text-xs font-bold flex items-center gap-1.5 z-10 backdrop-blur-md shadow-sm">
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          <span>Loading...</span>
+        </div>
+      )}
+
+      {/* Canvas Element */}
+      <canvas
+        ref={canvasRef}
+        style={{
+          filter: isPdfDarkMode ? 'invert(0.92) hue-rotate(180deg) contrast(1.15)' : 'none',
+          transition: 'filter 0.3s ease',
+          display: (isNotesOpened && (isWindowBlurred || isScreenshotBlocked)) ? 'none' : 'block'
+        }}
+        className="shadow-2xl rounded-xl max-w-full transition-all bg-white"
+      />
+    </div>
+  );
+};
 
 const PdfViewerPage = () => {
   const [searchParams] = useSearchParams();
@@ -29,14 +153,13 @@ const PdfViewerPage = () => {
   const [pageNum, setPageNum] = useState(1);
   const [pageInput, setPageInput] = useState('1');
   const [numPages, setNumPages] = useState(0);
-  const [scale, setScale] = useState(1.5);
+  const [scale, setScale] = useState(1.2);
   const [loading, setLoading] = useState(true);
-  const [renderingPage, setRenderingPage] = useState(false);
   const [error, setError] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPdfDarkMode, setIsPdfDarkMode] = useState(false);
   
-  // Explicit boolean security variables requested by user
+  // Security boolean variables
   const [isNotesOpened, setIsNotesOpened] = useState(false);
   const [isFullScreenModeOn, setIsFullScreenModeOn] = useState(false);
 
@@ -44,10 +167,9 @@ const PdfViewerPage = () => {
   const [isScreenshotBlocked, setIsScreenshotBlocked] = useState(false);
   const [isWindowBlurred, setIsWindowBlurred] = useState(false);
 
-  const canvasRef = useRef(null);
   const containerRef = useRef(null);
 
-  // Sync pageInput when pageNum changes
+  // Update pageInput string when pageNum changes from scroll observer
   useEffect(() => {
     setPageInput(String(pageNum));
   }, [pageNum]);
@@ -94,15 +216,13 @@ const PdfViewerPage = () => {
     }
   }, [pdfDoc, loading, error]);
 
-  // Strict Anti-Screenshot & Print Shortcut Blocker
-  // Active in both Normal Mode (isNotesOpened) and Fullscreen Mode (isNotesOpened && isFullScreenModeOn)
+  // Anti-Screenshot & Print Shortcut Blocker
   useEffect(() => {
     if (!isNotesOpened) return;
 
     const triggerScreenshotBlock = () => {
       setIsScreenshotBlocked(true);
 
-      // Immediately clear / overwrite system clipboard
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText('Screenshot is blocked on NoteShare for security and copyright protection.');
@@ -121,35 +241,12 @@ const PdfViewerPage = () => {
       const code = e.code || '';
       const keyCode = e.keyCode || 0;
 
-      // PrintScreen key detection (all platforms)
-      if (key === 'PrintScreen' || code === 'PrintScreen' || keyCode === 44) {
-        return true;
-      }
-
-      // Windows Snipping Tool (Win + Shift + S) / Meta + Shift + S / Ctrl + Shift + S
-      if ((e.metaKey || e.winKey || e.ctrlKey) && e.shiftKey && (key === 'S' || key === 's' || code === 'KeyS')) {
-        return true;
-      }
-
-      // Mac OS Screenshots (Cmd + Shift + 3 / 4 / 5)
-      if (e.metaKey && e.shiftKey && (key === '3' || key === '4' || key === '5' || keyCode === 51 || keyCode === 52 || keyCode === 53)) {
-        return true;
-      }
-
-      // Ctrl + P / Cmd + P (Print)
-      if ((e.ctrlKey || e.metaKey) && (key === 'p' || key === 'P' || code === 'KeyP')) {
-        return true;
-      }
-
-      // Ctrl + S / Cmd + S (Save Page)
-      if ((e.ctrlKey || e.metaKey) && (key === 's' || key === 'S' || code === 'KeyS')) {
-        return true;
-      }
-
-      // F12 / DevTools (Ctrl + Shift + I / Cmd + Option + I)
-      if (key === 'F12' || code === 'F12' || keyCode === 123 || ((e.ctrlKey || e.metaKey) && e.shiftKey && (key === 'I' || key === 'i' || code === 'KeyI'))) {
-        return true;
-      }
+      if (key === 'PrintScreen' || code === 'PrintScreen' || keyCode === 44) return true;
+      if ((e.metaKey || e.winKey || e.ctrlKey) && e.shiftKey && (key === 'S' || key === 's' || code === 'KeyS')) return true;
+      if (e.metaKey && e.shiftKey && (key === '3' || key === '4' || key === '5' || keyCode === 51 || keyCode === 52 || keyCode === 53)) return true;
+      if ((e.ctrlKey || e.metaKey) && (key === 'p' || key === 'P' || code === 'KeyP')) return true;
+      if ((e.ctrlKey || e.metaKey) && (key === 's' || key === 'S' || code === 'KeyS')) return true;
+      if (key === 'F12' || code === 'F12' || keyCode === 123 || ((e.ctrlKey || e.metaKey) && e.shiftKey && (key === 'I' || key === 'i' || code === 'KeyI'))) return true;
 
       return false;
     };
@@ -174,20 +271,10 @@ const PdfViewerPage = () => {
       }
     };
 
-    const handleWindowBlur = () => {
-      setIsWindowBlurred(true);
-    };
+    const handleWindowBlur = () => setIsWindowBlurred(true);
+    const handleWindowFocus = () => setIsWindowBlurred(false);
+    const preventDefaultAction = (e) => { e.preventDefault(); return false; };
 
-    const handleWindowFocus = () => {
-      setIsWindowBlurred(false);
-    };
-
-    const preventDefaultAction = (e) => {
-      e.preventDefault();
-      return false;
-    };
-
-    // Targets to attach listeners: window, document, and containerRef (fullscreen node)
     const targets = [window, document];
     if (containerRef.current) targets.push(containerRef.current);
     if (document.fullscreenElement) targets.push(document.fullscreenElement);
@@ -247,7 +334,6 @@ const PdfViewerPage = () => {
       if (data.note) setDocumentDetails(data.note);
       if (data.questionPaper) setDocumentDetails(data.questionPaper);
 
-      // Access PDF.js from window
       const pdfjsLib = window.pdfjsLib;
       if (!pdfjsLib) {
         throw new Error('PDF Engine not loaded. Please refresh the page.');
@@ -273,60 +359,54 @@ const PdfViewerPage = () => {
     }
   };
 
-  // Ultra-Crisp High-DPI Canvas Rendering Engine
-  useEffect(() => {
-    if (!pdfDoc) return;
+  // Scroll smoothly to target page element
+  const scrollToPage = (targetPage) => {
+    const pageEl = document.getElementById(`pdf-page-${targetPage}`);
+    if (pageEl) {
+      pageEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
-    let isMounted = true;
+  // Calculate & Set "Fit to Screen" Scale
+  const handleFitToScreen = useCallback(async () => {
+    if (!pdfDoc || !containerRef.current) return;
 
-    const renderPage = async () => {
-      setRenderingPage(true);
-      try {
-        const page = await pdfDoc.getPage(pageNum);
-        if (!isMounted) return;
+    try {
+      const page = await pdfDoc.getPage(1);
+      const defaultViewport = page.getViewport({ scale: 1.0 });
+      
+      const containerWidth = containerRef.current.clientWidth - 48; // accounting for padding
+      const containerHeight = containerRef.current.clientHeight - 130; // accounting for padding & bottom toolbar
 
-        const canvas = canvasRef.current;
-        if (!canvas) return;
+      if (containerWidth <= 0 || containerHeight <= 0) return;
 
-        const pixelRatio = window.devicePixelRatio || 1;
-        const viewport = page.getViewport({ scale: scale * pixelRatio });
-        const context = canvas.getContext('2d');
+      const fitWidthScale = containerWidth / defaultViewport.width;
+      const fitHeightScale = containerHeight / defaultViewport.height;
 
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-
-        canvas.style.width = `${Math.floor(viewport.width / pixelRatio)}px`;
-        canvas.style.height = `${Math.floor(viewport.height / pixelRatio)}px`;
-
-        const renderContext = {
-          canvasContext: context,
-          viewport: viewport,
-        };
-
-        await page.render(renderContext).promise;
-      } catch (err) {
-        console.error('Page rendering error:', err);
-      } finally {
-        if (isMounted) setRenderingPage(false);
-      }
-    };
-
-    renderPage();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [pdfDoc, pageNum, scale]);
+      // Fit scale calculation for optimal screen fitting
+      const optimalFitScale = Math.min(fitWidthScale, fitHeightScale);
+      
+      // Clamp between 0.6 and 2.5
+      const finalScale = Math.max(0.6, Math.min(optimalFitScale, 2.5));
+      setScale(parseFloat(finalScale.toFixed(2)));
+    } catch (err) {
+      console.error('Fit to screen calculation error:', err);
+    }
+  }, [pdfDoc]);
 
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
 
     if (!document.fullscreenElement) {
-      containerRef.current.requestFullscreen().catch(err => {
+      containerRef.current.requestFullscreen().then(() => {
+        setTimeout(handleFitToScreen, 300);
+      }).catch(err => {
         console.error(`Fullscreen error: ${err.message}`);
       });
     } else {
-      document.exitFullscreen();
+      document.exitFullscreen().then(() => {
+        setTimeout(handleFitToScreen, 300);
+      });
     }
   };
 
@@ -340,11 +420,19 @@ const PdfViewerPage = () => {
   };
 
   const handlePrevPage = () => {
-    if (pageNum > 1) setPageNum(prev => prev - 1);
+    if (pageNum > 1) {
+      const prev = pageNum - 1;
+      setPageNum(prev);
+      scrollToPage(prev);
+    }
   };
 
   const handleNextPage = () => {
-    if (pageNum < numPages) setPageNum(prev => prev + 1);
+    if (pageNum < numPages) {
+      const next = pageNum + 1;
+      setPageNum(next);
+      scrollToPage(next);
+    }
   };
 
   const handlePageInputSubmit = (e) => {
@@ -352,18 +440,23 @@ const PdfViewerPage = () => {
     const parsed = parseInt(pageInput, 10);
     if (!isNaN(parsed) && parsed >= 1 && parsed <= numPages) {
       setPageNum(parsed);
+      scrollToPage(parsed);
     } else {
       setPageInput(String(pageNum));
     }
   };
 
   const handleZoomIn = () => {
-    setScale(prev => Math.min(prev + 0.25, 3.0));
+    setScale(prev => Math.min(parseFloat((prev + 0.2).toFixed(2)), 3.0));
   };
 
   const handleZoomOut = () => {
-    setScale(prev => Math.max(prev - 0.25, 0.6));
+    setScale(prev => Math.max(parseFloat((prev - 0.2).toFixed(2)), 0.5));
   };
+
+  const handlePageVisible = useCallback((pageNumber) => {
+    setPageNum(pageNumber);
+  }, []);
 
   return (
     <div 
@@ -389,13 +482,11 @@ const PdfViewerPage = () => {
 
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-             
                   {documentDetails?.subjectCode && (
                     <span className="text-xs font-bold text-light-muted dark:text-dark-muted">
                       • {documentDetails.subjectCode}
                     </span>
                   )}
-               
                 </div>
                 <h1 className="text-lg font-bold text-light-foreground dark:text-dark-foreground truncate font-sans mt-0.5">
                   {documentDetails?.title || (type === 'question-paper' ? 'Question Paper Preview' : 'Note Preview')}
@@ -422,15 +513,14 @@ const PdfViewerPage = () => {
         <div 
           ref={containerRef}
           tabIndex={-1}
-          className={`flex-1 bg-light-surface/90 dark:bg-dark-surface/90 border border-light-border dark:border-dark-border rounded-2xl shadow-2xl overflow-auto flex flex-col items-center justify-between p-6 relative transition-all w-full focus:outline-none ${
-            isFullscreen ? 'fixed inset-0 z-[999] rounded-none border-none p-4 bg-zinc-950' : 'min-h-[78vh]'
+          className={`flex-1 bg-light-surface/90 dark:bg-dark-surface/90 border border-light-border dark:border-dark-border rounded-2xl shadow-2xl overflow-y-auto flex flex-col items-center p-4 sm:p-6 relative transition-all w-full focus:outline-none scroll-smooth ${
+            isFullscreen ? 'fixed inset-0 z-[999] rounded-none border-none p-4 bg-zinc-950' : 'h-[78vh]'
           }`}
         >
 
           {/* BLACK SCREEN OVERLAY (INSIDE CONTAINER SO IT IS 100% VISIBLE IN FULLSCREEN MODE) */}
           {isScreenshotBlocked && (
             <div className="fixed inset-0 bg-black z-[9999] flex flex-col items-center justify-center p-8 text-center text-white animate-fadeIn">
-            
               <h2 className="text-3xl font-extrabold tracking-tight text-white mb-3">
                 Screenshot is Blocked
               </h2>
@@ -440,10 +530,9 @@ const PdfViewerPage = () => {
             </div>
           )}
 
-          {/* Window Blur Protection Overlay (Active when isNotesOpened && isWindowBlurred) */}
+          {/* Window Blur Protection Overlay */}
           {isNotesOpened && isWindowBlurred && (
             <div className="absolute inset-0 bg-black z-[9998] flex flex-col items-center justify-center text-center p-6">
-              
               <h3 className="text-xl font-bold text-white">Content Protected</h3>
               <p className="text-xs text-gray-400 mt-1 max-w-sm">
                 Click inside NoteShare window to resume reading.
@@ -456,7 +545,7 @@ const PdfViewerPage = () => {
             <div className="flex flex-col items-center justify-center gap-4 py-20 my-auto">
               <Loader2 className="w-12 h-12 text-primary animate-spin" />
               <p className="text-sm font-bold text-light-foreground dark:text-dark-foreground animate-pulse">
-                Rendering crisp PDF canvas...
+                Loading continuous PDF document...
               </p>
             </div>
           )}
@@ -482,30 +571,30 @@ const PdfViewerPage = () => {
             </div>
           )}
 
-          {/* Page Rendering Spinner Indicator */}
-          {renderingPage && (
-            <div className="absolute top-4 right-4 bg-primary/10 text-primary border border-primary/20 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 z-20 shadow-sm backdrop-blur-md">
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              <span>Rendering...</span>
+          {/* CONTINUOUS VERTICAL SCROLL LIST (Edge PDF Reader Experience) */}
+          {pdfDoc && !loading && (
+            <div className="w-full flex flex-col items-center space-y-4 pb-20">
+              {Array.from({ length: numPages }, (_, index) => index + 1).map((pageNumber) => (
+                <PdfPageItem
+                  key={`page-${pageNumber}`}
+                  pdfDoc={pdfDoc}
+                  pageNumber={pageNumber}
+                  scale={scale}
+                  isPdfDarkMode={isPdfDarkMode}
+                  isNotesOpened={isNotesOpened}
+                  isWindowBlurred={isWindowBlurred}
+                  isScreenshotBlocked={isScreenshotBlocked}
+                  onPageVisible={handlePageVisible}
+                />
+              ))}
             </div>
           )}
 
-          {/* High-DPI Canvas Element (With Optional PDF Dark Mode Inversion) */}
-          <canvas
-            ref={canvasRef}
-            style={{
-              filter: isPdfDarkMode ? 'invert(0.92) hue-rotate(180deg) contrast(1.15)' : 'none',
-              transition: 'filter 0.3s ease',
-              display: (isNotesOpened && (isWindowBlurred || isScreenshotBlocked)) ? 'none' : 'block'
-            }}
-            className="shadow-2xl rounded-xl max-w-full my-auto transition-all"
-          />
-
           {/* FLOATING CONTROL TOOLBAR AT THE BOTTOM OF THE PAGE */}
-          {pdfDoc && (
-            <div className="sticky bottom-2 z-30 mt-6 bg-dark-surface/90 backdrop-blur-md border border-dark-border text-white px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-4 flex-wrap max-w-full justify-center animate-fadeIn">
+          {pdfDoc && !loading && (
+            <div className="sticky bottom-4 z-30 bg-dark-surface/95 backdrop-blur-md border border-dark-border text-white px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-3 sm:gap-4 flex-wrap max-w-full justify-center animate-fadeIn">
               
-              {/* Direct Page Jumper Form */}
+              {/* Direct Page Jumper Form & Navigation */}
               <form onSubmit={handlePageInputSubmit} className="flex items-center gap-2 text-xs font-bold">
                 <button
                   type="button"
@@ -573,7 +662,21 @@ const PdfViewerPage = () => {
               {/* Divider */}
               <div className="w-px h-6 bg-dark-border" />
 
-              {/* PDF Dark Mode / Theme Mode Toggle */}
+              {/* Fit to Screen Button */}
+              <button
+                type="button"
+                onClick={handleFitToScreen}
+                title="Fit Page to Screen Width & Height"
+                className="h-8 px-3 rounded-xl bg-dark-surface-secondary border border-dark-border text-gray-200 hover:text-white hover:bg-primary hover:text-primary-foreground hover:border-primary font-bold text-xs transition-all flex items-center gap-1.5 active:scale-95"
+              >
+                <Expand className="w-3.5 h-3.5 stroke-[2.5]" />
+                <span>Fit Screen</span>
+              </button>
+
+              {/* Divider */}
+              <div className="w-px h-6 bg-dark-border" />
+
+              {/* PDF Dark Mode Toggle */}
               <button
                 type="button"
                 onClick={() => setIsPdfDarkMode(prev => !prev)}
