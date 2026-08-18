@@ -5,10 +5,9 @@ import {
   Search, 
   Filter, 
   FileQuestion, 
-  Hash, 
   Loader2, 
-  Sparkles,
-  AlertCircle
+  Pin,
+  Sparkles
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import NoteCard from '../components/NoteCard';
@@ -23,6 +22,16 @@ const Notes = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
+  // Pinned Notes State (persisted in localStorage)
+  const [pinnedIds, setPinnedIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem('noteshare_pinned_notes');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
   // Filters & Search
   const [subjectFilter, setSubjectFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -36,12 +45,30 @@ const Notes = () => {
     fetchNotes();
   }, [user]);
 
+  // Persist pinnedIds to localStorage whenever changed
+  useEffect(() => {
+    try {
+      localStorage.setItem('noteshare_pinned_notes', JSON.stringify(pinnedIds));
+    } catch (e) {
+      console.error('Error saving pinned notes to localStorage:', e);
+    }
+  }, [pinnedIds]);
+
+  const handleTogglePin = (noteId) => {
+    setPinnedIds((prev) => {
+      if (prev.includes(noteId)) {
+        return prev.filter((id) => id !== noteId);
+      } else {
+        return [...prev, noteId];
+      }
+    });
+  };
+
   const fetchNotes = async () => {
     setLoading(true);
     setError('');
 
     try {
-      // Build query params based on user profile if logged in
       const params = new URLSearchParams();
       if (user?.branch) params.append('branch', user.branch);
       if (user?.year) params.append('year', user.year);
@@ -67,12 +94,8 @@ const Notes = () => {
       groupNotesBySubject(fetchedNotes, subjectFilter, searchQuery);
     } catch (err) {
       console.error('Error fetching notes:', err);
-      // Fallback demo sample notes if backend DB is empty or during demo testing
-      const sampleNotes = [
-       
-      ];
-      setNotesList(sampleNotes);
-      groupNotesBySubject(sampleNotes, subjectFilter, searchQuery);
+      setNotesList([]);
+      groupNotesBySubject([], subjectFilter, searchQuery);
     } finally {
       setLoading(false);
     }
@@ -139,7 +162,6 @@ const Notes = () => {
       if (response.ok && data.pdfUrl) {
         setPdfUrl(data.pdfUrl);
       } else {
-        // Fallback preview URL if PDF url endpoint is pending
         setPdfUrl('https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf');
       }
     } catch (err) {
@@ -148,6 +170,7 @@ const Notes = () => {
     }
   };
 
+  const pinnedNotesList = notesList.filter((n) => pinnedIds.includes(n._id || n.id));
   const subjectKeys = Object.keys(groupedNotes);
 
   return (
@@ -155,11 +178,10 @@ const Notes = () => {
       <div className="max-w-container mx-auto px-6 sm:px-8 lg:px-10 pt-10">
         
         {/* HEADER AREA */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-12">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
           
           {/* Left Title & Subtitle */}
           <div className="flex items-center gap-4">
-        
             <div>
               <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-light-foreground dark:text-dark-foreground font-sans">
                 Academic Library
@@ -217,7 +239,34 @@ const Notes = () => {
           </div>
         </div>
 
-        {/* MAIN BODY AREA (Notes Grouped by Subject + Sidebar) */}
+        {/* 📌 PINNED NOTICES / NOTES SECTION (Fills top of feed if pinned items exist) */}
+        {!loading && pinnedNotesList.length > 0 && (
+          <div className="mb-12 space-y-4 animate-fadeIn">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 text-primary flex items-center justify-center">
+                <Pin className="w-4 h-4 fill-primary" />
+              </div>
+              <h2 className="text-lg font-bold text-light-foreground dark:text-dark-foreground uppercase tracking-wider font-sans">
+                Pinned Notices &amp; Notes ({pinnedNotesList.length})
+              </h2>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {pinnedNotesList.map((note) => (
+                <NoteCard
+                  key={`pinned-${note._id || note.id}`}
+                  note={note}
+                  isPinned={true}
+                  onTogglePin={handleTogglePin}
+                />
+              ))}
+            </div>
+            
+            <div className="border-b border-light-border dark:border-dark-border pt-4" />
+          </div>
+        )}
+
+        {/* MAIN BODY AREA (Notes Grouped by Subject) */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24 gap-4">
             <Loader2 className="w-12 h-12 text-primary animate-spin" />
@@ -240,55 +289,43 @@ const Notes = () => {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            
-            {/* LEFT COLUMN: Subject Groups & Note Cards (9 cols on Desktop) */}
-            <div className="lg:col-span-8 xl:col-span-9 space-y-12">
-              {subjectKeys.sort().map((subjectName) => (
-                <section key={subjectName} className="space-y-6">
-                  
-                  {/* Subject Group Header */}
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3">
-                        <h3 className="text-xl sm:text-2xl font-bold text-light-foreground dark:text-dark-foreground tracking-tight uppercase font-sans truncate">
-                          {subjectName}
-                        </h3>
-                        <span className="px-3 py-0.5 bg-light-surface-secondary dark:bg-dark-surface-secondary text-light-muted dark:text-dark-muted text-xs font-bold rounded-full border border-light-border dark:border-dark-border shrink-0">
-                          {groupedNotes[subjectName].length} {groupedNotes[subjectName].length === 1 ? 'Note' : 'Notes'}
-                        </span>
-                      </div>
-                      <div className="h-0.5 w-full bg-gradient-to-r from-primary/30 via-emerald-400/20 to-transparent mt-2 rounded-full" />
+          <div className="space-y-12">
+            {subjectKeys.sort().map((subjectName) => (
+              <section key={subjectName} className="space-y-6">
+                
+                {/* Subject Group Header */}
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-xl sm:text-2xl font-bold text-light-foreground dark:text-dark-foreground tracking-tight uppercase font-sans truncate">
+                        {subjectName}
+                      </h3>
+                      <span className="px-3 py-0.5 bg-light-surface-secondary dark:bg-dark-surface-secondary text-light-muted dark:text-dark-muted text-xs font-bold rounded-full border border-light-border dark:border-dark-border shrink-0">
+                        {groupedNotes[subjectName].length} {groupedNotes[subjectName].length === 1 ? 'Note' : 'Notes'}
+                      </span>
                     </div>
+                    <div className="h-0.5 w-full bg-gradient-to-r from-primary/30 via-emerald-400/20 to-transparent mt-2 rounded-full" />
                   </div>
+                </div>
 
-                  {/* Note Cards Grid for this subject */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {groupedNotes[subjectName].map((note) => (
+                {/* Note Cards Grid for this subject */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {groupedNotes[subjectName].map((note) => {
+                    const noteId = note._id || note.id;
+                    const isPinned = pinnedIds.includes(noteId);
+                    return (
                       <NoteCard
-                        key={note._id || note.id}
+                        key={noteId}
                         note={note}
-                        onViewPdf={handleViewPdf}
+                        isPinned={isPinned}
+                        onTogglePin={handleTogglePin}
                       />
-                    ))}
-                  </div>
-
-                </section>
-              ))}
-            </div>
-
-            {/* RIGHT SIDEBAR: Sponsored Ad Placement (3 cols on Desktop) */}
-            {/* <div className="hidden lg:block lg:col-span-4 xl:col-span-3 sticky top-24">
-              <div className="bg-light-surface/90 dark:bg-dark-surface/90 border border-light-border dark:border-dark-border rounded-2xl p-5 shadow-sm space-y-3">
-                <div className="text-[10px] font-extrabold uppercase tracking-wider text-light-muted dark:text-dark-muted">
-                  SPONSORED
+                    );
+                  })}
                 </div>
-                <div className="w-full h-44 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-dashed border-light-border dark:border-dark-border rounded-xl flex items-center justify-center text-xs text-light-muted dark:text-dark-muted font-medium font-sans">
-                  Ad placement
-                </div>
-              </div>
-            </div> */}
 
+              </section>
+            ))}
           </div>
         )}
 

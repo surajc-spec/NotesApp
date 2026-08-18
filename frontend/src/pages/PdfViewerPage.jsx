@@ -171,15 +171,7 @@ const PdfViewerPage = () => {
 
   const containerRef = useRef(null);
 
-  // Hide browser body scrollbars while PDF Viewer is active in Normal Mode
-  useEffect(() => {
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
 
-    return () => {
-      document.body.style.overflow = originalOverflow;
-    };
-  }, []);
 
   // Update pageInput string when pageNum changes from scroll observer
   useEffect(() => {
@@ -639,9 +631,9 @@ const PdfViewerPage = () => {
             </div>
           )}
 
-          {/* CONTINUOUS VERTICAL SCROLL LIST CONTAINER (INNER SCROLL VIEWPORT WITH HIDDEN SCROLLBAR) */}
+          {/* CONTINUOUS VERTICAL SCROLL LIST CONTAINER (INNER SCROLL VIEWPORT WITH RESTORED SCROLLBAR) */}
           {pdfDoc && !loading && (
-            <div className="w-full h-full overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden p-4 sm:p-6 pb-24 sm:pb-28 flex flex-col items-center space-y-4 scroll-smooth">
+            <div className="w-full h-full overflow-y-auto p-4 sm:p-6 pb-24 sm:pb-28 flex flex-col items-center space-y-4 scroll-smooth">
               {Array.from({ length: numPages }, (_, index) => index + 1).map((pageNumber) => (
                 <PdfPageItem
                   key={`page-${pageNumber}`}
