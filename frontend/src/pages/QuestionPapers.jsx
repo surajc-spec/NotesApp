@@ -218,32 +218,32 @@ const QuestionPapers = () => {
                     </div>
                   </div>
 
-                  {/* Question Paper Cards Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {/* Question Paper Cards Grid (Compact 4-Column Grid) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
                     {groupedPapers[subjectName].map((paper) => {
                       const paperId = paper._id || paper.id;
                       return (
                         <div
                           key={paperId}
-                          className="bg-light-surface/90 dark:bg-dark-surface/90 backdrop-blur-md border border-light-border dark:border-dark-border rounded-2xl p-5 flex items-center justify-between gap-4 transition-all duration-200 hover:scale-[1.02] hover:border-primary/40 shadow-sm group"
+                          className="bg-light-surface/90 dark:bg-dark-surface/90 backdrop-blur-md border border-light-border dark:border-dark-border rounded-2xl px-4 py-3.5 flex items-center justify-between gap-3 transition-all duration-200 hover:scale-[1.02] hover:border-primary/40 shadow-sm group max-w-sm sm:max-w-none w-full"
                         >
                           {/* Left: Subject Code & Title */}
-                          <div className="min-w-0 flex-1 space-y-1">
-                            <div className="text-xs font-extrabold text-primary uppercase tracking-wider">
+                          <div className="min-w-0 flex-1 space-y-0.5">
+                            <div className="text-[11px] font-extrabold text-primary uppercase tracking-wider">
                               {paper.subjectCode || paper.subject || 'PAPER'}
                             </div>
-                            <h4 className="text-base font-bold text-light-foreground dark:text-dark-foreground font-sans truncate">
+                            <h4 className="text-sm font-bold text-light-foreground dark:text-dark-foreground font-sans truncate">
                               {paper.title}
                             </h4>
                           </div>
 
-                          {/* Right: View PDF Button on Upper Side */}
+                          {/* Right: View PDF Button */}
                           <button
                             type="button"
                             onClick={() => handleViewPdf(paperId)}
-                            className="h-9 px-4 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary hover:bg-primary hover:text-primary-foreground text-light-foreground dark:text-dark-foreground border border-light-border dark:border-dark-border hover:border-primary transition-all text-xs font-bold flex items-center justify-center gap-2 active:scale-95 shadow-sm shrink-0"
+                            className="h-8 px-3 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary hover:bg-primary hover:text-primary-foreground text-light-foreground dark:text-dark-foreground border border-light-border dark:border-dark-border hover:border-primary transition-all text-xs font-bold flex items-center justify-center gap-1.5 active:scale-95 shadow-sm shrink-0"
                           >
-                            <Eye className="w-4 h-4 stroke-[2]" />
+                            <Eye className="w-3.5 h-3.5 stroke-[2]" />
                             <span>View PDF</span>
                           </button>
 
