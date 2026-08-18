@@ -5,9 +5,7 @@ import {
   Search, 
   Filter, 
   FileQuestion, 
-  Loader2, 
-  Pin,
-  Sparkles
+  Loader2
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import NoteCard from '../components/NoteCard';
@@ -22,16 +20,6 @@ const Notes = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
-  // Pinned Notes State (persisted in localStorage)
-  const [pinnedIds, setPinnedIds] = useState(() => {
-    try {
-      const saved = localStorage.getItem('noteshare_pinned_notes');
-      return saved ? JSON.parse(saved) : [];
-    } catch (e) {
-      return [];
-    }
-  });
-
   // Filters & Search
   const [subjectFilter, setSubjectFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,25 +32,6 @@ const Notes = () => {
   useEffect(() => {
     fetchNotes();
   }, [user]);
-
-  // Persist pinnedIds to localStorage whenever changed
-  useEffect(() => {
-    try {
-      localStorage.setItem('noteshare_pinned_notes', JSON.stringify(pinnedIds));
-    } catch (e) {
-      console.error('Error saving pinned notes to localStorage:', e);
-    }
-  }, [pinnedIds]);
-
-  const handleTogglePin = (noteId) => {
-    setPinnedIds((prev) => {
-      if (prev.includes(noteId)) {
-        return prev.filter((id) => id !== noteId);
-      } else {
-        return [...prev, noteId];
-      }
-    });
-  };
 
   const fetchNotes = async () => {
     setLoading(true);
@@ -170,7 +139,6 @@ const Notes = () => {
     }
   };
 
-  const pinnedNotesList = notesList.filter((n) => pinnedIds.includes(n._id || n.id));
   const subjectKeys = Object.keys(groupedNotes);
 
   return (
@@ -178,7 +146,7 @@ const Notes = () => {
       <div className="max-w-container mx-auto px-6 sm:px-8 lg:px-10 pt-10">
         
         {/* HEADER AREA */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-12">
           
           {/* Left Title & Subtitle */}
           <div className="flex items-center gap-4">
@@ -239,33 +207,6 @@ const Notes = () => {
           </div>
         </div>
 
-        {/* 📌 PINNED NOTICES / NOTES SECTION (Fills top of feed if pinned items exist) */}
-        {!loading && pinnedNotesList.length > 0 && (
-          <div className="mb-12 space-y-4 animate-fadeIn">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 text-primary flex items-center justify-center">
-                <Pin className="w-4 h-4 fill-primary" />
-              </div>
-              <h2 className="text-lg font-bold text-light-foreground dark:text-dark-foreground uppercase tracking-wider font-sans">
-                Pinned Notices &amp; Notes ({pinnedNotesList.length})
-              </h2>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {pinnedNotesList.map((note) => (
-                <NoteCard
-                  key={`pinned-${note._id || note.id}`}
-                  note={note}
-                  isPinned={true}
-                  onTogglePin={handleTogglePin}
-                />
-              ))}
-            </div>
-            
-            <div className="border-b border-light-border dark:border-dark-border pt-4" />
-          </div>
-        )}
-
         {/* MAIN BODY AREA (Notes Grouped by Subject) */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24 gap-4">
@@ -310,18 +251,12 @@ const Notes = () => {
 
                 {/* Note Cards Grid for this subject */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {groupedNotes[subjectName].map((note) => {
-                    const noteId = note._id || note.id;
-                    const isPinned = pinnedIds.includes(noteId);
-                    return (
-                      <NoteCard
-                        key={noteId}
-                        note={note}
-                        isPinned={isPinned}
-                        onTogglePin={handleTogglePin}
-                      />
-                    );
-                  })}
+                  {groupedNotes[subjectName].map((note) => (
+                    <NoteCard
+                      key={note._id || note.id}
+                      note={note}
+                    />
+                  ))}
                 </div>
 
               </section>
