@@ -8,17 +8,15 @@ const cacheMiddleware = (ttlSeconds = 300) => {
     const cacheKey = `cache:${req.originalUrl || req.url}`;
 
     try {
+      // Prevent browser disk caching so browser always asks server (allowing instant invalidation on upload)
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+
       const cached = await cacheService.get(cacheKey);
 
       if (cached && cached.data) {
-        // Level 3: Add Browser & CDN HTTP Caching Headers if in Multi-Level Mode
-        if (cacheService.mode === 'multilevel') {
-          res.setHeader('Cache-Control', `public, max-age=${ttlSeconds}, s-maxage=${ttlSeconds * 2}`);
-          res.setHeader('X-Cache-Status', `HIT_${cached.source}`);
-        } else if (cacheService.mode === 'redis') {
-          res.setHeader('X-Cache-Status', `HIT_${cached.source}`);
-        }
-
+        res.setHeader('X-Cache-Status', `HIT_${cached.source}`);
         return res.status(200).json(cached.data);
       }
 

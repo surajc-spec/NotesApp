@@ -43,6 +43,7 @@ const Notes = () => {
       if (user?.year) params.append('year', user.year);
       if (user?.semester) params.append('semester', user.semester);
       if (user?.examType && user.examType !== 'all') params.append('examType', user.examType);
+      params.append('limit', '200');
 
       const response = await fetch(`/api/notes/view-notes?${params.toString()}`, {
         method: 'GET',

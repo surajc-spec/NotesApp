@@ -80,12 +80,12 @@ async function viewQuestionPapers(req, res) {
 
     if (branch) filter.branch = branch;
     if (year) filter.year = year;
-    if (semester) filter.semester = semester;
+    if (semester) filter.semester = Number(semester);
     if (subjectCode) filter.subjectCode = subjectCode;
     if (examType) filter.examType = examType;
 
     const currentPage = Math.max(Number(page), 1);
-    const currentLimit = Math.min(Math.max(Number(limit), 1), 100);
+    const currentLimit = Math.min(Math.max(Number(limit), 1), 200);
 
     const skip = (currentPage - 1) * currentLimit;
     const total = await questionPapersModel.countDocuments(filter);
