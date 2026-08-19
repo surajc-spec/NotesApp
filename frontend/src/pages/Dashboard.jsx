@@ -15,7 +15,11 @@ import {
   ShieldAlert,
   Files,
   X,
-  Download
+  Download,
+  Pencil,
+  Check,
+  CheckSquare,
+  Square
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import CustomSelect from '../components/CustomSelect';
@@ -87,6 +91,26 @@ const Dashboard = () => {
   const [downloadLoadingId, setDownloadLoadingId] = useState(null);
   const [searchManage, setSearchManage] = useState('');
 
+  // Multi-Select Bulk Delete State
+  const [selectedNoteIds, setSelectedNoteIds] = useState([]);
+  const [selectedPaperIds, setSelectedPaperIds] = useState([]);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+
+  // Edit Details Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState(null); // item object being edited
+  const [isEditingPaper, setIsEditingPaper] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    title: '',
+    subject: '',
+    subjectCode: '',
+    description: '',
+    branch: '',
+    semester: '',
+    examType: 'insem',
+  });
+  const [editLoading, setEditLoading] = useState(false);
+
   // Single Notes Upload Form State
   const [formData, setFormData] = useState({
     title: '',
@@ -143,12 +167,12 @@ const Dashboard = () => {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
       // Fetch Notes
-      const notesRes = await fetch('/api/notes/view-notes?limit=50', { headers, credentials: 'include' });
+      const notesRes = await fetch('/api/notes/view-notes?limit=100', { headers, credentials: 'include' });
       const notesData = await parseJsonResponse(notesRes);
       const notesList = notesData.notes || [];
 
       // Fetch Question Papers
-      const papersRes = await fetch('/api/question-papers/view-question-papers?limit=50', { headers, credentials: 'include' });
+      const papersRes = await fetch('/api/question-papers/view-question-papers?limit=100', { headers, credentials: 'include' });
       const papersData = await parseJsonResponse(papersRes);
       const papersList = papersData.questionPapers || [];
 
@@ -269,7 +293,7 @@ const Dashboard = () => {
         throw new Error('Cloud storage upload failed.');
       }
 
-      // 3. Save Document Metadata in DB (using /api/notes/create-note or /api/notes/create-notes)
+      // 3. Save Document Metadata in DB
       const createRes = await fetch('/api/notes/create-note', {
         method: 'POST',
         headers: authHeaders,
@@ -359,7 +383,6 @@ const Dashboard = () => {
       }));
 
       try {
-        // 1. Get Presigned Upload URL
         const uploadUrlRes = await fetch('/api/question-papers/upload-url', {
           method: 'POST',
           headers: authHeaders,
@@ -376,7 +399,6 @@ const Dashboard = () => {
           throw new Error(uploadUrlData.message || 'Failed to generate upload URL.');
         }
 
-        // 2. Upload file directly to Cloudflare R2 bucket
         const r2Res = await fetch(uploadUrlData.uploadUrl, {
           method: 'PUT',
           headers: { 'Content-Type': file.type },
@@ -389,7 +411,6 @@ const Dashboard = () => {
 
         const paperTitle = file.name.replace(/\.[^/.]+$/, '').trim() || `${subject} Question Paper`;
 
-        // 3. Save Question Paper Metadata in Database
         const createRes = await fetch('/api/question-papers/create-question-paper', {
           method: 'POST',
           headers: authHeaders,
@@ -444,7 +465,7 @@ const Dashboard = () => {
     }
   };
 
-  // Download PDF Handler for Dashboard (Fetches Blob to force local PC download)
+  // Download PDF Handler for Dashboard
   const handleDownload = async (id, isQuestionPaper = false, title = 'Document') => {
     setDownloadLoadingId(id);
     setMessage({ type: '', text: '' });
@@ -496,7 +517,7 @@ const Dashboard = () => {
     }
   };
 
-  // Delete Item Handler
+  // Single Delete Item Handler
   const handleDelete = async (id, isQuestionPaper = false) => {
     if (!window.confirm(`Are you sure you want to delete this ${isQuestionPaper ? 'question paper' : 'note'}? This action cannot be undone.`)) {
       return;
@@ -532,6 +553,195 @@ const Dashboard = () => {
       setMessage({ type: 'error', text: err.message || 'Failed to delete item.' });
     } finally {
       setDeleteLoadingId(null);
+    }
+  };
+
+  // --- MULTI-SELECT & BULK DELETE HANDLERS ---
+  const toggleSelectNote = (id) => {
+    setSelectedNoteIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAllNotes = (filteredNotes) => {
+    const allFilteredIds = filteredNotes.map(n => n._id);
+    const allSelected = allFilteredIds.every(id => selectedNoteIds.includes(id));
+
+    if (allSelected) {
+      setSelectedNoteIds(prev => prev.filter(id => !allFilteredIds.includes(id)));
+    } else {
+      setSelectedNoteIds(prev => Array.from(new Set([...prev, ...allFilteredIds])));
+    }
+  };
+
+  const handleBulkDeleteNotes = async () => {
+    if (!selectedNoteIds.length) return;
+    if (!window.confirm(`Are you sure you want to delete ${selectedNoteIds.length} selected note(s)? This will delete their PDF files and database records permanently.`)) {
+      return;
+    }
+
+    setBulkDeleting(true);
+    setMessage({ type: '', text: '' });
+
+    try {
+      const token = localStorage.getItem('token');
+      const headers = { 
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}) 
+      };
+
+      const res = await fetch('/api/notes/bulk-delete', {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+        body: JSON.stringify({ ids: selectedNoteIds }),
+      });
+
+      const data = await parseJsonResponse(res);
+      if (!res.ok) throw new Error(data.message || 'Bulk delete failed.');
+
+      setMessage({ type: 'success', text: `Successfully deleted ${selectedNoteIds.length} note(s)!` });
+      setSelectedNoteIds([]);
+      fetchManageData();
+    } catch (err) {
+      console.error('Bulk Delete Notes Error:', err);
+      setMessage({ type: 'error', text: err.message || 'Failed to delete selected notes.' });
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
+  const toggleSelectPaper = (id) => {
+    setSelectedPaperIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAllPapers = (filteredPapers) => {
+    const allFilteredIds = filteredPapers.map(p => p._id);
+    const allSelected = allFilteredIds.every(id => selectedPaperIds.includes(id));
+
+    if (allSelected) {
+      setSelectedPaperIds(prev => prev.filter(id => !allFilteredIds.includes(id)));
+    } else {
+      setSelectedPaperIds(prev => Array.from(new Set([...prev, ...allFilteredIds])));
+    }
+  };
+
+  const handleBulkDeletePapers = async () => {
+    if (!selectedPaperIds.length) return;
+    if (!window.confirm(`Are you sure you want to delete ${selectedPaperIds.length} selected question paper(s)?`)) {
+      return;
+    }
+
+    setBulkDeleting(true);
+    setMessage({ type: '', text: '' });
+
+    try {
+      const token = localStorage.getItem('token');
+      const headers = { 
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}) 
+      };
+
+      const res = await fetch('/api/question-papers/bulk-delete', {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+        body: JSON.stringify({ ids: selectedPaperIds }),
+      });
+
+      const data = await parseJsonResponse(res);
+      if (!res.ok) throw new Error(data.message || 'Bulk delete failed.');
+
+      setMessage({ type: 'success', text: `Successfully deleted ${selectedPaperIds.length} question paper(s)!` });
+      setSelectedPaperIds([]);
+      fetchManageData();
+    } catch (err) {
+      console.error('Bulk Delete Papers Error:', err);
+      setMessage({ type: 'error', text: err.message || 'Failed to delete selected question papers.' });
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
+  // --- EDIT DETAILS MODAL HANDLERS ---
+  const handleOpenEditModal = (item, isPaper = false) => {
+    setEditingItem(item);
+    setIsEditingPaper(isPaper);
+    setEditFormData({
+      title: item.title || '',
+      subject: item.subject || '',
+      subjectCode: item.subjectCode || '',
+      description: item.description || '',
+      branch: item.branch || '',
+      semester: item.semester ? String(item.semester) : '',
+      examType: item.examType || 'insem',
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditInputChange = (e) => {
+    setEditFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
+
+  const handleSaveEditSubmit = async (e) => {
+    e.preventDefault();
+    if (!editingItem) return;
+
+    setEditLoading(true);
+    setMessage({ type: '', text: '' });
+
+    try {
+      const token = localStorage.getItem('token');
+      const headers = { 
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}) 
+      };
+
+      const semNum = Number(editFormData.semester);
+      const yearStr = getYearFromSem(semNum);
+
+      const endpoint = isEditingPaper
+        ? `/api/question-papers/${editingItem._id}`
+        : `/api/notes/${editingItem._id}`;
+
+      const res = await fetch(endpoint, {
+        method: 'PUT',
+        headers,
+        credentials: 'include',
+        body: JSON.stringify({
+          title: editFormData.title,
+          subject: editFormData.subject,
+          subjectCode: editFormData.subjectCode,
+          description: editFormData.description,
+          branch: editFormData.branch,
+          year: yearStr,
+          semester: semNum,
+          examType: editFormData.examType,
+        }),
+      });
+
+      const data = await parseJsonResponse(res);
+      if (!res.ok) throw new Error(data.message || 'Failed to update details.');
+
+      setMessage({
+        type: 'success',
+        text: `Successfully updated details for "${editFormData.title}"!`,
+      });
+
+      setIsEditModalOpen(false);
+      setEditingItem(null);
+      fetchManageData();
+
+    } catch (err) {
+      console.error('Update Error:', err);
+      setMessage({ type: 'error', text: err.message || 'Failed to update item details.' });
+    } finally {
+      setEditLoading(false);
     }
   };
 
@@ -591,7 +801,7 @@ const Dashboard = () => {
               Management Dashboard
             </h1>
             <p className="text-sm text-light-muted dark:text-dark-muted mt-1 font-sans">
-              Upload study notes, question papers in bulk, view users, and manage content
+              Upload study notes, question papers in bulk, edit details, and perform bulk operations
             </p>
           </div>
         </div>
@@ -795,7 +1005,7 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              {/* Semester & Description */}
+              {/* Semester & Exam Type */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
@@ -814,91 +1024,78 @@ const Dashboard = () => {
 
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
-                    Description (Optional)
+                    Exam Type
                   </label>
-                  <input
-                    type="text"
-                    name="description"
-                    placeholder="Short description of content..."
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    className="w-full h-[50px] px-5 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-field text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
+                  <div className="flex items-center gap-4 h-[50px]">
+                    <label className="flex items-center gap-2 cursor-pointer text-sm font-semibold">
+                      <input
+                        type="radio"
+                        name="examType"
+                        value="insem"
+                        checked={formData.examType === 'insem'}
+                        onChange={handleInputChange}
+                        className="w-4 h-4 text-primary focus:ring-primary"
+                      />
+                      <span>In-Sem Exam</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer text-sm font-semibold">
+                      <input
+                        type="radio"
+                        name="examType"
+                        value="endsem"
+                        checked={formData.examType === 'endsem'}
+                        onChange={handleInputChange}
+                        className="w-4 h-4 text-primary focus:ring-primary"
+                      />
+                      <span>End-Sem Exam</span>
+                    </label>
+                  </div>
                 </div>
               </div>
 
-              {/* Exam Type Segmented Toggle */}
+              {/* Description */}
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
-                  Exam Type Selection
+                  Description
                 </label>
-                <div className="grid grid-cols-2 gap-4">
-                  <button
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, examType: 'insem' }))}
-                    className={`h-[50px] px-5 rounded-field border text-sm font-bold transition-all duration-200 flex items-center justify-center gap-3 cursor-pointer ${
-                      formData.examType === 'insem'
-                        ? 'bg-primary/15 border-primary text-primary'
-                        : 'bg-light-surface-secondary dark:bg-dark-surface-secondary border-light-border dark:border-dark-border text-light-muted dark:text-dark-muted hover:border-primary/40'
-                    }`}
-                  >
-                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors shrink-0 ${
-                      formData.examType === 'insem' ? 'border-primary bg-primary' : 'border-light-border dark:border-dark-border'
-                    }`}>
-                      {formData.examType === 'insem' && <div className="w-1.5 h-1.5 rounded-full bg-primary-foreground" />}
-                    </div>
-                    <span>In-Sem (Mid Semester)</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, examType: 'endsem' }))}
-                    className={`h-[50px] px-5 rounded-field border text-sm font-bold transition-all duration-200 flex items-center justify-center gap-3 cursor-pointer ${
-                      formData.examType === 'endsem'
-                        ? 'bg-primary/15 border-primary text-primary'
-                        : 'bg-light-surface-secondary dark:bg-dark-surface-secondary border-light-border dark:border-dark-border text-light-muted dark:text-dark-muted hover:border-primary/40'
-                    }`}
-                  >
-                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors shrink-0 ${
-                      formData.examType === 'endsem' ? 'border-primary bg-primary' : 'border-light-border dark:border-dark-border'
-                    }`}>
-                      {formData.examType === 'endsem' && <div className="w-1.5 h-1.5 rounded-full bg-primary-foreground" />}
-                    </div>
-                    <span>End-Sem (Final Semester)</span>
-                  </button>
-                </div>
+                <textarea
+                  name="description"
+                  rows={3}
+                  placeholder="Provide brief details about this note..."
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  className="w-full p-4 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-field text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                />
               </div>
 
-              {/* PDF File Drag and Drop Box */}
+              {/* PDF File Picker */}
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
-                  PDF Document Attachment
+                  PDF Document File
                 </label>
-                <div className="relative border-2 border-dashed border-light-border dark:border-dark-border hover:border-primary rounded-field p-6 text-center bg-light-surface-secondary/50 dark:bg-dark-surface-secondary/50 transition-colors cursor-pointer group">
+                <div className="relative border-2 border-dashed border-light-border dark:border-dark-border hover:border-primary rounded-2xl p-6 text-center transition-colors bg-light-surface-secondary/50 dark:bg-dark-surface-secondary/50 group">
                   <input
                     type="file"
                     accept="application/pdf"
+                    required
                     onChange={handleFileChange}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                   />
                   <div className="flex flex-col items-center gap-2">
                     <FileUp className="w-8 h-8 text-primary group-hover:scale-110 transition-transform" />
                     {selectedFile ? (
-                      <div>
-                        <p className="text-sm font-bold text-primary">{selectedFile.name}</p>
-                        <p className="text-xs text-light-muted dark:text-dark-muted">
-                          {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB - Ready to upload
-                        </p>
-                      </div>
+                      <p className="text-sm font-bold text-primary">
+                        {selectedFile.name} ({(selectedFile.size / (1024 * 1024)).toFixed(2)} MB)
+                      </p>
                     ) : (
-                      <div>
+                      <>
                         <p className="text-sm font-bold text-light-foreground dark:text-dark-foreground">
-                          Click or drag PDF file here
+                          Click or drag PDF note file here
                         </p>
-                        <p className="text-xs text-light-muted dark:text-dark-muted mt-1">
-                          Maximum file size 15 MB (PDF format strictly)
+                        <p className="text-xs text-light-muted dark:text-dark-muted mt-0.5">
+                          Maximum file size 15 MB
                         </p>
-                      </div>
+                      </>
                     )}
                   </div>
                 </div>
@@ -908,23 +1105,22 @@ const Dashboard = () => {
               <button
                 type="submit"
                 disabled={uploading}
-                className="w-full h-[50px] text-base font-bold text-primary-foreground bg-primary hover:bg-emerald-400 rounded-btn transition-all duration-200 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed mt-6"
+                className="w-full h-[50px] text-base font-bold text-primary-foreground bg-primary hover:bg-emerald-400 rounded-btn transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed mt-4 shadow-md"
               >
                 {uploading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Uploading PDF to Cloud...</span>
+                    <span>Uploading Note...</span>
                   </>
                 ) : (
                   <>
                     <Upload className="w-5 h-5 stroke-[2.5]" />
-                    <span>Upload Note</span>
+                    <span>Upload Study Note</span>
                   </>
                 )}
               </button>
 
             </form>
-
           </div>
         )}
 
@@ -934,19 +1130,18 @@ const Dashboard = () => {
             
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-                <GraduationCap className="w-5 h-5 stroke-[2]" />
+                <GraduationCap className="w-5 h-5" />
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-light-foreground dark:text-dark-foreground">
-                  Upload Question Papers
+                  Bulk Upload Question Papers
                 </h2>
                 <p className="text-xs text-light-muted dark:text-dark-muted mt-0.5">
-                  Bulk upload multiple question paper PDF files to Cloudflare R2
+                  Select multiple PDF files at once to upload entire subject sets in parallel
                 </p>
               </div>
             </div>
 
-            {/* Alert Message */}
             {message.text && (
               <div className={`mb-6 p-4 rounded-xl text-sm flex items-start gap-3 animate-fadeIn border ${
                 message.type === 'error'
@@ -964,40 +1159,7 @@ const Dashboard = () => {
 
             <form onSubmit={handleQuestionPapersBulkUploadSubmit} className="space-y-6">
               
-              {/* Subject Name & Subject Code */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
-                    Subject Name
-                  </label>
-                  <input
-                    type="text"
-                    name="subject"
-                    required
-                    placeholder="e.g. Computer Networks"
-                    value={formData.subject}
-                    onChange={handleInputChange}
-                    className="w-full h-[50px] px-5 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-field text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
-                    Subject Code
-                  </label>
-                  <input
-                    type="text"
-                    name="subjectCode"
-                    required
-                    placeholder="e.g. CN302"
-                    value={formData.subjectCode}
-                    onChange={handleInputChange}
-                    className="w-full h-[50px] px-5 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-field text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                </div>
-              </div>
-
-              {/* Engineering Branch & Semester */}
+              {/* Branch & Subject */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
@@ -1030,73 +1192,80 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              {/* Description (Optional) */}
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
-                  Description (Optional)
-                </label>
-                <input
-                  type="text"
-                  name="description"
-                  placeholder="Short description of question paper content..."
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  className="w-full h-[50px] px-5 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-field text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
+              {/* Subject Code & Subject Name */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
+                    Subject Name
+                  </label>
+                  <input
+                    type="text"
+                    name="subject"
+                    required
+                    placeholder="e.g. Data Structures & Algorithms"
+                    value={formData.subject}
+                    onChange={handleInputChange}
+                    className="w-full h-[50px] px-5 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-field text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
 
-              {/* Exam Type Selection Toggle */}
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
-                  Exam Type Selection
-                </label>
-                <div className="grid grid-cols-2 gap-4">
-                  <button
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, examType: 'insem' }))}
-                    className={`h-[50px] px-5 rounded-field border text-sm font-bold transition-all duration-200 flex items-center justify-center gap-3 cursor-pointer ${
-                      formData.examType === 'insem'
-                        ? 'bg-primary/15 border-primary text-primary'
-                        : 'bg-light-surface-secondary dark:bg-dark-surface-secondary border-light-border dark:border-dark-border text-light-muted dark:text-dark-muted hover:border-primary/40'
-                    }`}
-                  >
-                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors shrink-0 ${
-                      formData.examType === 'insem' ? 'border-primary bg-primary' : 'border-light-border dark:border-dark-border'
-                    }`}>
-                      {formData.examType === 'insem' && <div className="w-1.5 h-1.5 rounded-full bg-primary-foreground" />}
-                    </div>
-                    <span>In-Sem (Mid Semester)</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, examType: 'endsem' }))}
-                    className={`h-[50px] px-5 rounded-field border text-sm font-bold transition-all duration-200 flex items-center justify-center gap-3 cursor-pointer ${
-                      formData.examType === 'endsem'
-                        ? 'bg-primary/15 border-primary text-primary'
-                        : 'bg-light-surface-secondary dark:bg-dark-surface-secondary border-light-border dark:border-dark-border text-light-muted dark:text-dark-muted hover:border-primary/40'
-                    }`}
-                  >
-                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors shrink-0 ${
-                      formData.examType === 'endsem' ? 'border-primary bg-primary' : 'border-light-border dark:border-dark-border'
-                    }`}>
-                      {formData.examType === 'endsem' && <div className="w-1.5 h-1.5 rounded-full bg-primary-foreground" />}
-                    </div>
-                    <span>End-Sem (Final Semester)</span>
-                  </button>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
+                    Subject Code
+                  </label>
+                  <input
+                    type="text"
+                    name="subjectCode"
+                    required
+                    placeholder="e.g. DSA201"
+                    value={formData.subjectCode}
+                    onChange={handleInputChange}
+                    className="w-full h-[50px] px-5 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-field text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
                 </div>
               </div>
 
-              {/* PDF Document Attachment Dropzone (Bulk Selection) */}
+              {/* Exam Type Radio */}
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
-                  PDF Document Attachments (Select Multiple)
+                  Exam Type
                 </label>
-                <div className="relative border-2 border-dashed border-light-border dark:border-dark-border hover:border-primary rounded-field p-8 text-center bg-light-surface-secondary/50 dark:bg-dark-surface-secondary/50 transition-colors cursor-pointer group">
+                <div className="flex items-center gap-6 h-[50px] bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border px-5 rounded-field">
+                  <label className="flex items-center gap-2 cursor-pointer text-sm font-semibold">
+                    <input
+                      type="radio"
+                      name="examType"
+                      value="insem"
+                      checked={formData.examType === 'insem'}
+                      onChange={handleInputChange}
+                      className="w-4 h-4 text-primary focus:ring-primary"
+                    />
+                    <span>In-Sem Question Papers</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer text-sm font-semibold">
+                    <input
+                      type="radio"
+                      name="examType"
+                      value="endsem"
+                      checked={formData.examType === 'endsem'}
+                      onChange={handleInputChange}
+                      className="w-4 h-4 text-primary focus:ring-primary"
+                    />
+                    <span>End-Sem Question Papers</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Bulk File Selection Area */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
+                  Select Multiple PDF Question Papers
+                </label>
+                <div className="relative border-2 border-dashed border-light-border dark:border-dark-border hover:border-primary rounded-2xl p-6 text-center transition-colors bg-light-surface-secondary/50 dark:bg-dark-surface-secondary/50 group">
                   <input
                     type="file"
-                    multiple
                     accept="application/pdf"
+                    multiple
                     onChange={handleBulkFilesChange}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                   />
@@ -1297,17 +1466,17 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* TAB 4: MANAGE CONTENT TAB */}
+        {/* TAB 4: MANAGE CONTENT TAB (WITH EDIT & BULK MULTI-SELECT DELETE) */}
         {activeTab === 'manage' && (
           <div className="bg-light-surface/90 dark:bg-dark-surface/90 backdrop-blur-md border border-light-border dark:border-dark-border rounded-2xl p-8 shadow-xl space-y-8">
             
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-bold text-light-foreground dark:text-dark-foreground">
-                  Manage &amp; Delete Content
+                  Manage Content &amp; Edit Details
                 </h2>
                 <p className="text-xs text-light-muted dark:text-dark-muted mt-0.5">
-                  View, download, and delete uploaded study notes or question papers from R2 Cloud &amp; DB
+                  Select multiple items to delete in bulk, or click the pencil icon to edit title, subject, or branch details
                 </p>
               </div>
 
@@ -1347,14 +1516,38 @@ const Dashboard = () => {
                 <p className="text-sm font-bold text-light-muted dark:text-dark-muted">Loading content items...</p>
               </div>
             ) : (
-              <div className="space-y-8">
+              <div className="space-y-10">
                 
-                {/* Notes Section */}
-                <div>
-                  <h3 className="text-lg font-bold text-light-foreground dark:text-dark-foreground mb-3 flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-primary" />
-                    <span>Uploaded Notes ({filteredManageNotes.length})</span>
-                  </h3>
+                {/* --- SECTION 1: UPLOADED NOTES --- */}
+                <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <h3 className="text-lg font-bold text-light-foreground dark:text-dark-foreground flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-primary" />
+                      <span>Uploaded Notes ({filteredManageNotes.length})</span>
+                    </h3>
+
+                    {/* Bulk Delete Floating Action Bar for Notes */}
+                    {selectedNoteIds.length > 0 && (
+                      <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/30 px-4 py-2 rounded-xl animate-fadeIn">
+                        <span className="text-xs font-bold text-red-400">
+                          {selectedNoteIds.length} Note(s) Selected
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleBulkDeleteNotes}
+                          disabled={bulkDeleting}
+                          className="h-8 px-3 bg-red-500 hover:bg-red-600 text-white font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 active:scale-95 disabled:opacity-50"
+                        >
+                          {bulkDeleting ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-3.5 h-3.5" />
+                          )}
+                          <span>Delete Selected ({selectedNoteIds.length})</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
 
                   {filteredManageNotes.length === 0 ? (
                     <div className="p-6 text-center text-xs text-light-muted dark:text-dark-muted border border-dashed border-light-border dark:border-dark-border rounded-xl">
@@ -1365,75 +1558,136 @@ const Dashboard = () => {
                       <table className="w-full text-left text-xs">
                         <thead className="bg-light-surface-secondary dark:bg-dark-surface-secondary text-light-muted dark:text-dark-muted uppercase font-extrabold border-b border-light-border dark:border-dark-border">
                           <tr>
-                            <th className="px-5 py-3">Title</th>
-                            <th className="px-5 py-3">Subject</th>
-                            <th className="px-5 py-3">Branch &amp; Sem</th>
-                            <th className="px-5 py-3">Exam Type</th>
-                            <th className="px-5 py-3 text-right">Actions</th>
+                            <th className="px-4 py-3 text-center w-10">
+                              <input
+                                type="checkbox"
+                                checked={filteredManageNotes.length > 0 && filteredManageNotes.every(n => selectedNoteIds.includes(n._id))}
+                                onChange={() => handleSelectAllNotes(filteredManageNotes)}
+                                className="w-4 h-4 rounded text-primary focus:ring-primary cursor-pointer"
+                                title="Select All Notes"
+                              />
+                            </th>
+                            <th className="px-4 py-3">Title</th>
+                            <th className="px-4 py-3">Subject</th>
+                            <th className="px-4 py-3">Branch &amp; Sem</th>
+                            <th className="px-4 py-3">Exam Type</th>
+                            <th className="px-4 py-3 text-right">Actions</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-light-border dark:divide-dark-border">
-                          {filteredManageNotes.map((note) => (
-                            <tr key={note._id} className="hover:bg-light-surface-secondary/50 dark:hover:bg-dark-surface-secondary/50 transition-colors">
-                              <td className="px-5 py-3.5 font-bold text-light-foreground dark:text-dark-foreground">
-                                {note.title}
-                              </td>
-                              <td className="px-5 py-3.5">
-                                {note.subject} ({note.subjectCode})
-                              </td>
-                              <td className="px-5 py-3.5">
-                                {note.branch} - Sem {note.semester}
-                              </td>
-                              <td className="px-5 py-3.5 font-semibold text-primary">
-                                {note.examType === 'insem' ? 'In-Sem' : 'End-Sem'}
-                              </td>
-                              <td className="px-5 py-3.5 text-right">
-                                <div className="flex items-center justify-end gap-2">
-                                  {/* Download Icon Button */}
-                                  <button
-                                    type="button"
-                                    title="Download PDF"
-                                    onClick={() => handleDownload(note._id, false, note.title)}
-                                    disabled={downloadLoadingId === note._id}
-                                    className="w-8 h-8 rounded-lg bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground border border-primary/20 flex items-center justify-center transition-all active:scale-95 disabled:opacity-50"
-                                  >
-                                    {downloadLoadingId === note._id ? (
-                                      <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                      <Download className="w-4 h-4 stroke-[2]" />
-                                    )}
-                                  </button>
+                          {filteredManageNotes.map((note) => {
+                            const isSelected = selectedNoteIds.includes(note._id);
+                            return (
+                              <tr 
+                                key={note._id} 
+                                className={`transition-colors ${
+                                  isSelected 
+                                    ? 'bg-primary/10 dark:bg-primary/10' 
+                                    : 'hover:bg-light-surface-secondary/50 dark:hover:bg-dark-surface-secondary/50'
+                                }`}
+                              >
+                                <td className="px-4 py-3.5 text-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() => toggleSelectNote(note._id)}
+                                    className="w-4 h-4 rounded text-primary focus:ring-primary cursor-pointer"
+                                  />
+                                </td>
+                                <td className="px-4 py-3.5 font-bold text-light-foreground dark:text-dark-foreground max-w-xs truncate">
+                                  {note.title}
+                                </td>
+                                <td className="px-4 py-3.5">
+                                  {note.subject} ({note.subjectCode})
+                                </td>
+                                <td className="px-4 py-3.5">
+                                  {note.branch} - Sem {note.semester}
+                                </td>
+                                <td className="px-4 py-3.5 font-semibold text-primary">
+                                  {note.examType === 'insem' ? 'In-Sem' : 'End-Sem'}
+                                </td>
+                                <td className="px-4 py-3.5 text-right">
+                                  <div className="flex items-center justify-end gap-2">
+                                    {/* Edit Details Pencil Button */}
+                                    <button
+                                      type="button"
+                                      title="Edit Note Details"
+                                      onClick={() => handleOpenEditModal(note, false)}
+                                      className="w-8 h-8 rounded-lg bg-amber-500/10 hover:bg-amber-500 text-amber-500 hover:text-white border border-amber-500/20 flex items-center justify-center transition-all active:scale-95 shrink-0"
+                                    >
+                                      <Pencil className="w-3.5 h-3.5 stroke-[2.5]" />
+                                    </button>
 
-                                  {/* Delete Icon Button */}
-                                  <button
-                                    type="button"
-                                    title="Delete Note"
-                                    onClick={() => handleDelete(note._id, false)}
-                                    disabled={deleteLoadingId === note._id}
-                                    className="w-8 h-8 rounded-lg bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white border border-red-500/20 flex items-center justify-center transition-all active:scale-95 disabled:opacity-50"
-                                  >
-                                    {deleteLoadingId === note._id ? (
-                                      <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                      <Trash2 className="w-4 h-4 stroke-[2]" />
-                                    )}
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
+                                    {/* Download Icon Button */}
+                                    <button
+                                      type="button"
+                                      title="Download PDF"
+                                      onClick={() => handleDownload(note._id, false, note.title)}
+                                      disabled={downloadLoadingId === note._id}
+                                      className="w-8 h-8 rounded-lg bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground border border-primary/20 flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 shrink-0"
+                                    >
+                                      {downloadLoadingId === note._id ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                      ) : (
+                                        <Download className="w-4 h-4 stroke-[2]" />
+                                      )}
+                                    </button>
+
+                                    {/* Single Delete Icon Button */}
+                                    <button
+                                      type="button"
+                                      title="Delete Note"
+                                      onClick={() => handleDelete(note._id, false)}
+                                      disabled={deleteLoadingId === note._id}
+                                      className="w-8 h-8 rounded-lg bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white border border-red-500/20 flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 shrink-0"
+                                    >
+                                      {deleteLoadingId === note._id ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                      ) : (
+                                        <Trash2 className="w-4 h-4 stroke-[2]" />
+                                      )}
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
                   )}
                 </div>
 
-                {/* Question Papers Section */}
-                <div>
-                  <h3 className="text-lg font-bold text-light-foreground dark:text-dark-foreground mb-3 flex items-center gap-2">
-                    <GraduationCap className="w-5 h-5 text-emerald-400" />
-                    <span>Uploaded Question Papers ({filteredManagePapers.length})</span>
-                  </h3>
+                {/* --- SECTION 2: UPLOADED QUESTION PAPERS --- */}
+                <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <h3 className="text-lg font-bold text-light-foreground dark:text-dark-foreground flex items-center gap-2">
+                      <GraduationCap className="w-5 h-5 text-emerald-400" />
+                      <span>Uploaded Question Papers ({filteredManagePapers.length})</span>
+                    </h3>
+
+                    {/* Bulk Delete Floating Action Bar for Papers */}
+                    {selectedPaperIds.length > 0 && (
+                      <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/30 px-4 py-2 rounded-xl animate-fadeIn">
+                        <span className="text-xs font-bold text-red-400">
+                          {selectedPaperIds.length} Paper(s) Selected
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleBulkDeletePapers}
+                          disabled={bulkDeleting}
+                          className="h-8 px-3 bg-red-500 hover:bg-red-600 text-white font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 active:scale-95 disabled:opacity-50"
+                        >
+                          {bulkDeleting ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-3.5 h-3.5" />
+                          )}
+                          <span>Delete Selected ({selectedPaperIds.length})</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
 
                   {filteredManagePapers.length === 0 ? (
                     <div className="p-6 text-center text-xs text-light-muted dark:text-dark-muted border border-dashed border-light-border dark:border-dark-border rounded-xl">
@@ -1444,63 +1698,100 @@ const Dashboard = () => {
                       <table className="w-full text-left text-xs">
                         <thead className="bg-light-surface-secondary dark:bg-dark-surface-secondary text-light-muted dark:text-dark-muted uppercase font-extrabold border-b border-light-border dark:border-dark-border">
                           <tr>
-                            <th className="px-5 py-3">Title</th>
-                            <th className="px-5 py-3">Subject</th>
-                            <th className="px-5 py-3">Branch &amp; Sem</th>
-                            <th className="px-5 py-3">Exam Type</th>
-                            <th className="px-5 py-3 text-right">Actions</th>
+                            <th className="px-4 py-3 text-center w-10">
+                              <input
+                                type="checkbox"
+                                checked={filteredManagePapers.length > 0 && filteredManagePapers.every(p => selectedPaperIds.includes(p._id))}
+                                onChange={() => handleSelectAllPapers(filteredManagePapers)}
+                                className="w-4 h-4 rounded text-primary focus:ring-primary cursor-pointer"
+                                title="Select All Question Papers"
+                              />
+                            </th>
+                            <th className="px-4 py-3">Title</th>
+                            <th className="px-4 py-3">Subject</th>
+                            <th className="px-4 py-3">Branch &amp; Sem</th>
+                            <th className="px-4 py-3">Exam Type</th>
+                            <th className="px-4 py-3 text-right">Actions</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-light-border dark:divide-dark-border">
-                          {filteredManagePapers.map((paper) => (
-                            <tr key={paper._id} className="hover:bg-light-surface-secondary/50 dark:hover:bg-dark-surface-secondary/50 transition-colors">
-                              <td className="px-5 py-3.5 font-bold text-light-foreground dark:text-dark-foreground">
-                                {paper.title}
-                              </td>
-                              <td className="px-5 py-3.5">
-                                {paper.subject} ({paper.subjectCode})
-                              </td>
-                              <td className="px-5 py-3.5">
-                                {paper.branch} - Sem {paper.semester}
-                              </td>
-                              <td className="px-5 py-3.5 font-semibold text-emerald-400">
-                                {paper.examType === 'insem' ? 'In-Sem' : 'End-Sem'}
-                              </td>
-                              <td className="px-5 py-3.5 text-right">
-                                <div className="flex items-center justify-end gap-2">
-                                  {/* Download Icon Button */}
-                                  <button
-                                    type="button"
-                                    title="Download Question Paper"
-                                    onClick={() => handleDownload(paper._id, true, paper.title)}
-                                    disabled={downloadLoadingId === paper._id}
-                                    className="w-8 h-8 rounded-lg bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground border border-primary/20 flex items-center justify-center transition-all active:scale-95 disabled:opacity-50"
-                                  >
-                                    {downloadLoadingId === paper._id ? (
-                                      <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                      <Download className="w-4 h-4 stroke-[2]" />
-                                    )}
-                                  </button>
+                          {filteredManagePapers.map((paper) => {
+                            const isSelected = selectedPaperIds.includes(paper._id);
+                            return (
+                              <tr 
+                                key={paper._id} 
+                                className={`transition-colors ${
+                                  isSelected 
+                                    ? 'bg-primary/10 dark:bg-primary/10' 
+                                    : 'hover:bg-light-surface-secondary/50 dark:hover:bg-dark-surface-secondary/50'
+                                }`}
+                              >
+                                <td className="px-4 py-3.5 text-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() => toggleSelectPaper(paper._id)}
+                                    className="w-4 h-4 rounded text-primary focus:ring-primary cursor-pointer"
+                                  />
+                                </td>
+                                <td className="px-4 py-3.5 font-bold text-light-foreground dark:text-dark-foreground max-w-xs truncate">
+                                  {paper.title}
+                                </td>
+                                <td className="px-4 py-3.5">
+                                  {paper.subject} ({paper.subjectCode})
+                                </td>
+                                <td className="px-4 py-3.5">
+                                  {paper.branch} - Sem {paper.semester}
+                                </td>
+                                <td className="px-4 py-3.5 font-semibold text-emerald-400">
+                                  {paper.examType === 'insem' ? 'In-Sem' : 'End-Sem'}
+                                </td>
+                                <td className="px-4 py-3.5 text-right">
+                                  <div className="flex items-center justify-end gap-2">
+                                    {/* Edit Details Pencil Button */}
+                                    <button
+                                      type="button"
+                                      title="Edit Question Paper Details"
+                                      onClick={() => handleOpenEditModal(paper, true)}
+                                      className="w-8 h-8 rounded-lg bg-amber-500/10 hover:bg-amber-500 text-amber-500 hover:text-white border border-amber-500/20 flex items-center justify-center transition-all active:scale-95 shrink-0"
+                                    >
+                                      <Pencil className="w-3.5 h-3.5 stroke-[2.5]" />
+                                    </button>
 
-                                  {/* Delete Icon Button */}
-                                  <button
-                                    type="button"
-                                    title="Delete Question Paper"
-                                    onClick={() => handleDelete(paper._id, true)}
-                                    disabled={deleteLoadingId === paper._id}
-                                    className="w-8 h-8 rounded-lg bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white border border-red-500/20 flex items-center justify-center transition-all active:scale-95 disabled:opacity-50"
-                                  >
-                                    {deleteLoadingId === paper._id ? (
-                                      <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                      <Trash2 className="w-4 h-4 stroke-[2]" />
-                                    )}
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
+                                    {/* Download Icon Button */}
+                                    <button
+                                      type="button"
+                                      title="Download Question Paper"
+                                      onClick={() => handleDownload(paper._id, true, paper.title)}
+                                      disabled={downloadLoadingId === paper._id}
+                                      className="w-8 h-8 rounded-lg bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground border border-primary/20 flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 shrink-0"
+                                    >
+                                      {downloadLoadingId === paper._id ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                      ) : (
+                                        <Download className="w-4 h-4 stroke-[2]" />
+                                      )}
+                                    </button>
+
+                                    {/* Single Delete Icon Button */}
+                                    <button
+                                      type="button"
+                                      title="Delete Question Paper"
+                                      onClick={() => handleDelete(paper._id, true)}
+                                      disabled={deleteLoadingId === paper._id}
+                                      className="w-8 h-8 rounded-lg bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white border border-red-500/20 flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 shrink-0"
+                                    >
+                                      {deleteLoadingId === paper._id ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                      ) : (
+                                        <Trash2 className="w-4 h-4 stroke-[2]" />
+                                      )}
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
@@ -1514,6 +1805,198 @@ const Dashboard = () => {
         )}
 
       </div>
+
+      {/* --- EDIT DETAILS OVERLAY MODAL --- */}
+      {isEditModalOpen && editingItem && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[999] flex items-center justify-center p-4 overflow-y-auto animate-fadeIn">
+          <div className="bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border rounded-2xl p-6 sm:p-8 max-w-xl w-full shadow-2xl relative">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between gap-4 mb-6 border-b border-light-border dark:border-dark-border pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
+                  <Pencil className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-light-foreground dark:text-dark-foreground">
+                    Edit {isEditingPaper ? 'Question Paper' : 'Study Note'} Details
+                  </h3>
+                  <p className="text-xs text-light-muted dark:text-dark-muted truncate max-w-xs sm:max-w-sm">
+                    {editingItem.title}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(false)}
+                className="w-8 h-8 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary text-light-muted dark:text-dark-muted hover:text-light-foreground dark:hover:text-dark-foreground flex items-center justify-center transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleSaveEditSubmit} className="space-y-4">
+              
+              {/* Title */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-1.5">
+                  Title
+                </label>
+                <input
+                  type="text"
+                  name="title"
+                  required
+                  value={editFormData.title}
+                  onChange={handleEditInputChange}
+                  className="w-full h-[46px] px-4 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-field text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+
+              {/* Subject & Code */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-1.5">
+                    Subject Name
+                  </label>
+                  <input
+                    type="text"
+                    name="subject"
+                    required
+                    value={editFormData.subject}
+                    onChange={handleEditInputChange}
+                    className="w-full h-[46px] px-4 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-field text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-1.5">
+                    Subject Code
+                  </label>
+                  <input
+                    type="text"
+                    name="subjectCode"
+                    required
+                    value={editFormData.subjectCode}
+                    onChange={handleEditInputChange}
+                    className="w-full h-[46px] px-4 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-field text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+              </div>
+
+              {/* Branch & Semester */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-1.5">
+                    Engineering Branch
+                  </label>
+                  <CustomSelect
+                    id="edit-branch"
+                    name="branch"
+                    required
+                    value={editFormData.branch}
+                    onChange={handleEditInputChange}
+                    options={BRANCH_OPTIONS}
+                    placeholder="Select Branch"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-1.5">
+                    Semester
+                  </label>
+                  <CustomSelect
+                    id="edit-semester"
+                    name="semester"
+                    required
+                    value={editFormData.semester}
+                    onChange={handleEditInputChange}
+                    options={SEMESTER_OPTIONS}
+                    placeholder="Select Semester"
+                  />
+                </div>
+              </div>
+
+              {/* Exam Type Radio */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-1.5">
+                  Exam Type
+                </label>
+                <div className="flex items-center gap-6 h-[46px] bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border px-4 rounded-field">
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold">
+                    <input
+                      type="radio"
+                      name="examType"
+                      value="insem"
+                      checked={editFormData.examType === 'insem'}
+                      onChange={handleEditInputChange}
+                      className="w-4 h-4 text-primary focus:ring-primary"
+                    />
+                    <span>In-Sem Exam</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold">
+                    <input
+                      type="radio"
+                      name="examType"
+                      value="endsem"
+                      checked={editFormData.examType === 'endsem'}
+                      onChange={handleEditInputChange}
+                      className="w-4 h-4 text-primary focus:ring-primary"
+                    />
+                    <span>End-Sem Exam</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-1.5">
+                  Description
+                </label>
+                <textarea
+                  name="description"
+                  rows={2}
+                  value={editFormData.description}
+                  onChange={handleEditInputChange}
+                  className="w-full p-3 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-field text-xs focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                />
+              </div>
+
+              {/* Modal Buttons */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-light-border dark:border-dark-border">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="h-10 px-5 bg-light-surface-secondary dark:bg-dark-surface-secondary text-light-foreground dark:text-dark-foreground border border-light-border dark:border-dark-border font-bold text-xs rounded-xl hover:bg-light-border dark:hover:bg-dark-border transition-all"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={editLoading}
+                  className="h-10 px-6 bg-primary text-primary-foreground font-bold text-xs rounded-xl hover:bg-emerald-400 transition-all flex items-center gap-2 shadow-md disabled:opacity-50"
+                >
+                  {editLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4 stroke-[2.5]" />
+                      <span>Save Changes</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

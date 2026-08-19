@@ -138,6 +138,38 @@ async function viewPdf(req, res) {
   }
 }
 
+async function updateNote(req, res) {
+  try {
+    const { id } = req.params;
+    const { title, subject, subjectCode, description, branch, year, semester, examType } = req.body;
+
+    const note = await notesModel.findById(id);
+    if (!note) {
+      return res.status(404).json({ message: "Note not found" });
+    }
+
+    if (title) note.title = title;
+    if (subject) note.subject = subject;
+    if (subjectCode) note.subjectCode = subjectCode;
+    if (description !== undefined) note.description = description;
+    if (branch) note.branch = branch;
+    if (year) note.year = year;
+    if (semester) note.semester = semester;
+    if (examType) note.examType = examType;
+
+    await note.save();
+    await cacheService.flush();
+
+    return res.status(200).json({
+      message: "Note updated successfully",
+      note,
+    });
+  } catch (error) {
+    console.error("Update Note Error:", error);
+    return res.status(500).json({ message: "Failed to update note" });
+  }
+}
+
 async function deleteNotes(req, res) {
   try {
     const { id } = req.params;
@@ -166,4 +198,35 @@ async function deleteNotes(req, res) {
   }
 }
 
-module.exports = { createUploadUrl, createNote, viewNotes, viewPdf, deleteNotes };
+async function bulkDeleteNotes(req, res) {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: "Invalid or empty IDs array" });
+    }
+
+    const notes = await notesModel.find({ _id: { $in: ids } });
+    for (const note of notes) {
+      if (note.pdfKey) {
+        try {
+          await deleteFile(note.pdfKey);
+        } catch (err) {
+          console.warn(`Failed to delete R2 file for note ${note._id}:`, err);
+        }
+      }
+    }
+
+    await notesModel.deleteMany({ _id: { $in: ids } });
+    await cacheService.flush();
+
+    return res.status(200).json({
+      message: `${notes.length} note(s) deleted successfully`,
+      deletedCount: notes.length,
+    });
+  } catch (error) {
+    console.error("Bulk Delete Notes Error:", error);
+    return res.status(500).json({ message: "Failed to bulk delete notes" });
+  }
+}
+
+module.exports = { createUploadUrl, createNote, viewNotes, viewPdf, updateNote, deleteNotes, bulkDeleteNotes };

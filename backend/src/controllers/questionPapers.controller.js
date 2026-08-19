@@ -139,6 +139,38 @@ async function viewPdf(req, res) {
   }
 }
 
+async function updateQuestionPaper(req, res) {
+  try {
+    const { id } = req.params;
+    const { title, subject, subjectCode, description, branch, year, semester, examType } = req.body;
+
+    const paper = await questionPapersModel.findById(id);
+    if (!paper) {
+      return res.status(404).json({ message: "Question paper not found" });
+    }
+
+    if (title) paper.title = title;
+    if (subject) paper.subject = subject;
+    if (subjectCode) paper.subjectCode = subjectCode;
+    if (description !== undefined) paper.description = description;
+    if (branch) paper.branch = branch;
+    if (year) paper.year = year;
+    if (semester) paper.semester = semester;
+    if (examType) paper.examType = examType;
+
+    await paper.save();
+    await cacheService.flush();
+
+    return res.status(200).json({
+      message: "Question paper updated successfully",
+      questionPaper: paper,
+    });
+  } catch (error) {
+    console.error("Update Question Paper Error:", error);
+    return res.status(500).json({ message: "Failed to update question paper" });
+  }
+}
+
 async function deleteQuestionPaper(req, res) {
   try {
     const { id } = req.params;
@@ -167,4 +199,43 @@ async function deleteQuestionPaper(req, res) {
   }
 }
 
-module.exports = { createUploadUrl, createQuestionPaper, viewQuestionPapers, viewPdf, deleteQuestionPaper };
+async function bulkDeleteQuestionPapers(req, res) {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: "Invalid or empty IDs array" });
+    }
+
+    const papers = await questionPapersModel.find({ _id: { $in: ids } });
+    for (const paper of papers) {
+      if (paper.pdfKey) {
+        try {
+          await deleteFile(paper.pdfKey);
+        } catch (err) {
+          console.warn(`Failed to delete R2 file for paper ${paper._id}:`, err);
+        }
+      }
+    }
+
+    await questionPapersModel.deleteMany({ _id: { $in: ids } });
+    await cacheService.flush();
+
+    return res.status(200).json({
+      message: `${papers.length} question paper(s) deleted successfully`,
+      deletedCount: papers.length,
+    });
+  } catch (error) {
+    console.error("Bulk Delete Question Papers Error:", error);
+    return res.status(500).json({ message: "Failed to bulk delete question papers" });
+  }
+}
+
+module.exports = { 
+  createUploadUrl, 
+  createQuestionPaper, 
+  viewQuestionPapers, 
+  viewPdf, 
+  updateQuestionPaper, 
+  deleteQuestionPaper, 
+  bulkDeleteQuestionPapers 
+};

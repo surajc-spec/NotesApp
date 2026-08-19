@@ -12,6 +12,10 @@ router.post("/create-notes", authMiddleware.authAdmin, notesController.createNot
 // Multi-Level Caching placed FIRST to serve hits instantly & bypass rate-limit burn
 router.get("/view-notes", cacheMiddleware(300), authMiddleware.authUser, notesController.viewNotes);
 router.get("/:id/view", rateLimitMiddleware.viewPdfLimiter, authMiddleware.authUser, notesController.viewPdf);
+
+// Admin Management & Bulk Actions
+router.put("/:id", authMiddleware.authAdmin, notesController.updateNote);
+router.post("/bulk-delete", authMiddleware.authAdmin, notesController.bulkDeleteNotes);
 router.delete("/:id", authMiddleware.authAdmin, notesController.deleteNotes);
 
 module.exports = router;
