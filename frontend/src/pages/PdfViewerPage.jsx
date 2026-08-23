@@ -150,13 +150,13 @@ const PdfPageItem = ({
             {[1, 2, 3].map((rowIdx) => (
               <div 
                 key={rowIdx}
-                className="transform -rotate-[28deg] text-center select-none pointer-events-none opacity-20 dark:opacity-30 my-4"
+                className="transform -rotate-[28deg] text-center select-none pointer-events-none opacity-45 dark:opacity-55 my-4"
               >
-                <span className="text-2xl sm:text-4xl md:text-5xl font-black tracking-widest uppercase text-slate-800 dark:text-slate-200 font-sans block drop-shadow-sm">
+                <span className="text-3xl sm:text-5xl md:text-6xl font-black tracking-widest uppercase text-slate-900 dark:text-slate-100 font-sans block drop-shadow-sm">
                   NoteShare
                 </span>
                 {userEmail && (
-                  <span className="text-[10px] sm:text-xs md:text-sm font-bold tracking-wider text-slate-700 dark:text-slate-300 mt-1 font-mono block">
+                  <span className="text-xs sm:text-sm md:text-base font-extrabold tracking-wider text-slate-800 dark:text-slate-200 mt-1.5 font-mono block">
                     {userEmail}
                   </span>
                 )}
