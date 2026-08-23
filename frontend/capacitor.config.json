@@ -4,7 +4,7 @@
   "webDir": "dist",
   "bundledWebRuntime": false,
   "server": {
-    "url": "https://noteshare.online",
+    "androidScheme": "https",
     "cleartext": true
   },
   "android": {
