@@ -17,20 +17,21 @@ app.use(express.json())
 app.use(cookieParser())
 app.use(compression());
 
-// Anti-Scraper Security Middleware (Blocks Python/Curl/Bot user-agents & Banned IPs)
-app.use(antiScraperMiddleware);
-
-// Enable CORS for localhost and production deployed domains
+// Enable CORS for localhost, mobile Capacitor app, and production deployed domains
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
+  "http://localhost",
+  "https://localhost",
+  "capacitor://localhost",
+  "https://noteshare.online",
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps, curl, or same-domain proxy rewrites)
+      // Allow requests with no origin (like native mobile apps, curl, or same-domain proxy rewrites)
       if (!origin) return callback(null, true);
       if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
         return callback(null, true);
@@ -39,8 +40,13 @@ app.use(
       return callback(null, true);
     },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
   })
 );
+
+// Anti-Scraper Security Middleware (Blocks Python/Curl/Bot user-agents & Banned IPs)
+app.use(antiScraperMiddleware);
 
 // Lightweight health check endpoint for 24/7 keep-alive cron pinging
 app.get('/api/health', (req, res) => {

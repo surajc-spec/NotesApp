@@ -129,15 +129,17 @@ const PdfPageItem = ({
       )}
 
       {/* Canvas Element with Watermark Overlay */}
-      <div className="relative inline-block max-w-full rounded-xl overflow-hidden shadow-2xl bg-white">
+      <div className={`relative inline-block max-w-full rounded-xl overflow-hidden shadow-2xl transition-colors ${
+        isPdfDarkMode ? 'bg-[#18181b]' : 'bg-white'
+      }`}>
         <canvas
           ref={canvasRef}
           style={{
-            filter: isPdfDarkMode ? 'invert(0.92) hue-rotate(180deg) contrast(1.15)' : 'none',
+            filter: isPdfDarkMode ? 'invert(0.92) hue-rotate(180deg) contrast(1.15) brightness(0.95)' : 'none',
             transition: 'filter 0.3s ease',
             display: (isNotesOpened && (isWindowBlurred || isScreenshotBlocked)) ? 'none' : 'block'
           }}
-          className="max-w-full transition-all bg-white block"
+          className={`max-w-full transition-all block ${isPdfDarkMode ? 'bg-[#18181b]' : 'bg-white'}`}
         />
 
         {/* Dynamic Anti-Leak Watermark Overlay */}

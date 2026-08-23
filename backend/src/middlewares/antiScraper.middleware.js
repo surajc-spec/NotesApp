@@ -28,6 +28,11 @@ const BLOCKED_USER_AGENTS = [
  * Middleware to block scrapers, automated bots, and banned IPs
  */
 function antiScraperMiddleware(req, res, next) {
+  // Always allow CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return next();
+  }
+
   const clientIP =
     req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
     req.socket.remoteAddress ||

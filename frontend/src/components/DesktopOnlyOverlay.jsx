@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
 
 const DesktopOnlyOverlay = () => {
   const location = useLocation();
@@ -7,6 +8,11 @@ const DesktopOnlyOverlay = () => {
 
   useEffect(() => {
     const checkSecurityRestrictions = () => {
+      // 0. If running inside official Native Capacitor Mobile App, bypass desktop restriction (hardware FLAG_SECURE handles security)
+      if (Capacitor.isNativePlatform()) {
+        return;
+      }
+
       const currentPath = location.pathname;
 
       // Allow public static pages like /about, /contact, /terms, /privacy without hard block
