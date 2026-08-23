@@ -43,4 +43,13 @@ async function deleteFile(key) {
   return await r2Client.send(command);
 }
 
-module.exports = { getPdfUrl, getUploadUrl,deleteFile };
+async function getFileStream(key) {
+  const command = new GetObjectCommand({
+    Bucket: config.R2_BUCKET_NAME,
+    Key: key,
+  });
+
+  return await r2Client.send(command);
+}
+
+module.exports = { getPdfUrl, getUploadUrl, deleteFile, getFileStream };

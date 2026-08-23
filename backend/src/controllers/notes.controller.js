@@ -1,5 +1,5 @@
 const crypto = require("crypto");
-const { getUploadUrl, getPdfUrl, deleteFile } = require("../services/r2.service");
+const { getUploadUrl, getPdfUrl, deleteFile, getFileStream } = require("../services/r2.service");
 const notesModel = require('../models/notes.model');
 const cacheService = require('../services/cacheService');
 
@@ -125,10 +125,22 @@ async function viewPdf(req, res) {
       });
     }
 
+    // Direct binary stream mode (bypasses cross-origin S3/R2 CORS issues on mobile apps)
+    if (req.query.stream === 'true') {
+      const s3Response = await getFileStream(note.pdfKey);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline; filename="document.pdf"');
+      if (s3Response.ContentLength) {
+        res.setHeader('Content-Length', s3Response.ContentLength);
+      }
+      return s3Response.Body.pipe(res);
+    }
+
     const pdfUrl = await getPdfUrl(note.pdfKey);
 
     return res.status(200).json({
       pdfUrl,
+      note,
     });
   } catch (error) {
     console.log(error);

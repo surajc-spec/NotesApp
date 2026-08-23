@@ -475,6 +475,7 @@ const PdfViewerPage = () => {
         ? `/api/question-papers/${id}/view` 
         : `/api/notes/${id}/view`;
 
+      // 1. Fetch document metadata
       const response = await fetch(endpoint, {
         method: 'GET',
         headers,
@@ -483,8 +484,8 @@ const PdfViewerPage = () => {
 
       const data = await response.json();
 
-      if (!response.ok || !data.pdfUrl) {
-        throw new Error(data.message || 'Failed to load PDF document URL.');
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to load document details.');
       }
 
       if (data.note) setDocumentDetails(data.note);
@@ -497,11 +498,25 @@ const PdfViewerPage = () => {
 
       pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || '3.11.174'}/pdf.worker.min.js`;
 
+      // 2. Fetch PDF binary via direct authenticated stream endpoint
+      // This bypasses any cross-origin Cloudflare R2 / S3 CORS and Worker restrictions completely!
+      const streamEndpoint = `${endpoint}?stream=true`;
+      const streamResponse = await fetch(streamEndpoint, {
+        method: 'GET',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        credentials: 'include',
+      });
+
+      if (!streamResponse.ok) {
+        throw new Error('Failed to stream PDF binary from secure server.');
+      }
+
+      const pdfArrayBuffer = await streamResponse.arrayBuffer();
+
       const loadingTask = pdfjsLib.getDocument({
-        url: data.pdfUrl,
+        data: pdfArrayBuffer,
         cMapUrl: `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || '3.11.174'}/cmaps/`,
         cMapPacked: true,
-        withCredentials: false,
       });
 
       const pdf = await loadingTask.promise;

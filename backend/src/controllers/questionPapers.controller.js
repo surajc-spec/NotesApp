@@ -1,5 +1,5 @@
 const crypto = require("crypto");
-const { getUploadUrl, getPdfUrl, deleteFile } = require("../services/r2.service");
+const { getUploadUrl, getPdfUrl, deleteFile, getFileStream } = require("../services/r2.service");
 const questionPapersModel = require("../models/questionPapers.model");
 const cacheService = require("../services/cacheService");
 
@@ -126,10 +126,22 @@ async function viewPdf(req, res) {
       });
     }
 
+    // Direct binary stream mode (bypasses cross-origin S3/R2 CORS issues on mobile apps)
+    if (req.query.stream === 'true') {
+      const s3Response = await getFileStream(questionPaper.pdfKey);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline; filename="question-paper.pdf"');
+      if (s3Response.ContentLength) {
+        res.setHeader('Content-Length', s3Response.ContentLength);
+      }
+      return s3Response.Body.pipe(res);
+    }
+
     const pdfUrl = await getPdfUrl(questionPaper.pdfKey);
 
     return res.status(200).json({
       pdfUrl,
+      questionPaper,
     });
   } catch (error) {
     console.log("View PDF Error:", error);
