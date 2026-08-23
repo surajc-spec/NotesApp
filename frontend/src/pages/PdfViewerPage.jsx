@@ -496,7 +496,7 @@ const PdfViewerPage = () => {
         throw new Error('PDF Engine not loaded. Please refresh the page.');
       }
 
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || '3.11.174'}/pdf.worker.min.js`;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
 
       // 2. Fetch PDF binary via direct authenticated stream endpoint
       // This bypasses any cross-origin Cloudflare R2 / S3 CORS and Worker restrictions completely!
@@ -513,13 +513,23 @@ const PdfViewerPage = () => {
 
       const pdfArrayBuffer = await streamResponse.arrayBuffer();
 
-      const loadingTask = pdfjsLib.getDocument({
-        data: pdfArrayBuffer,
-        cMapUrl: `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || '3.11.174'}/cmaps/`,
-        cMapPacked: true,
-      });
+      let pdf;
+      try {
+        const loadingTask = pdfjsLib.getDocument({
+          data: pdfArrayBuffer,
+          cMapPacked: true,
+        });
+        pdf = await loadingTask.promise;
+      } catch (workerErr) {
+        console.warn('Worker loading failed, falling back to direct in-thread render:', workerErr);
+        pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+        const fallbackTask = pdfjsLib.getDocument({
+          data: pdfArrayBuffer,
+          cMapPacked: true,
+        });
+        pdf = await fallbackTask.promise;
+      }
 
-      const pdf = await loadingTask.promise;
       setPdfDoc(pdf);
       setNumPages(pdf.numPages);
       setPageNum(1);
