@@ -18,6 +18,7 @@ import {
   ArrowLeftRight
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { Capacitor } from '@capacitor/core';
 
 // Single Page Canvas Component for Continuous Vertical PDF Scrolling (Edge Reader Style)
 const PdfPageItem = ({ 
@@ -333,9 +334,16 @@ const PdfViewerPage = () => {
       }
     };
 
-    const handleWindowBlur = () => setIsWindowBlurred(true);
+    const handleWindowBlur = () => {
+      // In native Android app, FLAG_SECURE handles screen protection at OS level
+      if (Capacitor.isNativePlatform()) return;
+      if (!document.hasFocus()) {
+        setIsWindowBlurred(true);
+      }
+    };
     const handleWindowFocus = () => setIsWindowBlurred(false);
     const handleVisibilityChange = () => {
+      if (Capacitor.isNativePlatform()) return;
       if (document.hidden) {
         setIsWindowBlurred(true);
       } else {
@@ -353,10 +361,11 @@ const PdfViewerPage = () => {
       target.addEventListener('keyup', handleKeyUp, true);
     });
 
-    window.addEventListener('blur', handleWindowBlur);
-    window.addEventListener('focus', handleWindowFocus);
-    window.addEventListener('focusout', handleWindowBlur);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    if (!Capacitor.isNativePlatform()) {
+      window.addEventListener('blur', handleWindowBlur);
+      window.addEventListener('focus', handleWindowFocus);
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+    }
 
     document.addEventListener('contextmenu', preventDefaultAction);
     document.addEventListener('copy', preventDefaultAction);
@@ -368,10 +377,11 @@ const PdfViewerPage = () => {
         target.removeEventListener('keyup', handleKeyUp, true);
       });
 
-      window.removeEventListener('blur', handleWindowBlur);
-      window.removeEventListener('focus', handleWindowFocus);
-      window.removeEventListener('focusout', handleWindowBlur);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (!Capacitor.isNativePlatform()) {
+        window.removeEventListener('blur', handleWindowBlur);
+        window.removeEventListener('focus', handleWindowFocus);
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      }
 
       document.removeEventListener('contextmenu', preventDefaultAction);
       document.removeEventListener('copy', preventDefaultAction);
