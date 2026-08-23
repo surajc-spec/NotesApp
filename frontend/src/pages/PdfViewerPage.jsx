@@ -649,7 +649,7 @@ const PdfViewerPage = () => {
                 <div className="flex items-center gap-2">
                   {documentDetails?.subjectCode && (
                     <span className="text-xs font-bold text-light-muted dark:text-dark-muted">
-                      • {documentDetails.subjectCode}
+                       {documentDetails.subjectCode}
                     </span>
                   )}
                 </div>
