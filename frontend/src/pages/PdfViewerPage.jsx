@@ -129,7 +129,7 @@ const PdfPageItem = ({
       )}
 
       {/* Canvas Element with Watermark Overlay */}
-      <div className="relative inline-block max-w-full">
+      <div className="relative inline-block max-w-full rounded-xl overflow-hidden shadow-2xl bg-white">
         <canvas
           ref={canvasRef}
           style={{
@@ -137,50 +137,31 @@ const PdfPageItem = ({
             transition: 'filter 0.3s ease',
             display: (isNotesOpened && (isWindowBlurred || isScreenshotBlocked)) ? 'none' : 'block'
           }}
-          className="shadow-2xl rounded-xl max-w-full transition-all bg-white block"
+          className="max-w-full transition-all bg-white block"
         />
 
         {/* Dynamic Anti-Leak Watermark Overlay */}
         {!rendering && (
           <div 
-            className="absolute inset-0 pointer-events-none overflow-hidden select-none flex flex-col justify-around items-center py-10 z-10"
+            className="absolute inset-0 pointer-events-none overflow-hidden select-none flex flex-col justify-around items-center py-8 z-20 w-full h-full"
             aria-hidden="true"
           >
-            {/* Top-Mid Diagonal Stamp */}
-            <div className="transform -rotate-[30deg] text-center opacity-[0.08] dark:opacity-[0.14] select-none pointer-events-none">
-              <span className="text-2xl sm:text-4xl font-black tracking-widest uppercase text-black dark:text-white font-sans block">
-                NoteShare
-              </span>
-              {userEmail && (
-                <span className="text-xs sm:text-sm font-bold tracking-wider text-black dark:text-white mt-0.5 font-mono block">
-                  {userEmail}
+            {/* Repeating Diagonal Watermark Rows */}
+            {[1, 2, 3].map((rowIdx) => (
+              <div 
+                key={rowIdx}
+                className="transform -rotate-[28deg] text-center select-none pointer-events-none opacity-20 dark:opacity-30 my-4"
+              >
+                <span className="text-2xl sm:text-4xl md:text-5xl font-black tracking-widest uppercase text-slate-800 dark:text-slate-200 font-sans block drop-shadow-sm">
+                  NoteShare
                 </span>
-              )}
-            </div>
-
-            {/* Center Main Diagonal Stamp */}
-            <div className="transform -rotate-[30deg] text-center opacity-[0.10] dark:opacity-[0.16] select-none pointer-events-none">
-              <span className="text-3xl sm:text-5xl font-black tracking-widest uppercase text-black dark:text-white font-sans block">
-                NoteShare
-              </span>
-              {userEmail && (
-                <span className="text-xs sm:text-base font-bold tracking-wider text-black dark:text-white mt-1 font-mono block">
-                  {userEmail}
-                </span>
-              )}
-            </div>
-
-            {/* Bottom-Mid Diagonal Stamp */}
-            <div className="transform -rotate-[30deg] text-center opacity-[0.08] dark:opacity-[0.14] select-none pointer-events-none">
-              <span className="text-2xl sm:text-4xl font-black tracking-widest uppercase text-black dark:text-white font-sans block">
-                NoteShare
-              </span>
-              {userEmail && (
-                <span className="text-xs sm:text-sm font-bold tracking-wider text-black dark:text-white mt-0.5 font-mono block">
-                  {userEmail}
-                </span>
-              )}
-            </div>
+                {userEmail && (
+                  <span className="text-[10px] sm:text-xs md:text-sm font-bold tracking-wider text-slate-700 dark:text-slate-300 mt-1 font-mono block">
+                    {userEmail}
+                  </span>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -290,16 +271,35 @@ const PdfViewerPage = () => {
     };
 
     const isScreenshotShortcut = (e) => {
-      const key = e.key || '';
+      const key = (e.key || '').toLowerCase();
       const code = e.code || '';
       const keyCode = e.keyCode || 0;
+      const isCtrlOrMeta = e.ctrlKey || e.metaKey;
 
-      if (key === 'PrintScreen' || code === 'PrintScreen' || keyCode === 44) return true;
-      if ((e.metaKey || e.winKey || e.ctrlKey) && e.shiftKey && (key === 'S' || key === 's' || code === 'KeyS')) return true;
-      if (e.metaKey && e.shiftKey && (key === '3' || key === '4' || key === '5' || keyCode === 51 || keyCode === 52 || keyCode === 53)) return true;
-      if ((e.ctrlKey || e.metaKey) && (key === 'p' || key === 'P' || code === 'KeyP')) return true;
-      if ((e.ctrlKey || e.metaKey) && (key === 's' || key === 'S' || code === 'KeyS')) return true;
-      if (key === 'F12' || code === 'F12' || keyCode === 123 || ((e.ctrlKey || e.metaKey) && e.shiftKey && (key === 'I' || key === 'i' || code === 'KeyI'))) return true;
+      // 1. PrintScreen key (standard & multimedia keyboards)
+      if (key === 'printscreen' || code === 'PrintScreen' || keyCode === 44 || key === 'snapshot') return true;
+
+      // 2. Windows Snipping Tool / macOS screenshot (Win+Shift+S / Cmd+Shift+S / Ctrl+Shift+S)
+      if (e.shiftKey && (key === 's' || code === 'KeyS')) return true;
+
+      // 3. macOS screenshots (Cmd+Shift+3, Cmd+Shift+4, Cmd+Shift+5, Cmd+Shift+6)
+      if (isCtrlOrMeta && e.shiftKey && ['3', '4', '5', '6', 'Digit3', 'Digit4', 'Digit5', 'Digit6'].includes(key || code)) return true;
+
+      // 4. Print shortcuts (Ctrl+P / Cmd+P)
+      if (isCtrlOrMeta && (key === 'p' || code === 'KeyP')) return true;
+
+      // 5. Save Page shortcuts (Ctrl+S / Cmd+S)
+      if (isCtrlOrMeta && (key === 's' || code === 'KeyS')) return true;
+
+      // 6. View Source shortcut (Ctrl+U / Cmd+U)
+      if (isCtrlOrMeta && (key === 'u' || code === 'KeyU')) return true;
+
+      // 7. DevTools / Inspect shortcuts (F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C)
+      if (key === 'f12' || code === 'F12' || keyCode === 123) return true;
+      if (isCtrlOrMeta && e.shiftKey && ['i', 'j', 'c', 'KeyI', 'KeyJ', 'KeyC'].includes(key || code)) return true;
+
+      // 8. Alt + PrintScreen
+      if (e.altKey && (key === 'printscreen' || code === 'PrintScreen' || keyCode === 44)) return true;
 
       return false;
     };
