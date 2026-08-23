@@ -33,6 +33,22 @@ function antiScraperMiddleware(req, res, next) {
     return next();
   }
 
+  // Always allow keep-alive health check
+  if (req.path === '/api/health') {
+    return next();
+  }
+
+  // If request comes from trusted NoteShare frontend or mobile app, allow through
+  const origin = req.headers['origin'] || req.headers['referer'] || '';
+  const isTrustedOrigin = 
+    origin.includes('noteshare.online') || 
+    origin.includes('localhost') || 
+    origin.includes('capacitor://');
+
+  if (isTrustedOrigin) {
+    return next();
+  }
+
   const clientIP =
     req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
     req.socket.remoteAddress ||

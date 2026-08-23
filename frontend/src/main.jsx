@@ -8,19 +8,22 @@ import App from './App.jsx'
 // Route all API calls directly to live Render backend with Auth token when running inside Native App
 if (Capacitor.isNativePlatform()) {
   const originalFetch = window.fetch;
-  window.fetch = function(resource, init = {}) {
+  window.fetch = function(resource, init) {
+    let finalUrl = resource;
     if (typeof resource === 'string' && resource.startsWith('/api/')) {
-      resource = `https://notesapp-pbjv.onrender.com${resource}`;
+      finalUrl = `https://notesapp-pbjv.onrender.com${resource}`;
     }
+    
     const token = localStorage.getItem('token');
-    if (token) {
-      init = init || {};
-      init.headers = {
-        ...init.headers,
-        'Authorization': `Bearer ${token}`
-      };
+    const newInit = init ? { ...init } : {};
+    const headers = new Headers(init?.headers || {});
+    
+    if (token && !headers.has('Authorization')) {
+      headers.set('Authorization', `Bearer ${token}`);
     }
-    return originalFetch.call(this, resource, init);
+    
+    newInit.headers = headers;
+    return originalFetch.call(this, finalUrl, newInit);
   };
 }
 
