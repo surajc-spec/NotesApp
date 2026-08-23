@@ -10,20 +10,27 @@ if (Capacitor.isNativePlatform()) {
   const originalFetch = window.fetch;
   window.fetch = function(resource, init) {
     let finalUrl = resource;
+    const isBackendApi = typeof resource === 'string' && (resource.startsWith('/api/') || resource.includes('notesapp-pbjv.onrender.com'));
+
     if (typeof resource === 'string' && resource.startsWith('/api/')) {
       finalUrl = `https://notesapp-pbjv.onrender.com${resource}`;
     }
     
-    const token = localStorage.getItem('token');
-    const newInit = init ? { ...init } : {};
-    const headers = new Headers(init?.headers || {});
-    
-    if (token && !headers.has('Authorization')) {
-      headers.set('Authorization', `Bearer ${token}`);
+    // Only attach Backend Authorization token for our NoteShare API, NEVER for third-party Cloudflare R2 / S3 presigned URLs or CDNs
+    if (isBackendApi) {
+      const token = localStorage.getItem('token');
+      const newInit = init ? { ...init } : {};
+      const headers = new Headers(init?.headers || {});
+      
+      if (token && !headers.has('Authorization')) {
+        headers.set('Authorization', `Bearer ${token}`);
+      }
+      
+      newInit.headers = headers;
+      return originalFetch.call(this, finalUrl, newInit);
     }
     
-    newInit.headers = headers;
-    return originalFetch.call(this, finalUrl, newInit);
+    return originalFetch.call(this, finalUrl, init);
   };
 }
 

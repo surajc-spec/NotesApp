@@ -495,12 +495,13 @@ const PdfViewerPage = () => {
         throw new Error('PDF Engine not loaded. Please refresh the page.');
       }
 
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || '3.11.174'}/pdf.worker.min.js`;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || '3.11.174'}/pdf.worker.min.js`;
 
       const loadingTask = pdfjsLib.getDocument({
         url: data.pdfUrl,
-        cMapUrl: `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || '3.11.174'}/cmaps/`,
+        cMapUrl: `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || '3.11.174'}/cmaps/`,
         cMapPacked: true,
+        withCredentials: false,
       });
 
       const pdf = await loadingTask.promise;
