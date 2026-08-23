@@ -81,13 +81,8 @@ const RestrictedAccess = () => {
         {/* Security Card */}
         <div className="bg-light-surface/95 dark:bg-dark-surface/95 backdrop-blur-md border-2 border-red-500/30 rounded-3xl p-8 sm:p-12 shadow-2xl text-center space-y-6 animate-fadeIn">
           
-          {/* Glowing Header Icon */}
-          <div className="relative inline-flex items-center justify-center mx-auto">
-            <div className="w-24 h-24 rounded-3xl bg-red-500/10 border-2 border-red-500/30 text-red-500 flex items-center justify-center shadow-lg">
-              <ShieldAlert className="w-12 h-12 stroke-[2.2]" />
-            </div>
-          </div>
-
+       
+        
           {/* Title & Badge */}
           <div className="space-y-3">
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-light-foreground dark:text-dark-foreground font-sans">
@@ -129,16 +124,16 @@ const RestrictedAccess = () => {
 
           {/* Action / Steps to Unlock */}
           {restrictionReason === 'mobile' ? (
-            <div className="p-5 rounded-2xl bg-primary/10 border-2 border-primary/30 text-left space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center shrink-0">
-                  <Smartphone className="w-5 h-5 stroke-[2.2]" />
+            <div className="p-5 sm:p-6 rounded-3xl bg-primary/10 border-2 border-primary/30 text-left space-y-4 shadow-sm">
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-primary/20 text-primary flex items-center justify-center shrink-0 shadow-inner">
+                  <Smartphone className="w-6 h-6 stroke-[2.2]" />
                 </div>
-                <div>
-                  <h4 className="text-sm font-extrabold text-light-foreground dark:text-dark-foreground">
+                <div className="min-w-0">
+                  <h4 className="text-base font-extrabold text-light-foreground dark:text-dark-foreground font-sans">
                     Study on Phone with NoteShare App
                   </h4>
-                  <p className="text-xs text-light-muted dark:text-dark-muted">
+                  <p className="text-xs text-light-muted dark:text-dark-muted leading-relaxed mt-0.5">
                     Secure mobile studying with native hardware protection.
                   </p>
                 </div>
@@ -147,13 +142,13 @@ const RestrictedAccess = () => {
               <a
                 href="/NoteShare.apk"
                 download="NoteShare.apk"
-                className="w-full h-[48px] text-sm font-bold text-primary-foreground bg-primary hover:bg-emerald-400 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] active:scale-[0.98]"
+                className="w-full py-3.5 px-5 bg-primary hover:bg-emerald-400 text-primary-foreground font-extrabold text-sm sm:text-base rounded-2xl transition-all duration-200 flex items-center justify-center gap-2.5 shadow-lg hover:shadow-primary/25 active:scale-[0.98] text-center"
               >
-                <Download className="w-4 h-4 stroke-[2.5]" />
-                <span>Download NoteShare Android App (.apk)</span>
+                <Download className="w-5 h-5 stroke-[2.5] shrink-0" />
+                <span>Download Android App (.apk)</span>
               </a>
 
-              <p className="text-[11px] text-light-muted dark:text-dark-muted text-center pt-1">
+              <p className="text-xs text-light-muted dark:text-dark-muted text-center pt-0.5">
                 Or open <span className="font-bold text-light-foreground dark:text-dark-foreground">noteshare.online</span> on your laptop/desktop.
               </p>
             </div>
