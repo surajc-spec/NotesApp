@@ -150,13 +150,19 @@ const PdfPageItem = ({
             {[1, 2, 3].map((rowIdx) => (
               <div 
                 key={rowIdx}
-                className="transform -rotate-[28deg] text-center select-none pointer-events-none opacity-70 dark:opacity-80 my-4"
+                className={`transform -rotate-[28deg] text-center select-none pointer-events-none my-4 transition-all ${
+                  isPdfDarkMode ? 'opacity-65 text-white' : 'opacity-70 text-black'
+                }`}
               >
-                <span className="text-3xl sm:text-5xl md:text-6xl font-black tracking-widest uppercase text-black dark:text-black font-sans block drop-shadow-md">
+                <span className={`text-3xl sm:text-5xl md:text-6xl font-black tracking-widest uppercase font-sans block ${
+                  isPdfDarkMode ? 'text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]' : 'text-black drop-shadow-md'
+                }`}>
                   NoteShare
                 </span>
                 {userEmail && (
-                  <span className="text-sm sm:text-base md:text-lg font-black tracking-wider text-black dark:text-black mt-1 font-mono block drop-shadow-sm">
+                  <span className={`text-sm sm:text-base md:text-lg font-black tracking-wider mt-1 font-mono block ${
+                    isPdfDarkMode ? 'text-zinc-200 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]' : 'text-black drop-shadow-sm'
+                  }`}>
                     {userEmail}
                   </span>
                 )}
