@@ -17,6 +17,7 @@ import {
   Sun,
   ArrowLeftRight
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 // Single Page Canvas Component for Continuous Vertical PDF Scrolling (Edge Reader Style)
 const PdfPageItem = ({ 
@@ -27,6 +28,7 @@ const PdfPageItem = ({
   isNotesOpened, 
   isWindowBlurred, 
   isScreenshotBlocked, 
+  userEmail,
   onPageVisible 
 }) => {
   const canvasRef = useRef(null);
@@ -126,16 +128,62 @@ const PdfPageItem = ({
         </div>
       )}
 
-      {/* Canvas Element */}
-      <canvas
-        ref={canvasRef}
-        style={{
-          filter: isPdfDarkMode ? 'invert(0.92) hue-rotate(180deg) contrast(1.15)' : 'none',
-          transition: 'filter 0.3s ease',
-          display: (isNotesOpened && (isWindowBlurred || isScreenshotBlocked)) ? 'none' : 'block'
-        }}
-        className="shadow-2xl rounded-xl max-w-full transition-all bg-white"
-      />
+      {/* Canvas Element with Watermark Overlay */}
+      <div className="relative inline-block max-w-full">
+        <canvas
+          ref={canvasRef}
+          style={{
+            filter: isPdfDarkMode ? 'invert(0.92) hue-rotate(180deg) contrast(1.15)' : 'none',
+            transition: 'filter 0.3s ease',
+            display: (isNotesOpened && (isWindowBlurred || isScreenshotBlocked)) ? 'none' : 'block'
+          }}
+          className="shadow-2xl rounded-xl max-w-full transition-all bg-white block"
+        />
+
+        {/* Dynamic Anti-Leak Watermark Overlay */}
+        {!rendering && (
+          <div 
+            className="absolute inset-0 pointer-events-none overflow-hidden select-none flex flex-col justify-around items-center py-10 z-10"
+            aria-hidden="true"
+          >
+            {/* Top-Mid Diagonal Stamp */}
+            <div className="transform -rotate-[30deg] text-center opacity-[0.08] dark:opacity-[0.14] select-none pointer-events-none">
+              <span className="text-2xl sm:text-4xl font-black tracking-widest uppercase text-black dark:text-white font-sans block">
+                NoteShare
+              </span>
+              {userEmail && (
+                <span className="text-xs sm:text-sm font-bold tracking-wider text-black dark:text-white mt-0.5 font-mono block">
+                  {userEmail}
+                </span>
+              )}
+            </div>
+
+            {/* Center Main Diagonal Stamp */}
+            <div className="transform -rotate-[30deg] text-center opacity-[0.10] dark:opacity-[0.16] select-none pointer-events-none">
+              <span className="text-3xl sm:text-5xl font-black tracking-widest uppercase text-black dark:text-white font-sans block">
+                NoteShare
+              </span>
+              {userEmail && (
+                <span className="text-xs sm:text-base font-bold tracking-wider text-black dark:text-white mt-1 font-mono block">
+                  {userEmail}
+                </span>
+              )}
+            </div>
+
+            {/* Bottom-Mid Diagonal Stamp */}
+            <div className="transform -rotate-[30deg] text-center opacity-[0.08] dark:opacity-[0.14] select-none pointer-events-none">
+              <span className="text-2xl sm:text-4xl font-black tracking-widest uppercase text-black dark:text-white font-sans block">
+                NoteShare
+              </span>
+              {userEmail && (
+                <span className="text-xs sm:text-sm font-bold tracking-wider text-black dark:text-white mt-0.5 font-mono block">
+                  {userEmail}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -143,6 +191,7 @@ const PdfPageItem = ({
 const PdfViewerPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const type = searchParams.get('type') || 'note';
   const id = searchParams.get('id');
@@ -644,6 +693,7 @@ const PdfViewerPage = () => {
                   isNotesOpened={isNotesOpened}
                   isWindowBlurred={isWindowBlurred}
                   isScreenshotBlocked={isScreenshotBlocked}
+                  userEmail={user?.email || 'noteshare.online'}
                   onPageVisible={handlePageVisible}
                 />
               ))}
