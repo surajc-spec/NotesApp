@@ -289,7 +289,8 @@ const PdfViewerPage = () => {
       if (e.shiftKey && (key === 's' || code === 'KeyS')) return true;
 
       // 3. macOS screenshots (Cmd+Shift+3, Cmd+Shift+4, Cmd+Shift+5, Cmd+Shift+6)
-      if (isCtrlOrMeta && e.shiftKey && ['3', '4', '5', '6', 'Digit3', 'Digit4', 'Digit5', 'Digit6'].includes(key || code)) return true;
+      // Note: On Mac, Shift+3 produces '#', Shift+4 produces '$', Shift+5 produces '%', Shift+6 produces '^'
+      if (isCtrlOrMeta && e.shiftKey && ['3', '4', '5', '6', '#', '$', '%', '^', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Numpad3', 'Numpad4', 'Numpad5', 'Numpad6'].includes(key || code)) return true;
 
       // 4. Print shortcuts (Ctrl+P / Cmd+P)
       if (isCtrlOrMeta && (key === 'p' || code === 'KeyP')) return true;
@@ -332,6 +333,13 @@ const PdfViewerPage = () => {
 
     const handleWindowBlur = () => setIsWindowBlurred(true);
     const handleWindowFocus = () => setIsWindowBlurred(false);
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setIsWindowBlurred(true);
+      } else {
+        setIsWindowBlurred(false);
+      }
+    };
     const preventDefaultAction = (e) => { e.preventDefault(); return false; };
 
     const targets = [window, document];
@@ -345,6 +353,8 @@ const PdfViewerPage = () => {
 
     window.addEventListener('blur', handleWindowBlur);
     window.addEventListener('focus', handleWindowFocus);
+    window.addEventListener('focusout', handleWindowBlur);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     document.addEventListener('contextmenu', preventDefaultAction);
     document.addEventListener('copy', preventDefaultAction);
@@ -358,6 +368,8 @@ const PdfViewerPage = () => {
 
       window.removeEventListener('blur', handleWindowBlur);
       window.removeEventListener('focus', handleWindowFocus);
+      window.removeEventListener('focusout', handleWindowBlur);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
 
       document.removeEventListener('contextmenu', preventDefaultAction);
       document.removeEventListener('copy', preventDefaultAction);
