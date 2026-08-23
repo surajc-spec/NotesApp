@@ -146,25 +146,25 @@ const PdfPageItem = ({
         {/* Dynamic Anti-Leak Watermark Overlay */}
         {!rendering && (
           <div 
-            className="absolute inset-0 pointer-events-none overflow-hidden select-none flex flex-col justify-around items-center py-8 z-20 w-full h-full"
+            className="absolute inset-0 pointer-events-none overflow-hidden select-none flex flex-col justify-around items-center py-6 z-20 w-full h-full"
             aria-hidden="true"
           >
             {/* Repeating Diagonal Watermark Rows */}
             {[1, 2, 3].map((rowIdx) => (
               <div 
                 key={rowIdx}
-                className={`transform -rotate-[28deg] text-center select-none pointer-events-none my-4 transition-all ${
-                  isPdfDarkMode ? 'opacity-65 text-white' : 'opacity-70 text-black'
+                className={`transform -rotate-[28deg] text-center select-none pointer-events-none my-2 transition-all ${
+                  isPdfDarkMode ? 'opacity-25 text-white' : 'opacity-20 text-neutral-800'
                 }`}
               >
-                <span className={`text-3xl sm:text-5xl md:text-6xl font-black tracking-widest uppercase font-sans block ${
-                  isPdfDarkMode ? 'text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]' : 'text-black drop-shadow-md'
+                <span className={`text-base sm:text-2xl md:text-3xl font-bold tracking-widest uppercase font-sans block ${
+                  isPdfDarkMode ? 'text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]' : 'text-neutral-900 drop-shadow-sm'
                 }`}>
                   NoteShare
                 </span>
                 {userEmail && (
-                  <span className={`text-sm sm:text-base md:text-lg font-black tracking-wider mt-1 font-mono block ${
-                    isPdfDarkMode ? 'text-zinc-200 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]' : 'text-black drop-shadow-sm'
+                  <span className={`text-[10px] sm:text-xs md:text-sm font-semibold tracking-wider mt-0.5 font-mono block ${
+                    isPdfDarkMode ? 'text-zinc-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]' : 'text-neutral-800'
                   }`}>
                     {userEmail}
                   </span>

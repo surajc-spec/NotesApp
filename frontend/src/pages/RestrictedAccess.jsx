@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldAlert, Monitor, Smartphone, Minimize2, Code2, RefreshCw, Lock } from 'lucide-react';
+import { ShieldAlert, Monitor, Smartphone, Minimize2, Code2, RefreshCw, Lock, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const RestrictedAccess = () => {
@@ -90,14 +90,12 @@ const RestrictedAccess = () => {
 
           {/* Title & Badge */}
           <div className="space-y-3">
-         
-
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-light-foreground dark:text-dark-foreground font-sans">
-              Desktop Full-Screen Mode Required
+              Desktop Mode or App Required
             </h1>
 
             <p className="text-xs sm:text-sm text-light-muted dark:text-dark-muted leading-relaxed max-w-md mx-auto font-sans">
-              NoteShare academic notes and question papers are protected by security policy and can only be accessed on full-screen desktop computers.
+              To protect academic materials and enable hardware screenshot security, NoteShare is accessible on desktop browsers or via the official Android App.
             </p>
           </div>
 
@@ -106,7 +104,7 @@ const RestrictedAccess = () => {
             {restrictionReason === 'mobile' && (
               <>
                 <Smartphone className="w-5 h-5 text-amber-400 shrink-0" />
-                <span>Mobile Device or Small Screen Detected</span>
+                <span>Mobile Browser Detected</span>
               </>
             )}
             {restrictionReason === 'minimized' && (
@@ -129,26 +127,56 @@ const RestrictedAccess = () => {
             )}
           </div>
 
-          {/* Steps to Unlock */}
-          <div className="text-left p-5 rounded-2xl bg-red-500/5 border border-red-500/20 space-y-2 text-xs text-light-muted dark:text-dark-muted font-medium">
-            <p className="font-bold text-light-foreground dark:text-dark-foreground uppercase tracking-wider text-[11px] mb-1">
-              How to restore access:
-            </p>
-            <ul className="list-disc pl-4 space-y-1 leading-relaxed">
-              <li>Open NoteShare on a <strong>laptop or desktop computer</strong>.</li>
-              <li>Ensure your browser window is <strong>fully maximized</strong> (F11 or Maximize button).</li>
-              <li>Close any open <strong>Developer Tools or Inspect Element</strong> panels.</li>
-            </ul>
-          </div>
+          {/* Action / Steps to Unlock */}
+          {restrictionReason === 'mobile' ? (
+            <div className="p-5 rounded-2xl bg-primary/10 border-2 border-primary/30 text-left space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center shrink-0">
+                  <Smartphone className="w-5 h-5 stroke-[2.2]" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-extrabold text-light-foreground dark:text-dark-foreground">
+                    Study on Phone with NoteShare App
+                  </h4>
+                  <p className="text-xs text-light-muted dark:text-dark-muted">
+                    Secure mobile studying with native hardware protection.
+                  </p>
+                </div>
+              </div>
 
-          {/* Action Button */}
-          <button
-            onClick={handleRecheck}
-            className="w-full h-[52px] text-sm font-bold text-primary-foreground bg-primary hover:bg-emerald-400 rounded-btn transition-all duration-200 flex items-center justify-center gap-2.5 shadow-lg hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <RefreshCw className="w-4 h-4 stroke-[2.5]" />
-            <span>Re-Check Security &amp; Resume</span>
-          </button>
+              <a
+                href="/NoteShare.apk"
+                download="NoteShare.apk"
+                className="w-full h-[48px] text-sm font-bold text-primary-foreground bg-primary hover:bg-emerald-400 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <Download className="w-4 h-4 stroke-[2.5]" />
+                <span>Download NoteShare Android App (.apk)</span>
+              </a>
+
+              <p className="text-[11px] text-light-muted dark:text-dark-muted text-center pt-1">
+                Or open <span className="font-bold text-light-foreground dark:text-dark-foreground">noteshare.online</span> on your laptop/desktop.
+              </p>
+            </div>
+          ) : (
+            <div className="text-left p-5 rounded-2xl bg-red-500/5 border border-red-500/20 space-y-2 text-xs text-light-muted dark:text-dark-muted font-medium">
+              <p className="font-bold text-light-foreground dark:text-dark-foreground uppercase tracking-wider text-[11px] mb-1">
+                How to restore access:
+              </p>
+              <ul className="list-disc pl-4 space-y-1 leading-relaxed">
+                <li>Open NoteShare on a <strong>laptop or desktop computer</strong>.</li>
+                <li>Ensure your browser window is <strong>fully maximized</strong> (F11 or Maximize button).</li>
+                <li>Close any open <strong>Developer Tools or Inspect Element</strong> panels.</li>
+              </ul>
+
+              <button
+                onClick={handleRecheck}
+                className="w-full h-[48px] mt-3 text-sm font-bold text-primary-foreground bg-primary hover:bg-emerald-400 rounded-xl transition-all duration-200 flex items-center justify-center gap-2.5 shadow-lg hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <RefreshCw className="w-4 h-4 stroke-[2.5]" />
+                <span>Re-Check Security &amp; Resume</span>
+              </button>
+            </div>
+          )}
 
         </div>
       </div>
