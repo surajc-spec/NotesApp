@@ -138,7 +138,7 @@ const PdfPageItem = ({
           style={{
             filter: isPdfDarkMode ? 'invert(0.92) hue-rotate(180deg) contrast(1.15) brightness(0.95)' : 'none',
             transition: 'filter 0.3s ease',
-            display: (isNotesOpened && (isWindowBlurred || isScreenshotBlocked)) ? 'none' : 'block'
+            visibility: (isNotesOpened && (isWindowBlurred || isScreenshotBlocked)) ? 'hidden' : 'visible'
           }}
           className={`max-w-full transition-all block ${isPdfDarkMode ? 'bg-[#18181b]' : 'bg-white'}`}
         />
@@ -620,7 +620,9 @@ const PdfViewerPage = () => {
   };
 
   const handlePageVisible = useCallback((pageNumber) => {
+    if (document.hidden) return;
     setPageNum(pageNumber);
+    setPageInput(String(pageNumber));
   }, []);
 
   return (
