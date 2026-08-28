@@ -13,6 +13,7 @@ import {
   FileQuestion
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import CustomSelect from '../components/CustomSelect';
 
 const BRANCH_OPTIONS = [
   { label: 'All Branches', value: '' },
@@ -242,50 +243,42 @@ const QuestionPapers = () => {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             
             {/* Filters Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 flex-1">
               
               {/* Branch Select */}
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-light-muted dark:text-dark-muted mb-1">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-light-muted dark:text-dark-muted mb-1.5">
                   Branch
                 </label>
-                <select
+                <CustomSelect
+                  name="branch"
                   value={branchFilter}
                   onChange={(e) => setBranchFilter(e.target.value)}
-                  className="w-full h-10 px-3 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-xl text-xs font-bold text-light-foreground dark:text-dark-foreground focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer transition-all"
-                >
-                  {BRANCH_OPTIONS.map(opt => (
-                    <option key={opt.value} value={opt.value} className="bg-light-surface dark:bg-dark-surface">
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                  options={BRANCH_OPTIONS}
+                  placeholder="All Branches"
+                />
               </div>
 
               {/* Semester Select */}
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-light-muted dark:text-dark-muted mb-1">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-light-muted dark:text-dark-muted mb-1.5">
                   Semester
                 </label>
-                <select
+                <CustomSelect
+                  name="semester"
                   value={semesterFilter}
                   onChange={(e) => setSemesterFilter(e.target.value)}
-                  className="w-full h-10 px-3 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-xl text-xs font-bold text-light-foreground dark:text-dark-foreground focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer transition-all"
-                >
-                  {SEMESTER_OPTIONS.map(opt => (
-                    <option key={opt.value} value={opt.value} className="bg-light-surface dark:bg-dark-surface">
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                  options={SEMESTER_OPTIONS}
+                  placeholder="All Semesters"
+                />
               </div>
 
               {/* Exam Type Toggle */}
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-light-muted dark:text-dark-muted mb-1">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-light-muted dark:text-dark-muted mb-1.5">
                   Exam Papers
                 </label>
-                <div className="grid grid-cols-3 gap-1 h-10 p-1 bg-light-surface-secondary dark:bg-dark-surface-secondary rounded-xl border border-light-border dark:border-dark-border">
+                <div className="grid grid-cols-3 gap-1 h-[50px] p-1 bg-light-surface-secondary dark:bg-dark-surface-secondary rounded-field border border-light-border dark:border-dark-border">
                   {[
                     { label: 'All', value: 'all' },
                     { label: 'In-Sem', value: 'insem' },
@@ -295,7 +288,7 @@ const QuestionPapers = () => {
                       key={mode.value}
                       type="button"
                       onClick={() => setExamTypeFilter(mode.value)}
-                      className={`h-full text-[11px] font-extrabold rounded-lg transition-all flex items-center justify-center ${
+                      className={`h-full text-xs font-bold rounded-xl transition-all flex items-center justify-center cursor-pointer ${
                         examTypeFilter === mode.value
                           ? 'bg-primary text-primary-foreground shadow-sm'
                           : 'text-light-muted dark:text-dark-muted hover:text-light-foreground dark:hover:text-dark-foreground'
