@@ -38,7 +38,7 @@ const QuestionPapers = () => {
       const params = new URLSearchParams();
       if (user?.branch) params.append('branch', user.branch);
       if (user?.semester) params.append('semester', user.semester);
-      // We don't restrict examType so students see all available question papers
+      if (user?.examType && user.examType !== 'all') params.append('examType', user.examType);
       params.append('limit', '200');
 
       const response = await fetch(`/api/question-papers/view-question-papers?${params.toString()}`, {
@@ -129,6 +129,7 @@ const QuestionPapers = () => {
               <span className="text-primary font-bold">
                 {user?.branch || 'All Branches'}
                 {user?.year ? ` • ${user.year}` : user?.semester ? ` • Semester ${user.semester}` : ''}
+                {user?.examType && user.examType !== 'all' ? ` • ${user.examType === 'insem' ? 'In-Sem' : user.examType === 'endsem' ? 'End-Sem' : user.examType.toUpperCase()}` : ''}
               </span>
             </p>
           </div>
@@ -197,7 +198,7 @@ const QuestionPapers = () => {
               <p className="text-xs sm:text-sm text-light-muted dark:text-dark-muted mt-1.5 max-w-md mx-auto font-sans leading-relaxed">
                 {user?.branch ? (
                   <>
-                    No question papers uploaded yet for <strong className="text-light-foreground dark:text-dark-foreground">{user.branch}</strong> ({user.year || `Semester ${user.semester}`}).
+                    No question papers uploaded yet for <strong className="text-light-foreground dark:text-dark-foreground">{user.branch}</strong> ({user.year || `Semester ${user.semester}`}{user.examType && user.examType !== 'all' ? ` • ${user.examType === 'insem' ? 'In-Sem' : 'End-Sem'}` : ''}).
                   </>
                 ) : (
                   'No question papers matched your search query.'

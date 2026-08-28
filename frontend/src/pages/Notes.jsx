@@ -41,7 +41,7 @@ const Notes = () => {
       const params = new URLSearchParams();
       if (user?.branch) params.append('branch', user.branch);
       if (user?.semester) params.append('semester', user.semester);
-      // We don't restrict examType to 'insem' so users see both insem and endsem notes
+      if (user?.examType && user.examType !== 'all') params.append('examType', user.examType);
       params.append('limit', '200');
 
       const response = await fetch(`/api/notes/view-notes?${params.toString()}`, {
@@ -159,6 +159,7 @@ const Notes = () => {
               <span className="text-primary font-bold">
                 {user?.branch || 'All Branches'}
                 {user?.year ? ` • ${user.year}` : user?.semester ? ` • Semester ${user.semester}` : ''}
+                {user?.examType && user.examType !== 'all' ? ` • ${user.examType === 'insem' ? 'In-Sem' : user.examType === 'endsem' ? 'End-Sem' : user.examType.toUpperCase()}` : ''}
               </span>
             </p>
           </div>
@@ -227,7 +228,7 @@ const Notes = () => {
               <p className="text-xs sm:text-sm text-light-muted dark:text-dark-muted mt-1.5 max-w-md mx-auto font-sans leading-relaxed">
                 {user?.branch ? (
                   <>
-                    No notes uploaded yet for <strong className="text-light-foreground dark:text-dark-foreground">{user.branch}</strong> ({user.year || `Semester ${user.semester}`}). You can update your academic details anytime in your Profile.
+                    No notes uploaded yet for <strong className="text-light-foreground dark:text-dark-foreground">{user.branch}</strong> ({user.year || `Semester ${user.semester}`}{user.examType && user.examType !== 'all' ? ` • ${user.examType === 'insem' ? 'In-Sem' : 'End-Sem'}` : ''}). You can update your academic details anytime in your Profile.
                   </>
                 ) : (
                   'No notes matched your search query.'

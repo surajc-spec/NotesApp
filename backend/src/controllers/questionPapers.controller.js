@@ -91,7 +91,14 @@ async function viewQuestionPapers(req, res) {
       filter.subjectCode = new RegExp(subjectCode.trim(), 'i');
     }
     if (examType && examType !== 'all') {
-      filter.examType = examType.trim();
+      const cleanExam = examType.trim().toLowerCase().replace(/[-_ ]/g, '');
+      if (cleanExam === 'insem') {
+        filter.examType = { $regex: /^in[-_\s]?sem$/i };
+      } else if (cleanExam === 'endsem') {
+        filter.examType = { $regex: /^end[-_\s]?sem$/i };
+      } else {
+        filter.examType = new RegExp(`^${examType.trim()}$`, 'i');
+      }
     }
 
     const currentPage = Math.max(Number(page), 1);
