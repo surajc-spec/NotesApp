@@ -7,9 +7,31 @@ import {
   BookOpen, 
   Hash, 
   Loader2, 
-  Eye 
+  Eye,
+  RotateCcw,
+  Sparkles,
+  FileQuestion
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+
+const BRANCH_OPTIONS = [
+  { label: 'All Branches', value: '' },
+  { label: 'Computer Engineering', value: 'Computer Engineering' },
+  { label: 'Information Technology', value: 'Information Technology' },
+  { label: 'Electronics & Telecommunication', value: 'Electronics & Telecommunication' },
+];
+
+const SEMESTER_OPTIONS = [
+  { label: 'All Semesters', value: '' },
+  { label: 'Semester 1 (FE)', value: '1' },
+  { label: 'Semester 2 (FE)', value: '2' },
+  { label: 'Semester 3 (SE)', value: '3' },
+  { label: 'Semester 4 (SE)', value: '4' },
+  { label: 'Semester 5 (TE)', value: '5' },
+  { label: 'Semester 6 (TE)', value: '6' },
+  { label: 'Semester 7 (BE)', value: '7' },
+  { label: 'Semester 8 (BE)', value: '8' },
+];
 
 const QuestionPapers = () => {
   const navigate = useNavigate();
@@ -18,14 +40,30 @@ const QuestionPapers = () => {
   const [papersList, setPapersList] = useState([]);
   const [groupedPapers, setGroupedPapers] = useState({});
   const [loading, setLoading] = useState(true);
+
+  // Interactive Academic Filters (Default to user profile if available, else all)
+  const [branchFilter, setBranchFilter] = useState(user?.branch || '');
+  const [semesterFilter, setSemesterFilter] = useState(user?.semester ? String(user.semester) : '');
+  const [examTypeFilter, setExamTypeFilter] = useState('all');
+
+  // Search & Subject in-memory filters
   const [subjectFilter, setSubjectFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Sync user profile defaults on login / logout
   useEffect(() => {
-    fetchQuestionPapers();
+    if (user) {
+      setBranchFilter(user.branch || '');
+      setSemesterFilter(user.semester ? String(user.semester) : '');
+    }
   }, [user]);
 
-  const fetchQuestionPapers = async () => {
+  // Fetch whenever academic filters change
+  useEffect(() => {
+    fetchQuestionPapers(branchFilter, semesterFilter, examTypeFilter);
+  }, [branchFilter, semesterFilter, examTypeFilter]);
+
+  const fetchQuestionPapers = async (branchVal = branchFilter, semVal = semesterFilter, examVal = examTypeFilter) => {
     setLoading(true);
 
     try {
@@ -33,11 +71,10 @@ const QuestionPapers = () => {
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const params = new URLSearchParams({ limit: '50' });
-      if (user?.branch) params.append('branch', user.branch);
-      if (user?.year) params.append('year', user.year);
-      if (user?.semester) params.append('semester', user.semester);
-      if (user?.examType && user.examType !== 'all') params.append('examType', user.examType);
+      const params = new URLSearchParams();
+      if (branchVal && branchVal !== 'all') params.append('branch', branchVal);
+      if (semVal && semVal !== 'all') params.append('semester', semVal);
+      if (examVal && examVal !== 'all') params.append('examType', examVal);
       params.append('limit', '200');
 
       const response = await fetch(`/api/question-papers/view-question-papers?${params.toString()}`, {
@@ -104,37 +141,63 @@ const QuestionPapers = () => {
     groupPapersBySubject(papersList, subjectFilter, val);
   };
 
+  const handleClearFilters = () => {
+    setBranchFilter('');
+    setSemesterFilter('');
+    setExamTypeFilter('all');
+    setSubjectFilter('');
+    setSearchQuery('');
+  };
+
+  const handleResetToMyProfile = () => {
+    if (user) {
+      setBranchFilter(user.branch || '');
+      setSemesterFilter(user.semester ? String(user.semester) : '');
+      setExamTypeFilter('all');
+      setSubjectFilter('');
+      setSearchQuery('');
+    }
+  };
+
   const handleViewPdf = (paperId) => {
     navigate(`/pdf-viewer?type=question-paper&id=${paperId}`);
   };
 
   const subjectKeys = Object.keys(groupedPapers);
+  const isFiltered = Boolean(branchFilter || semesterFilter || (examTypeFilter && examTypeFilter !== 'all') || subjectFilter || searchQuery);
 
   return (
     <div className="min-h-[calc(100vh-72px)] bg-light-background dark:bg-dark-background text-light-foreground dark:text-dark-foreground pb-20 transition-colors duration-300">
-      <div className="max-w-container mx-auto px-6 sm:px-8 lg:px-10 pt-10">
+      <div className="max-w-container mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         
         {/* HEADER AREA */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-12">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
           
           {/* Left Title & Subtitle */}
-          <div className="flex items-center gap-4">
-          
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-light-foreground dark:text-dark-foreground font-sans">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-light-foreground dark:text-dark-foreground font-sans">
                 Question Papers
               </h1>
-              <p className="text-sm text-light-muted dark:text-dark-muted mt-1 font-sans">
-                Browse previous year examination question papers
-              </p>
+              {user && (
+                <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-extrabold">
+                  Personalized
+                </span>
+              )}
             </div>
+
+            <p className="text-xs sm:text-sm text-light-muted dark:text-dark-muted mt-1 font-sans">
+              {branchFilter ? branchFilter : 'All Engineering Branches'} 
+              {semesterFilter ? ` • Semester ${semesterFilter}` : ''}
+              {examTypeFilter !== 'all' ? ` • ${examTypeFilter.toUpperCase()} Papers` : ''}
+            </p>
           </div>
 
           {/* Right Action Bar: Filter, Search, All Notes Button */}
-          <div className="flex flex-col sm:flex-row items-center gap-3.5 w-full lg:w-auto">
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
             
             {/* Filter by Subject Input */}
-            <div className="relative w-full sm:w-60">
+            <div className="relative w-full sm:w-56">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-light-muted dark:text-dark-muted">
                 <Filter className="w-4 h-4" />
               </div>
@@ -143,12 +206,12 @@ const QuestionPapers = () => {
                 placeholder="Filter by Subject..."
                 value={subjectFilter}
                 onChange={handleSubjectFilterChange}
-                className="w-full h-[46px] pl-10 pr-4 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-field text-sm text-light-foreground dark:text-dark-foreground placeholder-light-muted dark:placeholder-dark-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                className="w-full h-[44px] pl-10 pr-4 bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border rounded-xl text-xs sm:text-sm text-light-foreground dark:text-dark-foreground placeholder-light-muted dark:placeholder-dark-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all shadow-sm"
               />
             </div>
 
             {/* Search Keywords Input */}
-            <div className="relative w-full sm:w-64">
+            <div className="relative w-full sm:w-60">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-light-muted dark:text-dark-muted">
                 <Search className="w-4 h-4" />
               </div>
@@ -157,7 +220,7 @@ const QuestionPapers = () => {
                 placeholder="Search keywords..."
                 value={searchQuery}
                 onChange={handleSearchQueryChange}
-                className="w-full h-[46px] pl-10 pr-4 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-field text-sm text-light-foreground dark:text-dark-foreground placeholder-light-muted dark:placeholder-dark-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                className="w-full h-[44px] pl-10 pr-4 bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border rounded-xl text-xs sm:text-sm text-light-foreground dark:text-dark-foreground placeholder-light-muted dark:placeholder-dark-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all shadow-sm"
               />
             </div>
 
@@ -165,11 +228,113 @@ const QuestionPapers = () => {
             <button
               type="button"
               onClick={() => navigate('/notes')}
-              className="w-full sm:w-auto h-[46px] px-5 bg-primary hover:bg-emerald-400 text-primary-foreground font-bold text-sm rounded-btn transition-all duration-200 flex items-center justify-center gap-2 hover:scale-[1.03] active:scale-[0.97] shrink-0"
+              className="w-full sm:w-auto h-[44px] px-4 bg-primary hover:bg-emerald-400 text-primary-foreground font-bold text-xs sm:text-sm rounded-xl transition-all duration-200 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] shrink-0 shadow-sm"
             >
               <BookOpen className="w-4 h-4 stroke-[2.5]" />
               <span>All Notes</span>
             </button>
+
+          </div>
+        </div>
+
+        {/* ACADEMIC FILTER SELECTORS BAR */}
+        <div className="bg-light-surface/90 dark:bg-dark-surface/90 backdrop-blur-md border border-light-border dark:border-dark-border rounded-2xl p-4 sm:p-5 mb-8 shadow-sm">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            
+            {/* Filters Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1">
+              
+              {/* Branch Select */}
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-light-muted dark:text-dark-muted mb-1">
+                  Branch
+                </label>
+                <select
+                  value={branchFilter}
+                  onChange={(e) => setBranchFilter(e.target.value)}
+                  className="w-full h-10 px-3 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-xl text-xs font-bold text-light-foreground dark:text-dark-foreground focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer transition-all"
+                >
+                  {BRANCH_OPTIONS.map(opt => (
+                    <option key={opt.value} value={opt.value} className="bg-light-surface dark:bg-dark-surface">
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Semester Select */}
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-light-muted dark:text-dark-muted mb-1">
+                  Semester
+                </label>
+                <select
+                  value={semesterFilter}
+                  onChange={(e) => setSemesterFilter(e.target.value)}
+                  className="w-full h-10 px-3 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-xl text-xs font-bold text-light-foreground dark:text-dark-foreground focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer transition-all"
+                >
+                  {SEMESTER_OPTIONS.map(opt => (
+                    <option key={opt.value} value={opt.value} className="bg-light-surface dark:bg-dark-surface">
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Exam Type Toggle */}
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-light-muted dark:text-dark-muted mb-1">
+                  Exam Papers
+                </label>
+                <div className="grid grid-cols-3 gap-1 h-10 p-1 bg-light-surface-secondary dark:bg-dark-surface-secondary rounded-xl border border-light-border dark:border-dark-border">
+                  {[
+                    { label: 'All', value: 'all' },
+                    { label: 'In-Sem', value: 'insem' },
+                    { label: 'End-Sem', value: 'endsem' }
+                  ].map((mode) => (
+                    <button
+                      key={mode.value}
+                      type="button"
+                      onClick={() => setExamTypeFilter(mode.value)}
+                      className={`h-full text-[11px] font-extrabold rounded-lg transition-all flex items-center justify-center ${
+                        examTypeFilter === mode.value
+                          ? 'bg-primary text-primary-foreground shadow-sm'
+                          : 'text-light-muted dark:text-dark-muted hover:text-light-foreground dark:hover:text-dark-foreground'
+                      }`}
+                    >
+                      {mode.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+
+            {/* Reset / My Profile Actions */}
+            <div className="flex items-center gap-2 shrink-0 pt-2 md:pt-4">
+              {user && (
+                <button
+                  type="button"
+                  onClick={handleResetToMyProfile}
+                  title="Reset to my registered branch & semester"
+                  className="h-10 px-3 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border hover:border-primary text-light-foreground dark:text-dark-foreground text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 active:scale-95"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-primary" />
+                  <span className="hidden sm:inline">My Profile</span>
+                </button>
+              )}
+
+              {isFiltered && (
+                <button
+                  type="button"
+                  onClick={handleClearFilters}
+                  title="Show all question papers"
+                  className="h-10 px-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 active:scale-95"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Show All</span>
+                </button>
+              )}
+            </div>
 
           </div>
         </div>
@@ -183,18 +348,33 @@ const QuestionPapers = () => {
             </p>
           </div>
         ) : subjectKeys.length === 0 ? (
-          <div className="bg-light-surface/80 dark:bg-dark-surface/80 border border-dashed border-light-border dark:border-dark-border rounded-2xl p-16 text-center flex flex-col items-center gap-4 max-w-xl mx-auto my-12">
-            <div className="w-16 h-16 rounded-full bg-light-surface-secondary dark:bg-dark-surface-secondary flex items-center justify-center text-light-muted dark:text-dark-muted">
-              <Search className="w-8 h-8 stroke-[1.5]" />
+          <div className="bg-light-surface/80 dark:bg-dark-surface/80 border border-dashed border-light-border dark:border-dark-border rounded-3xl p-10 sm:p-14 text-center flex flex-col items-center gap-4 max-w-xl mx-auto my-8 shadow-sm">
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+              <FileQuestion className="w-8 h-8 stroke-[2]" />
             </div>
             <div>
               <h3 className="text-xl font-bold text-light-foreground dark:text-dark-foreground font-sans">
                 No question papers found
               </h3>
-              <p className="text-sm text-light-muted dark:text-dark-muted mt-1 max-w-sm mx-auto font-sans">
-                Question papers uploaded by admins will appear here.
+              <p className="text-xs sm:text-sm text-light-muted dark:text-dark-muted mt-1.5 max-w-md mx-auto font-sans leading-relaxed">
+                {branchFilter || semesterFilter ? (
+                  <>
+                    No question papers uploaded yet for <strong className="text-light-foreground dark:text-dark-foreground">{branchFilter || 'your branch'}</strong> {semesterFilter ? `(Semester ${semesterFilter})` : ''}. You can explore all question papers in the library!
+                  </>
+                ) : (
+                  'No question papers matched your search query.'
+                )}
               </p>
             </div>
+
+            <button
+              type="button"
+              onClick={handleClearFilters}
+              className="h-11 px-6 bg-primary hover:bg-emerald-400 text-primary-foreground font-bold text-xs sm:text-sm rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-2 mt-2"
+            >
+              <FileQuestion className="w-4 h-4 stroke-[2.5]" />
+              <span>Explore All Question Papers</span>
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">

@@ -246,7 +246,7 @@ async function googleAuth(req, res) {
         password: hashedPassword,
         branch: "Computer Engineering",
         semester: 1,
-        year: 1,
+        year: getYearFromSemester(1),
         examType: "insem",
         role: "user",
       });

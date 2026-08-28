@@ -77,11 +77,21 @@ async function viewNotes(req, res) {
     const { branch, year, semester, subjectCode, examType, page = 1, limit = 50 } = req.query;
     const filter = {};
 
-    if (branch) filter.branch = branch;
-    if (year) filter.year = year;
-    if (semester) filter.semester = Number(semester);
-    if (subjectCode) filter.subjectCode = subjectCode;
-    if (examType) filter.examType = examType;
+    if (branch && branch !== 'all') {
+      filter.branch = new RegExp(`^${branch.trim()}$`, 'i');
+    }
+    if (semester && semester !== 'all') {
+      filter.semester = Number(semester);
+    }
+    if (year && year !== 'all' && (!semester || semester === 'all')) {
+      filter.year = new RegExp(year.trim(), 'i');
+    }
+    if (subjectCode) {
+      filter.subjectCode = new RegExp(subjectCode.trim(), 'i');
+    }
+    if (examType && examType !== 'all') {
+      filter.examType = examType.trim();
+    }
 
     const currentPage = Math.max(Number(page), 1);
     const currentLimit = Math.min(Math.max(Number(limit), 1), 200);
