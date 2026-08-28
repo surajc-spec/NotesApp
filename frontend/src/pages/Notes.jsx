@@ -5,34 +5,11 @@ import {
   Search, 
   Filter, 
   FileQuestion, 
-  Loader2,
-  SlidersHorizontal,
-  RotateCcw,
-  Sparkles
+  Loader2
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import NoteCard from '../components/NoteCard';
 import PdfViewerModal from '../components/PdfViewerModal';
-import CustomSelect from '../components/CustomSelect';
-
-const BRANCH_OPTIONS = [
-  { label: 'All Branches', value: '' },
-  { label: 'Computer Engineering', value: 'Computer Engineering' },
-  { label: 'Information Technology', value: 'Information Technology' },
-  { label: 'Electronics & Telecommunication', value: 'Electronics & Telecommunication' },
-];
-
-const SEMESTER_OPTIONS = [
-  { label: 'All Semesters', value: '' },
-  { label: 'Semester 1 (FE)', value: '1' },
-  { label: 'Semester 2 (FE)', value: '2' },
-  { label: 'Semester 3 (SE)', value: '3' },
-  { label: 'Semester 4 (SE)', value: '4' },
-  { label: 'Semester 5 (TE)', value: '5' },
-  { label: 'Semester 6 (TE)', value: '6' },
-  { label: 'Semester 7 (BE)', value: '7' },
-  { label: 'Semester 8 (BE)', value: '8' },
-];
 
 const Notes = () => {
   const navigate = useNavigate();
@@ -43,11 +20,6 @@ const Notes = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
-  // Interactive Academic Filters (Default to user profile if available, else all)
-  const [branchFilter, setBranchFilter] = useState(user?.branch || '');
-  const [semesterFilter, setSemesterFilter] = useState(user?.semester ? String(user.semester) : '');
-  const [examTypeFilter, setExamTypeFilter] = useState('all');
-  
   // Search & Subject in-memory filters
   const [subjectFilter, setSubjectFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -57,28 +29,19 @@ const Notes = () => {
   const [pdfUrl, setPdfUrl] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Sync user profile defaults on login / logout
   useEffect(() => {
-    if (user) {
-      setBranchFilter(user.branch || '');
-      setSemesterFilter(user.semester ? String(user.semester) : '');
-    }
+    fetchNotes();
   }, [user]);
 
-  // Fetch whenever academic filters change
-  useEffect(() => {
-    fetchNotes(branchFilter, semesterFilter, examTypeFilter);
-  }, [branchFilter, semesterFilter, examTypeFilter]);
-
-  const fetchNotes = async (branchVal = branchFilter, semVal = semesterFilter, examVal = examTypeFilter) => {
+  const fetchNotes = async () => {
     setLoading(true);
     setError('');
 
     try {
       const params = new URLSearchParams();
-      if (branchVal && branchVal !== 'all') params.append('branch', branchVal);
-      if (semVal && semVal !== 'all') params.append('semester', semVal);
-      if (examVal && examVal !== 'all') params.append('examType', examVal);
+      if (user?.branch) params.append('branch', user.branch);
+      if (user?.semester) params.append('semester', user.semester);
+      // We don't restrict examType to 'insem' so users see both insem and endsem notes
       params.append('limit', '200');
 
       const response = await fetch(`/api/notes/view-notes?${params.toString()}`, {
@@ -148,24 +111,6 @@ const Notes = () => {
     groupNotesBySubject(notesList, subjectFilter, val);
   };
 
-  const handleClearFilters = () => {
-    setBranchFilter('');
-    setSemesterFilter('');
-    setExamTypeFilter('all');
-    setSubjectFilter('');
-    setSearchQuery('');
-  };
-
-  const handleResetToMyProfile = () => {
-    if (user) {
-      setBranchFilter(user.branch || '');
-      setSemesterFilter(user.semester ? String(user.semester) : '');
-      setExamTypeFilter('all');
-      setSubjectFilter('');
-      setSearchQuery('');
-    }
-  };
-
   // Trigger PDF Viewer
   const handleViewPdf = async (noteId, note) => {
     setSelectedNote(note);
@@ -195,32 +140,26 @@ const Notes = () => {
   };
 
   const subjectKeys = Object.keys(groupedNotes);
-  const isFiltered = Boolean(branchFilter || semesterFilter || (examTypeFilter && examTypeFilter !== 'all') || subjectFilter || searchQuery);
 
   return (
     <div className="min-h-[calc(100vh-72px)] bg-light-background dark:bg-dark-background text-light-foreground dark:text-dark-foreground pb-20 transition-colors duration-300">
       <div className="max-w-container mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         
         {/* HEADER AREA */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
           
           {/* Left Title & Subtitle */}
           <div>
-            <div className="flex items-center gap-2.5">
-              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-light-foreground dark:text-dark-foreground font-sans">
-                Academic Library
-              </h1>
-              {user && (
-                <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-extrabold">
-                  Personalized
-                </span>
-              )}
-            </div>
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-light-foreground dark:text-dark-foreground font-sans">
+              Academic Library
+            </h1>
 
             <p className="text-xs sm:text-sm text-light-muted dark:text-dark-muted mt-1 font-sans">
-              {branchFilter ? branchFilter : 'All Engineering Branches'} 
-              {semesterFilter ? ` • Semester ${semesterFilter}` : ''}
-              {examTypeFilter !== 'all' ? ` • ${examTypeFilter.toUpperCase()} Notes` : ''}
+              Personalized for{' '}
+              <span className="text-primary font-bold">
+                {user?.branch || 'All Branches'}
+                {user?.year ? ` • ${user.year}` : user?.semester ? ` • Semester ${user.semester}` : ''}
+              </span>
             </p>
           </div>
 
@@ -259,105 +198,11 @@ const Notes = () => {
             <button
               type="button"
               onClick={() => navigate('/question-papers')}
-              className="w-full sm:w-auto h-[44px] px-4 bg-primary hover:bg-emerald-400 text-primary-foreground font-bold text-xs sm:text-sm rounded-xl transition-all duration-200 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] shrink-0 shadow-sm"
+              className="w-full sm:w-auto h-[44px] px-4 bg-primary hover:bg-emerald-400 text-primary-foreground font-bold text-xs sm:text-sm rounded-xl transition-all duration-200 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] shrink-0 shadow-sm cursor-pointer"
             >
               <FileQuestion className="w-4 h-4 stroke-[2.5]" />
               <span>Question Papers</span>
             </button>
-
-          </div>
-        </div>
-
-        {/* ACADEMIC FILTER SELECTORS BAR */}
-        <div className="bg-light-surface/90 dark:bg-dark-surface/90 backdrop-blur-md border border-light-border dark:border-dark-border rounded-2xl p-4 sm:p-5 mb-8 shadow-sm">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            
-            {/* Filters Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 flex-1">
-              
-              {/* Branch Select */}
-              <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-light-muted dark:text-dark-muted mb-1.5">
-                  Branch
-                </label>
-                <CustomSelect
-                  name="branch"
-                  value={branchFilter}
-                  onChange={(e) => setBranchFilter(e.target.value)}
-                  options={BRANCH_OPTIONS}
-                  placeholder="All Branches"
-                />
-              </div>
-
-              {/* Semester Select */}
-              <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-light-muted dark:text-dark-muted mb-1.5">
-                  Semester
-                </label>
-                <CustomSelect
-                  name="semester"
-                  value={semesterFilter}
-                  onChange={(e) => setSemesterFilter(e.target.value)}
-                  options={SEMESTER_OPTIONS}
-                  placeholder="All Semesters"
-                />
-              </div>
-
-              {/* Exam Type Toggle */}
-              <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-light-muted dark:text-dark-muted mb-1.5">
-                  Exam Notes
-                </label>
-                <div className="grid grid-cols-3 gap-1 h-[50px] p-1 bg-light-surface-secondary dark:bg-dark-surface-secondary rounded-field border border-light-border dark:border-dark-border">
-                  {[
-                    { label: 'All', value: 'all' },
-                    { label: 'In-Sem', value: 'insem' },
-                    { label: 'End-Sem', value: 'endsem' }
-                  ].map((mode) => (
-                    <button
-                      key={mode.value}
-                      type="button"
-                      onClick={() => setExamTypeFilter(mode.value)}
-                      className={`h-full text-xs font-bold rounded-xl transition-all flex items-center justify-center cursor-pointer ${
-                        examTypeFilter === mode.value
-                          ? 'bg-primary text-primary-foreground shadow-sm'
-                          : 'text-light-muted dark:text-dark-muted hover:text-light-foreground dark:hover:text-dark-foreground'
-                      }`}
-                    >
-                      {mode.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-            </div>
-
-            {/* Reset / My Profile Actions */}
-            <div className="flex items-center gap-2 shrink-0 pt-2 md:pt-4">
-              {user && (
-                <button
-                  type="button"
-                  onClick={handleResetToMyProfile}
-                  title="Reset to my registered branch & semester"
-                  className="h-10 px-3 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border hover:border-primary text-light-foreground dark:text-dark-foreground text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 active:scale-95"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-primary" />
-                  <span className="hidden sm:inline">My Profile</span>
-                </button>
-              )}
-
-              {isFiltered && (
-                <button
-                  type="button"
-                  onClick={handleClearFilters}
-                  title="Show all notes in library"
-                  className="h-10 px-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 active:scale-95"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Show All</span>
-                </button>
-              )}
-            </div>
 
           </div>
         </div>
@@ -377,27 +222,18 @@ const Notes = () => {
             </div>
             <div>
               <h3 className="text-xl font-bold text-light-foreground dark:text-dark-foreground font-sans">
-                No notes found for current filter
+                No notes found
               </h3>
               <p className="text-xs sm:text-sm text-light-muted dark:text-dark-muted mt-1.5 max-w-md mx-auto font-sans leading-relaxed">
-                {branchFilter || semesterFilter ? (
+                {user?.branch ? (
                   <>
-                    No notes uploaded yet for <strong className="text-light-foreground dark:text-dark-foreground">{branchFilter || 'your branch'}</strong> {semesterFilter ? `(Semester ${semesterFilter})` : ''}. You can explore all available notes in the NoteShare library!
+                    No notes uploaded yet for <strong className="text-light-foreground dark:text-dark-foreground">{user.branch}</strong> ({user.year || `Semester ${user.semester}`}). You can update your academic details anytime in your Profile.
                   </>
                 ) : (
                   'No notes matched your search query.'
                 )}
               </p>
             </div>
-
-            <button
-              type="button"
-              onClick={handleClearFilters}
-              className="h-11 px-6 bg-primary hover:bg-emerald-400 text-primary-foreground font-bold text-xs sm:text-sm rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-2 mt-2"
-            >
-              <BookOpen className="w-4 h-4 stroke-[2.5]" />
-              <span>Explore All Library Notes</span>
-            </button>
           </div>
         ) : (
           <div className="space-y-12">
