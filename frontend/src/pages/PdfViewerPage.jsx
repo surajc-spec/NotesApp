@@ -740,7 +740,7 @@ const PdfViewerPage = () => {
 
           {/* CONTINUOUS VERTICAL SCROLL LIST CONTAINER (INNER SCROLL VIEWPORT WITH RESTORED SCROLLBAR) */}
           {pdfDoc && !loading && (
-            <div className="w-full h-full overflow-y-auto p-4 sm:p-6 pb-24 sm:pb-28 flex flex-col items-center space-y-4 scroll-smooth">
+            <div className="w-full h-full overflow-y-auto p-4 sm:p-6 pb-24 sm:pb-28 landscape:pb-16 flex flex-col items-center space-y-4 scroll-smooth">
               {Array.from({ length: numPages }, (_, index) => index + 1).map((pageNumber) => (
                 <PdfPageItem
                   key={`page-${pageNumber}`}
@@ -758,12 +758,12 @@ const PdfViewerPage = () => {
             </div>
           )}
 
-          {/* PERMANENT FLOATING CONTROL TOOLBAR (2 CLEAN ROWS ON MOBILE APP, 1 ROW ON DESKTOP) */}
+          {/* PERMANENT FLOATING CONTROL TOOLBAR (2 ROWS IN MOBILE PORTRAIT, 1 SLIM ROW IN LANDSCAPE / DESKTOP) */}
           {pdfDoc && !loading && (
-            <div className="fixed bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 bg-dark-surface/95 backdrop-blur-md border border-dark-border text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl shadow-2xl flex flex-col md:flex-row items-center justify-center gap-2 sm:gap-3 max-w-[95vw] sm:max-w-fit animate-fadeIn">
+            <div className="fixed bottom-2 sm:bottom-6 landscape:bottom-2 left-1/2 -translate-x-1/2 z-50 bg-dark-surface/95 backdrop-blur-md border border-dark-border text-white px-2.5 sm:px-4 landscape:px-3 py-1.5 sm:py-2.5 landscape:py-1.5 rounded-2xl shadow-2xl flex flex-col sm:flex-row landscape:flex-row items-center justify-center gap-1.5 sm:gap-3 landscape:gap-2.5 max-w-[98vw] sm:max-w-fit animate-fadeIn">
               
-              {/* ROW 1: Page Navigation & Zoom Controls */}
-              <div className="flex items-center justify-center gap-2 sm:gap-3 w-full sm:w-auto">
+              {/* SECTION 1: Page Navigation & Zoom Controls */}
+              <div className="flex items-center justify-center gap-1.5 sm:gap-3 landscape:gap-2 w-full sm:w-auto landscape:w-auto">
                 
                 {/* Direct Page Jumper Form & Navigation */}
                 <form onSubmit={handlePageInputSubmit} className="flex items-center gap-1 sm:gap-1.5 text-xs font-bold shrink-0">
@@ -772,7 +772,7 @@ const PdfViewerPage = () => {
                     onClick={handlePrevPage}
                     disabled={pageNum <= 1}
                     title="Previous Page"
-                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-dark-surface-secondary border border-dark-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-dark-surface-secondary border border-dark-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground disabled:opacity-30 disabled:hover:bg-transparent transition-all cursor-pointer"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
@@ -796,7 +796,7 @@ const PdfViewerPage = () => {
                     onClick={handleNextPage}
                     disabled={pageNum >= numPages}
                     title="Next Page"
-                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-dark-surface-secondary border border-dark-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-dark-surface-secondary border border-dark-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground disabled:opacity-30 disabled:hover:bg-transparent transition-all cursor-pointer"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>
@@ -811,7 +811,7 @@ const PdfViewerPage = () => {
                     type="button"
                     onClick={handleZoomOut}
                     title="Zoom Out"
-                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-dark-surface-secondary border border-dark-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all"
+                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-dark-surface-secondary border border-dark-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all cursor-pointer"
                   >
                     <ZoomOut className="w-3.5 h-3.5" />
                   </button>
@@ -824,7 +824,7 @@ const PdfViewerPage = () => {
                     type="button"
                     onClick={handleZoomIn}
                     title="Zoom In"
-                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-dark-surface-secondary border border-dark-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all"
+                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-dark-surface-secondary border border-dark-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all cursor-pointer"
                   >
                     <ZoomIn className="w-3.5 h-3.5" />
                   </button>
@@ -832,18 +832,18 @@ const PdfViewerPage = () => {
 
               </div>
 
-              {/* Desktop Divider between Row 1 & Row 2 */}
-              <div className="w-px h-6 bg-dark-border shrink-0 hidden md:block" />
+              {/* Divider between Section 1 & Section 2 on Landscape / Desktop */}
+              <div className="w-px h-5 bg-dark-border shrink-0 hidden sm:block landscape:block" />
 
-              {/* ROW 2: View Modes & Action Buttons */}
-              <div className="flex items-center justify-center gap-1.5 sm:gap-2 w-full sm:w-auto">
+              {/* SECTION 2: View Modes & Action Buttons */}
+              <div className="flex items-center justify-center gap-1.5 sm:gap-2 landscape:gap-1.5 w-full sm:w-auto landscape:w-auto">
                 
                 {/* Fit Mode Toggle */}
                 <button
                   type="button"
                   onClick={handleToggleFitMode}
                   title={fitMode === 'width' ? 'Fit to Page' : 'Fit to Width'}
-                  className="h-7 sm:h-8 px-2.5 sm:px-3 rounded-xl bg-dark-surface-secondary border border-dark-border text-gray-200 hover:text-white hover:bg-primary hover:text-primary-foreground hover:border-primary font-bold text-[11px] sm:text-xs transition-all flex items-center gap-1 active:scale-95 shrink-0"
+                  className="h-7 sm:h-8 px-2.5 sm:px-3 rounded-xl bg-dark-surface-secondary border border-dark-border text-gray-200 hover:text-white hover:bg-primary hover:text-primary-foreground hover:border-primary font-bold text-[11px] sm:text-xs transition-all flex items-center gap-1 active:scale-95 shrink-0 cursor-pointer"
                 >
                   <ArrowLeftRight className="w-3 h-3 stroke-[2.5]" />
                   <span>{fitMode === 'width' ? 'Fit Width' : 'Fit Page'}</span>
@@ -854,7 +854,7 @@ const PdfViewerPage = () => {
                   type="button"
                   onClick={() => setIsPdfDarkMode(prev => !prev)}
                   title={isPdfDarkMode ? 'Switch to Light Reading Mode' : 'Switch to Dark Reading Mode'}
-                  className={`h-7 sm:h-8 px-2.5 sm:px-3 rounded-xl border font-bold text-[11px] sm:text-xs transition-all flex items-center gap-1 active:scale-95 shrink-0 ${
+                  className={`h-7 sm:h-8 px-2.5 sm:px-3 rounded-xl border font-bold text-[11px] sm:text-xs transition-all flex items-center gap-1 active:scale-95 shrink-0 cursor-pointer ${
                     isPdfDarkMode
                       ? 'bg-amber-400/20 text-amber-300 border-amber-400/30'
                       : 'bg-dark-surface-secondary text-gray-300 border-dark-border hover:text-white'
@@ -868,7 +868,7 @@ const PdfViewerPage = () => {
                 <button
                   type="button"
                   onClick={toggleFullscreen}
-                  className="h-7 sm:h-8 px-2.5 sm:px-3 bg-primary text-primary-foreground font-bold text-[11px] sm:text-xs rounded-xl hover:bg-emerald-400 transition-all flex items-center gap-1 active:scale-95 shadow-md shrink-0"
+                  className="h-7 sm:h-8 px-2.5 sm:px-3 bg-primary text-primary-foreground font-bold text-[11px] sm:text-xs rounded-xl hover:bg-emerald-400 transition-all flex items-center gap-1 active:scale-95 shadow-md shrink-0 cursor-pointer"
                 >
                   {isFullscreen ? (
                     <>
