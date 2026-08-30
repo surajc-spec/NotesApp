@@ -29,11 +29,9 @@ const PdfPageItem = ({
   isNotesOpened, 
   isWindowBlurred, 
   isScreenshotBlocked, 
-  userEmail,
-  onPageVisible 
+  userEmail
 }) => {
   const canvasRef = useRef(null);
-  const itemRef = useRef(null);
   const [rendering, setRendering] = useState(false);
 
   useEffect(() => {
@@ -90,28 +88,8 @@ const PdfPageItem = ({
     };
   }, [pdfDoc, pageNumber, scale]);
 
-  // Observer to track which page is currently visible in the scroll viewport
-  useEffect(() => {
-    if (!itemRef.current || !onPageVisible) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && entry.intersectionRatio >= 0.4) {
-            onPageVisible(pageNumber);
-          }
-        });
-      },
-      { threshold: [0.4, 0.6] }
-    );
-
-    observer.observe(itemRef.current);
-    return () => observer.disconnect();
-  }, [pageNumber, onPageVisible]);
-
   return (
     <div
-      ref={itemRef}
       id={`pdf-page-${pageNumber}`}
       data-page-number={pageNumber}
       className="relative my-3 sm:my-4 flex flex-col items-center justify-center shrink-0 w-full"
@@ -209,6 +187,10 @@ const PdfViewerPage = () => {
   const [isWindowBlurred, setIsWindowBlurred] = useState(false);
 
   const containerRef = useRef(null);
+  const scrollContainerRef = useRef(null);
+  const isScrollingToPageRef = useRef(false);
+  const scrollTimeoutRef = useRef(null);
+  const rafRef = useRef(null);
 
 
 
@@ -553,11 +535,88 @@ const PdfViewerPage = () => {
 
   // Scroll smoothly to target page element
   const scrollToPage = (targetPage) => {
+    isScrollingToPageRef.current = true;
+    if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+
     const pageEl = document.getElementById(`pdf-page-${targetPage}`);
     if (pageEl) {
       pageEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+
+    scrollTimeoutRef.current = setTimeout(() => {
+      isScrollingToPageRef.current = false;
+      updateCurrentPageFromScroll();
+    }, 700);
   };
+
+  // Real-time calculation of active visible page as user scrolls
+  const updateCurrentPageFromScroll = useCallback(() => {
+    if (isScrollingToPageRef.current) return;
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    // Check top boundary
+    if (container.scrollTop <= 30) {
+      setPageNum(1);
+      setPageInput('1');
+      if (id) sessionStorage.setItem(`pdf_page_${id}`, '1');
+      return;
+    }
+
+    // Check bottom boundary
+    if (container.scrollTop + container.clientHeight >= container.scrollHeight - 40) {
+      if (numPages > 0) {
+        setPageNum(numPages);
+        setPageInput(String(numPages));
+        if (id) sessionStorage.setItem(`pdf_page_${id}`, String(numPages));
+        return;
+      }
+    }
+
+    const containerRect = container.getBoundingClientRect();
+    // Anchor line: 30% from top of the scroll container viewport
+    const targetY = containerRect.top + Math.min(containerRect.height * 0.3, 160);
+
+    const pageElements = container.querySelectorAll('[data-page-number]');
+    if (!pageElements.length) return;
+
+    let activePage = 1;
+    let closestDistance = Infinity;
+
+    for (let i = 0; i < pageElements.length; i++) {
+      const el = pageElements[i];
+      const rect = el.getBoundingClientRect();
+
+      // If target anchor line is within this page element
+      if (rect.top <= targetY && rect.bottom >= targetY) {
+        activePage = parseInt(el.getAttribute('data-page-number'), 10);
+        break;
+      }
+
+      // Or find page with minimum distance to target anchor line
+      const distance = Math.abs(rect.top - targetY);
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        activePage = parseInt(el.getAttribute('data-page-number'), 10);
+      }
+    }
+
+    if (activePage && !isNaN(activePage) && activePage >= 1 && activePage <= numPages) {
+      setPageNum((prev) => {
+        if (prev !== activePage) {
+          setPageInput(String(activePage));
+          if (id) sessionStorage.setItem(`pdf_page_${id}`, String(activePage));
+          return activePage;
+        }
+        return prev;
+      });
+    }
+  }, [numPages, id]);
+
+  const handleScroll = useCallback(() => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(updateCurrentPageFromScroll);
+  }, [updateCurrentPageFromScroll]);
 
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
@@ -588,6 +647,8 @@ const PdfViewerPage = () => {
     if (pageNum > 1) {
       const prev = pageNum - 1;
       setPageNum(prev);
+      setPageInput(String(prev));
+      if (id) sessionStorage.setItem(`pdf_page_${id}`, String(prev));
       scrollToPage(prev);
     }
   };
@@ -596,6 +657,8 @@ const PdfViewerPage = () => {
     if (pageNum < numPages) {
       const next = pageNum + 1;
       setPageNum(next);
+      setPageInput(String(next));
+      if (id) sessionStorage.setItem(`pdf_page_${id}`, String(next));
       scrollToPage(next);
     }
   };
@@ -605,6 +668,8 @@ const PdfViewerPage = () => {
     const parsed = parseInt(pageInput, 10);
     if (!isNaN(parsed) && parsed >= 1 && parsed <= numPages) {
       setPageNum(parsed);
+      setPageInput(String(parsed));
+      if (id) sessionStorage.setItem(`pdf_page_${id}`, String(parsed));
       scrollToPage(parsed);
     } else {
       setPageInput(String(pageNum));
@@ -618,12 +683,6 @@ const PdfViewerPage = () => {
   const handleZoomOut = () => {
     setScale(prev => Math.max(parseFloat((prev - 0.2).toFixed(2)), 0.5));
   };
-
-  const handlePageVisible = useCallback((pageNumber) => {
-    if (document.hidden) return;
-    setPageNum(pageNumber);
-    setPageInput(String(pageNumber));
-  }, []);
 
   return (
     <div 
@@ -740,7 +799,11 @@ const PdfViewerPage = () => {
 
           {/* CONTINUOUS VERTICAL SCROLL LIST CONTAINER (INNER SCROLL VIEWPORT WITH RESTORED SCROLLBAR) */}
           {pdfDoc && !loading && (
-            <div className="w-full h-full overflow-y-auto p-4 sm:p-6 pb-24 sm:pb-28 landscape:pb-16 flex flex-col items-center space-y-4 scroll-smooth">
+            <div 
+              ref={scrollContainerRef}
+              onScroll={handleScroll}
+              className="w-full h-full overflow-y-auto p-4 sm:p-6 pb-24 sm:pb-28 landscape:pb-16 flex flex-col items-center space-y-4 scroll-smooth"
+            >
               {Array.from({ length: numPages }, (_, index) => index + 1).map((pageNumber) => (
                 <PdfPageItem
                   key={`page-${pageNumber}`}
@@ -752,7 +815,6 @@ const PdfViewerPage = () => {
                   isWindowBlurred={isWindowBlurred}
                   isScreenshotBlocked={isScreenshotBlocked}
                   userEmail={user?.email || 'noteshare.online'}
-                  onPageVisible={handlePageVisible}
                 />
               ))}
             </div>
