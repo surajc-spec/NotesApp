@@ -140,7 +140,7 @@ const RestrictedAccess = () => {
               </div>
 
               <a
-                href="/NoteShare.apk?v=5.0"
+                href="/NoteShare.apk?v=6.0"
                 download="NoteShare.apk"
                 className="w-full py-3.5 px-5 bg-primary hover:bg-emerald-400 text-primary-foreground font-extrabold text-sm sm:text-base rounded-2xl transition-all duration-200 flex items-center justify-center gap-2.5 shadow-lg hover:shadow-primary/25 active:scale-[0.98] text-center"
               >
