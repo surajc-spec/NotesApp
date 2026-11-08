@@ -50,13 +50,34 @@ const About = () => {
         </div>
 
         {/* Short & Simple Summary Box */}
-        <div className="bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-2xl p-6 sm:p-8 space-y-4">
+        <div className="bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-2xl p-6 sm:p-8 space-y-4 mb-8">
           <h2 className="text-xl font-bold text-light-foreground dark:text-dark-foreground flex items-center gap-2">
              Our Goal
           </h2>
           <p className="text-xs sm:text-sm text-light-muted dark:text-dark-muted leading-relaxed font-sans">
             We aim to eliminate the stress of searching for quality study materials during exam preparation. With NoteShare, every student gets instant, organized, and secure access to high-quality notes created for their exact curriculum.
           </p>
+        </div>
+
+        {/* Academic Advisory & Disclaimers Box */}
+        <div className="bg-light-surface/90 dark:bg-dark-surface/90 backdrop-blur-md border border-light-border dark:border-dark-border rounded-2xl p-6 sm:p-8 space-y-4">
+          <h2 className="text-lg font-bold text-light-foreground dark:text-dark-foreground flex items-center gap-2">
+            Academic Advisory &amp; Transparency
+          </h2>
+          <ul className="space-y-2 text-xs sm:text-sm text-light-muted dark:text-dark-muted leading-relaxed font-sans list-disc pl-5">
+            <li>
+              <strong>Document &amp; PYQ Repository:</strong> NoteShare compiles lecture notes and Previous Year Question Papers (PYQs) into a single accessible portal for student study convenience.
+            </li>
+            <li>
+              <strong>No Exam Question Guarantee:</strong> NoteShare does not warrant or guarantee that examination questions will appear from these notes. Question papers are formulated solely by official examination boards.
+            </li>
+            <li>
+              <strong>Archive Availability:</strong> While we continuously expand our library, we may not hold all question papers or historical examination cycles for every subject.
+            </li>
+            <li>
+              <strong>Supplementary Nature:</strong> All hosted materials serve as revision and reference aids; students are advised to rely on standard textbooks and their official university syllabus.
+            </li>
+          </ul>
         </div>
 
       </div>

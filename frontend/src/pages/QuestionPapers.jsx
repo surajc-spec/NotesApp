@@ -274,6 +274,13 @@ const QuestionPapers = () => {
           </div>
         )}
 
+        {/* Academic Advisory Footer Notice */}
+        <div className="mt-16 p-4 rounded-xl bg-light-surface-secondary/60 dark:bg-dark-surface-secondary/60 border border-light-border dark:border-dark-border text-center text-xs text-light-muted dark:text-dark-muted space-y-1">
+          <p>
+            <strong>Academic Advisory:</strong> NoteShare compiles past question papers as supplementary revision aids. We do not guarantee complete archival coverage for all exam cycles.
+          </p>
+        </div>
+
       </div>
     </div>
   );
