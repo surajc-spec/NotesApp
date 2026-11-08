@@ -24,8 +24,12 @@ const QuestionPapers = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
+    if (user && user.role !== 'admin' && !user.isProfileComplete && (!user.branch || !user.semester)) {
+      navigate('/setup-profile');
+      return;
+    }
     fetchQuestionPapers();
-  }, [user]);
+  }, [user, navigate]);
 
   const fetchQuestionPapers = async () => {
     setLoading(true);

@@ -57,26 +57,36 @@ async function sendOtp(req, res) {
   }
 }
 
+function formatUserResponse(user) {
+  const isComplete = Boolean(
+    user.isProfileComplete || (user.branch && user.semester)
+  );
+  return {
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    branch: user.branch || null,
+    semester: user.semester || null,
+    year: user.year || null,
+    examType: user.examType || "insem",
+    role: user.role,
+    isProfileComplete: isComplete,
+  };
+}
+
 async function userRegister(req, res) {
   try {
     const { name, email, password, semester, branch, examType, otp } = req.body;
 
-    if (!name || !email || !password || !branch || semester === undefined) {
+    if (!name || !email || !password) {
       return res.status(400).json({
-        message: "All required fields must be provided",
+        message: "Name, email, and password are required",
       });
     }
 
     if (!otp) {
       return res.status(400).json({
         message: "OTP verification code is required",
-      });
-    }
-
-    const sem = Number(semester);
-    if (!Number.isInteger(sem) || sem < 1 || sem > 8) {
-      return res.status(400).json({
-        message: "Semester must be between 1 and 8",
       });
     }
 
@@ -98,17 +108,27 @@ async function userRegister(req, res) {
       });
     }
 
+    let sem = null;
+    if (semester !== undefined && semester !== null && semester !== '') {
+      const parsedSem = Number(semester);
+      if (Number.isInteger(parsedSem) && parsedSem >= 1 && parsedSem <= 8) {
+        sem = parsedSem;
+      }
+    }
+
+    const hasAcademicDetails = Boolean(branch && sem);
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await userModel.create({
       name,
       email: lowerEmail,
       password: hashedPassword,
-      branch,
+      branch: branch || null,
       semester: sem,
-      year: getYearFromSemester(sem),
+      year: sem ? getYearFromSemester(sem) : null,
       examType: examType || "insem",
       role: "user",
+      isProfileComplete: hasAcademicDetails,
     });
 
     // Delete verified OTP entry
@@ -131,16 +151,7 @@ async function userRegister(req, res) {
     return res.status(201).json({
       message: "User registered successfully",
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        branch: user.branch,
-        semester: user.semester,
-        year: user.year,
-        examType: user.examType || "insem",
-        role: user.role,
-      },
+      user: formatUserResponse(user),
     });
   } catch (error) {
     console.error("Registration error:", error);
@@ -191,16 +202,7 @@ async function userLogin(req, res) {
     return res.status(200).json({
       message: "User logged in successfully",
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        branch: user.branch,
-        semester: user.semester,
-        year: user.year,
-        examType: user.examType || "insem",
-        role: user.role,
-      },
+      user: formatUserResponse(user),
     });
   } catch (error) {
     console.error("Login error:", error);
@@ -244,11 +246,12 @@ async function googleAuth(req, res) {
         name: name || lowerEmail.split("@")[0],
         email: lowerEmail,
         password: hashedPassword,
-        branch: "Computer Engineering",
-        semester: 1,
-        year: getYearFromSemester(1),
+        branch: null,
+        semester: null,
+        year: null,
         examType: "insem",
         role: "user",
+        isProfileComplete: false,
       });
     }
 
@@ -269,16 +272,7 @@ async function googleAuth(req, res) {
     return res.status(200).json({
       message: "Google authentication successful",
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        branch: user.branch,
-        semester: user.semester,
-        year: user.year,
-        examType: user.examType || "insem",
-        role: user.role,
-      },
+      user: formatUserResponse(user),
     });
   } catch (error) {
     console.error("Google Auth Error:", error);
@@ -399,6 +393,11 @@ async function updateProfile(req, res) {
     const userId = req.user.id;
     const { branch, semester, name, examType } = req.body;
 
+    const currentUser = await userModel.findById(userId);
+    if (!currentUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
     const updateData = {};
     if (name) updateData.name = name;
     if (branch) updateData.branch = branch;
@@ -417,28 +416,21 @@ async function updateProfile(req, res) {
       updateData.year = getYearFromSemester(sem);
     }
 
+    const effectiveBranch = updateData.branch !== undefined ? updateData.branch : currentUser.branch;
+    const effectiveSemester = updateData.semester !== undefined ? updateData.semester : currentUser.semester;
+    if (effectiveBranch && effectiveSemester) {
+      updateData.isProfileComplete = true;
+    }
+
     const updatedUser = await userModel.findByIdAndUpdate(
       userId,
       updateData,
       { new: true }
     ).select("-password");
 
-    if (!updatedUser) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
     return res.status(200).json({
       message: "Profile updated successfully",
-      user: {
-        id: updatedUser._id,
-        name: updatedUser.name,
-        email: updatedUser.email,
-        branch: updatedUser.branch,
-        semester: updatedUser.semester,
-        year: updatedUser.year,
-        examType: updatedUser.examType || "insem",
-        role: updatedUser.role,
-      },
+      user: formatUserResponse(updatedUser),
     });
   } catch (error) {
     console.error("Update profile error:", error);

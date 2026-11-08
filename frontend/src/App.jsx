@@ -21,6 +21,7 @@ import TermsAndConditions from './pages/TermsAndConditions';
 import Contact from './pages/Contact';
 import Feedback from './pages/Feedback';
 import RestrictedAccess from './pages/RestrictedAccess';
+import SetupProfile from './pages/SetupProfile';
 
 const AppContent = () => {
   const location = useLocation();
@@ -49,6 +50,7 @@ const AppContent = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/pdf-viewer" element={<PdfViewerPage />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/setup-profile" element={<SetupProfile />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />

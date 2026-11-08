@@ -20,25 +20,30 @@ const userSchema = mongoose.Schema({
 
     branch: {
         type: String,
-        required: true
+        default: null,
     },
 
     semester: {
         type: Number,
-        required: true,
         min: 1,
-        max: 8
+        max: 8,
+        default: null,
     },
 
     year: {
         type: String,
-        required: true
+        default: null,
     },
 
     examType: {
         type: String,
         enum: ["insem", "endsem", "all"],
         default: "insem"
+    },
+
+    isProfileComplete: {
+        type: Boolean,
+        default: false,
     },
 
     role: {

@@ -1,31 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, AlertCircle, Info, MailCheck, ShieldCheck, RefreshCw } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle, MailCheck, ShieldCheck, RefreshCw } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../contexts/AuthContext';
-import CustomSelect from '../components/CustomSelect';
-
-const BRANCH_OPTIONS = [
-  'Computer Engineering',
-  'Information Technology',
-  'Electronics & Telecommunication',
-];
-
-const SEMESTER_OPTIONS = [
-  { label: 'Semester 1', value: 1 },
-  { label: 'Semester 2', value: 2 },
-  { label: 'Semester 3', value: 3 },
-  { label: 'Semester 4', value: 4 },
-  { label: 'Semester 5', value: 5 },
-  { label: 'Semester 6', value: 6 },
-  { label: 'Semester 7', value: 7 },
-  { label: 'Semester 8', value: 8 },
-];
-
-const EXAM_TYPE_OPTIONS = [
-  { label: 'In-Sem Exam', value: 'insem' },
-  { label: 'End-Sem Exam', value: 'endsem' },
-];
 
 const Register = () => {
   const navigate = useNavigate();
@@ -35,9 +12,6 @@ const Register = () => {
     name: '',
     email: '',
     password: '',
-    examType: 'insem',
-    branch: '',
-    semester: '',
     otp: '',
   });
 
@@ -104,7 +78,9 @@ const Register = () => {
       login(data);
 
       if (data.user?.role === 'admin') {
-        navigate('/dashboard');
+        navigate('/notes');
+      } else if (!data.user?.isProfileComplete) {
+        navigate('/setup-profile');
       } else {
         navigate('/notes');
       }
@@ -121,9 +97,9 @@ const Register = () => {
     setError('');
     setSuccessMessage('');
 
-    const { name, email, password, examType, branch, semester } = formData;
+    const { name, email, password } = formData;
 
-    if (!name || !email || !password || !examType || !branch || !semester) {
+    if (!name || !email || !password) {
       setError('Please fill in all required fields.');
       return;
     }
@@ -164,7 +140,7 @@ const Register = () => {
     setError('');
     setSuccessMessage('');
 
-    const { name, email, password, examType, branch, semester, otp } = formData;
+    const { name, email, password, otp } = formData;
 
     if (!otp || otp.trim().length !== 6) {
       setError('Please enter the valid 6-digit verification code.');
@@ -182,9 +158,6 @@ const Register = () => {
           name,
           email,
           password,
-          branch,
-          semester: Number(semester),
-          examType,
           otp: otp.trim(),
         }),
       });
@@ -196,7 +169,14 @@ const Register = () => {
       }
 
       login(data);
-      navigate('/notes');
+
+      if (data.user?.role === 'admin') {
+        navigate('/notes');
+      } else if (!data.user?.isProfileComplete) {
+        navigate('/setup-profile');
+      } else {
+        navigate('/notes');
+      }
     } catch (err) {
       setError(err.message || 'Something went wrong. Please try again.');
     } finally {
@@ -206,7 +186,7 @@ const Register = () => {
 
   return (
     <div className="min-h-[calc(100vh-72px)] flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-light-background dark:bg-dark-background transition-colors duration-300">
-      <div className="w-full max-w-lg">
+      <div className="w-full max-w-md">
         
         {/* Card Container */}
         <div className="bg-light-surface/90 dark:bg-dark-surface/90 backdrop-blur-md border border-light-border dark:border-dark-border rounded-2xl shadow-xl p-8 sm:p-10 transition-colors">
@@ -249,14 +229,6 @@ const Register = () => {
             </>
           )}
 
-          {/* Academic Info Banner */}
-          {step === 1 && (
-            <div className="mb-6 p-3.5 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border text-center text-xs font-semibold text-light-muted dark:text-dark-muted flex items-center justify-center gap-2">
-              <Info className="w-4 h-4 text-primary shrink-0" />
-              <span>Academic details can be updated anytime from your profile. If you don't see any notes, please check your academic details in your profile.</span>
-            </div>
-          )}
-
           {/* Success Banner */}
           {successMessage && (
             <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-sm flex items-start gap-3 animate-fadeIn">
@@ -275,7 +247,7 @@ const Register = () => {
 
           {/* STEP 1: Registration Form */}
           {step === 1 && (
-            <form onSubmit={handleSendOtp} className="space-y-5">
+            <form onSubmit={handleSendOtp} className="space-y-4">
               
               {/* Full Name */}
               <div>
@@ -311,79 +283,29 @@ const Register = () => {
                 />
               </div>
 
-              {/* Grid for Password & Exam Type Dropdown */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div>
-                  <label htmlFor="password" className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
-                    Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      id="password"
-                      name="password"
-                      type={showPassword ? 'text' : 'password'}
-                      required
-                      placeholder="••••••••"
-                      value={formData.password}
-                      onChange={handleChange}
-                      className="w-full h-[50px] pl-5 pr-12 py-3 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-field text-sm text-light-foreground dark:text-dark-foreground placeholder-light-muted dark:placeholder-dark-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((prev) => !prev)}
-                      className="absolute inset-y-0 right-0 pr-4 flex items-center text-light-muted dark:text-dark-muted hover:text-light-foreground dark:hover:text-dark-foreground focus:outline-none"
-                    >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="examType" className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
-                    Exam Type
-                  </label>
-                  <CustomSelect
-                    id="examType"
-                    name="examType"
+              {/* Password */}
+              <div>
+                <label htmlFor="password" className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
                     required
-                    value={formData.examType}
+                    placeholder="••••••••"
+                    value={formData.password}
                     onChange={handleChange}
-                    options={EXAM_TYPE_OPTIONS}
-                    placeholder="Select Exam Type"
+                    className="w-full h-[50px] pl-5 pr-12 py-3 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border rounded-field text-sm text-light-foreground dark:text-dark-foreground placeholder-light-muted dark:placeholder-dark-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   />
-                </div>
-              </div>
-
-              {/* Grid for Branch & Semester Custom Dropdowns */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div>
-                  <label htmlFor="branch" className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
-                    Branch
-                  </label>
-                  <CustomSelect
-                    id="branch"
-                    name="branch"
-                    required
-                    value={formData.branch}
-                    onChange={handleChange}
-                    options={BRANCH_OPTIONS}
-                    placeholder="Select Branch"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="semester" className="block text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground mb-2">
-                    Semester
-                  </label>
-                  <CustomSelect
-                    id="semester"
-                    name="semester"
-                    required
-                    value={formData.semester}
-                    onChange={handleChange}
-                    options={SEMESTER_OPTIONS}
-                    placeholder="Select Semester"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-light-muted dark:text-dark-muted hover:text-light-foreground dark:hover:text-dark-foreground focus:outline-none"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
                 </div>
               </div>
 

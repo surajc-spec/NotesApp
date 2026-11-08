@@ -71,7 +71,9 @@ const Login = () => {
       login(data);
 
       if (data.user?.role === 'admin') {
-        navigate('/dashboard');
+        navigate('/notes');
+      } else if (!data.user?.isProfileComplete) {
+        navigate('/setup-profile');
       } else {
         navigate('/notes');
       }
@@ -103,7 +105,9 @@ const Login = () => {
       login(data);
 
       if (data.user?.role === 'admin') {
-        navigate('/dashboard');
+        navigate('/notes');
+      } else if (!data.user?.isProfileComplete) {
+        navigate('/setup-profile');
       } else {
         navigate('/notes');
       }

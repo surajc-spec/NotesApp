@@ -30,8 +30,12 @@ const Notes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
+    if (user && user.role !== 'admin' && !user.isProfileComplete && (!user.branch || !user.semester)) {
+      navigate('/setup-profile');
+      return;
+    }
     fetchNotes();
-  }, [user]);
+  }, [user, navigate]);
 
   const fetchNotes = async () => {
     setLoading(true);
