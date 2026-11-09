@@ -9,6 +9,7 @@ const noteRoutes = require("../src/routes/notes.routes");
 const questionPaperRoutes = require("../src/routes/questionPapers.routes");
 const contactRoutes = require("../src/routes/contact.routes");
 const feedbackRoutes = require("../src/routes/feedback.routes");
+const communityRoutes = require("../src/routes/community.routes");
 const { antiScraperMiddleware, honeypotTrapHandler } = require("./middlewares/antiScraper.middleware");
 
 const app = express();
@@ -61,5 +62,6 @@ app.use("/api/notes", noteRoutes);
 app.use("/api/question-papers", questionPaperRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/feedback", feedbackRoutes);
+app.use("/api/community", communityRoutes);
 
 module.exports = app;

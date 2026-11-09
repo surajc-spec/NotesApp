@@ -19,7 +19,8 @@ import {
   Pencil,
   Check,
   CheckSquare,
-  Square
+  Square,
+  MessageSquare,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import CustomSelect from '../components/CustomSelect';
@@ -98,6 +99,7 @@ const Dashboard = () => {
 
   // Edit Details Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isCommunityModalOpen, setIsCommunityModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null); // item object being edited
   const [isEditingPaper, setIsEditingPaper] = useState(false);
   const [editFormData, setEditFormData] = useState({
@@ -804,10 +806,21 @@ const Dashboard = () => {
               Upload study notes, question papers in bulk, edit details, and perform bulk operations
             </p>
           </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsCommunityModalOpen(true)}
+              className="h-[44px] px-5 bg-light-surface/90 dark:bg-dark-surface/90 border border-light-border dark:border-dark-border hover:border-primary text-light-foreground dark:text-dark-foreground font-semibold rounded-btn transition-all duration-200 flex items-center gap-2.5 hover:scale-[1.02] active:scale-[0.98] shadow-sm"
+            >
+              <MessageSquare className="w-4 h-4 text-primary stroke-[2.2]" />
+              <span>Community Inspector</span>
+            </button>
+          </div>
         </div>
 
         {/* METRICS CARDS */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
           
           <div className="bg-light-surface/90 dark:bg-dark-surface/90 backdrop-blur-md border border-light-border dark:border-dark-border rounded-2xl p-6 shadow-sm flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
@@ -843,6 +856,26 @@ const Dashboard = () => {
                 {stats.usersCount}
               </h3>
             </div>
+          </div>
+
+          <div
+            onClick={() => setIsCommunityModalOpen(true)}
+            className="bg-light-surface/90 dark:bg-dark-surface/90 backdrop-blur-md border border-light-border dark:border-dark-border hover:border-primary/50 rounded-2xl p-6 shadow-sm flex items-center justify-between gap-4 cursor-pointer transition-all hover:scale-[1.02] group"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0 group-hover:bg-amber-500/20 transition-colors">
+                <MessageSquare className="w-6 h-6 stroke-[2.5]" />
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-light-muted dark:text-dark-muted">Class Groups</p>
+                <h3 className="text-base font-extrabold text-light-foreground dark:text-dark-foreground mt-0.5">
+                  Community Hub
+                </h3>
+              </div>
+            </div>
+            <span className="text-xs font-bold text-primary shrink-0">
+              Open &rarr;
+            </span>
           </div>
 
         </div>
@@ -1993,6 +2026,90 @@ const Dashboard = () => {
               </div>
 
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* COMMUNITY INSPECTOR MODAL */}
+      {isCommunityModalOpen && (
+        <div className="fixed inset-0 z-modal bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto custom-scrollbar font-sans">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-light-border dark:border-dark-border pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <MessageSquare className="w-5 h-5 stroke-[2.2]" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-light-foreground dark:text-dark-foreground">
+                    Class Community Inspector
+                  </h3>
+                  <p className="text-xs text-light-muted dark:text-dark-muted">
+                    Open and monitor discussions or broadcast announcements to any academic group.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCommunityModalOpen(false)}
+                className="p-2 rounded-xl text-light-muted dark:text-dark-muted hover:text-light-foreground dark:hover:text-dark-foreground hover:bg-light-surface-secondary dark:hover:bg-dark-surface-secondary transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Quick Link: Profile Class */}
+            {user?.branch && user?.semester && (
+              <div className="p-3.5 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-primary">Your Default Profile Class</p>
+                  <p className="text-xs text-light-foreground dark:text-dark-foreground font-bold">
+                    {user.branch} • Semester {user.semester}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCommunityModalOpen(false);
+                    navigate('/community');
+                  }}
+                  className="px-3.5 py-1.5 rounded-lg bg-primary text-primary-foreground font-bold text-xs hover:bg-emerald-400 transition-all shadow-sm"
+                >
+                  Open My Class &rarr;
+                </button>
+              </div>
+            )}
+
+            {/* Channels by Branch */}
+            <div className="space-y-4">
+              {BRANCH_OPTIONS.map((branch) => (
+                <div
+                  key={branch}
+                  className="p-4 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border space-y-2.5"
+                >
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-light-foreground dark:text-dark-foreground">
+                    {branch}
+                  </h4>
+                  <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
+                      <button
+                        key={sem}
+                        type="button"
+                        onClick={() => {
+                          setIsCommunityModalOpen(false);
+                          navigate(`/community?branch=${encodeURIComponent(branch)}&semester=${sem}`);
+                        }}
+                        className="py-2 px-1 text-center text-xs font-semibold rounded-lg bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border hover:border-primary hover:text-primary hover:bg-primary/5 transition-all active:scale-95"
+                      >
+                        Sem {sem}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
           </div>
         </div>
       )}

@@ -13,7 +13,8 @@ import {
   Moon, 
   Monitor,
   Menu, 
-  X 
+  X,
+  MessageSquare
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -109,6 +110,12 @@ const Navbar = () => {
                 <GraduationCap className="w-4 h-4 stroke-[2]" />
                 <span>Question Papers</span>
               </a>
+
+              {/* Community Hub (/community) - For All Logged-in Users */}
+              <NavLink to="/community" className={getNavLinkClass}>
+                <MessageSquare className="w-4 h-4 stroke-[2]" />
+                <span>Community</span>
+              </NavLink>
 
               {/* Dashboard (/dashboard) - Only for Admin */}
               {isAdmin && (
@@ -248,6 +255,16 @@ const Navbar = () => {
                     <GraduationCap className="w-5 h-5 stroke-[2]" />
                     <span>Question Papers</span>
                   </a>
+
+                  {/* Community Hub Mobile Link */}
+                  <NavLink
+                    to="/community"
+                    onClick={closeMobileMenu}
+                    className={getMobileNavLinkClass}
+                  >
+                    <MessageSquare className="w-5 h-5 stroke-[2]" />
+                    <span>Community</span>
+                  </NavLink>
 
                   {/* Dashboard - Admin Only */}
                   {isAdmin && (

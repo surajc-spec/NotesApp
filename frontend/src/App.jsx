@@ -22,6 +22,7 @@ import Contact from './pages/Contact';
 import Feedback from './pages/Feedback';
 import RestrictedAccess from './pages/RestrictedAccess';
 import SetupProfile from './pages/SetupProfile';
+import Community from './pages/Community';
 
 const AppContent = () => {
   const location = useLocation();
@@ -38,15 +39,18 @@ const AppContent = () => {
     }
   }, [location]);
 
+  const hideFooter = location.pathname === '/community' || location.pathname === '/pdf-viewer';
+
   return (
-    <div className="min-h-screen flex flex-col justify-between bg-light-background dark:bg-dark-background text-light-foreground dark:text-dark-foreground transition-colors duration-300">
+    <div className={`min-h-screen flex flex-col justify-between bg-light-background dark:bg-dark-background text-light-foreground dark:text-dark-foreground transition-colors duration-300 ${hideFooter ? 'h-screen overflow-hidden' : ''}`}>
       <DesktopOnlyOverlay />
       <Navbar />
-      <main className="flex-1">
+      <main className={`flex-1 ${hideFooter ? 'overflow-hidden flex flex-col' : ''}`}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/notes" element={<Notes />} />
           <Route path="/question-papers" element={<QuestionPapers />} />
+          <Route path="/community" element={<Community />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/pdf-viewer" element={<PdfViewerPage />} />
           <Route path="/profile" element={<Profile />} />
@@ -62,7 +66,7 @@ const AppContent = () => {
           <Route path="/restricted" element={<RestrictedAccess />} />
         </Routes>
       </main>
-      <Footer />
+      {!hideFooter && <Footer />}
     </div>
   );
 };
