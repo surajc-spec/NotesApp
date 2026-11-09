@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GraduationCap, ArrowRight, AlertCircle, Sparkles, BookOpen } from 'lucide-react';
+import { GraduationCap, ArrowRight, AlertCircle, BookOpen } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import CustomSelect from '../components/CustomSelect';
 
@@ -145,9 +145,8 @@ const SetupProfile = () => {
           </div>
 
           {/* Info Banner */}
-          <div className="mb-6 p-3.5 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border text-center text-xs font-semibold text-light-muted dark:text-dark-muted flex items-center justify-center gap-2">
-            <Sparkles className="w-4 h-4 text-primary shrink-0" />
-            <span>Don't worry! You can change these details anytime from your Profile.</span>
+          <div className="mb-6 p-3.5 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border text-center text-xs text-light-muted dark:text-dark-muted">
+            You can update your branch and semester details anytime from your Profile.
           </div>
 
           {/* Error Alert */}

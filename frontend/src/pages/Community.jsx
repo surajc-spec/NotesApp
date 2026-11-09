@@ -268,29 +268,24 @@ const Community = () => {
               <MessageSquare className="w-5 h-5 stroke-[2.2]" />
             </div>
             <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2.5 flex-wrap">
                 <h1 className="text-lg sm:text-xl font-bold text-light-foreground dark:text-dark-foreground truncate">
                   {activeBranch || 'My Class'}
                 </h1>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20 shrink-0">
+                <span className="px-2.5 py-0.5 text-xs font-semibold rounded-md bg-light-surface-secondary dark:bg-dark-surface-secondary text-light-muted dark:text-dark-muted border border-light-border dark:border-dark-border shrink-0">
                   Semester {activeSemester}
                 </span>
-                {isAdmin ? (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20 shrink-0">
+                {isAdmin && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
                     <ShieldCheck className="w-3.5 h-3.5" />
-                    Admin Inspector
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-light-muted dark:text-dark-muted shrink-0">
-                    <Lock className="w-3 h-3 text-primary" />
-                    Class Locked
+                    Admin
                   </span>
                 )}
               </div>
               <p className="text-xs text-light-muted dark:text-dark-muted truncate mt-0.5">
                 {isAdmin && branchParam
                   ? `Viewing ${activeBranch} Sem ${activeSemester} group from Admin Panel.`
-                  : 'Isolated class community for your verified branch & semester.'}
+                  : 'Class discussion group for your verified branch & semester.'}
               </p>
             </div>
           </div>
@@ -360,14 +355,14 @@ const Community = () => {
                       {isMine ? 'You' : msg.senderName}
                     </span>
                     {isMsgAdmin && (
-                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[10px] font-bold bg-primary/15 text-primary border border-primary/20">
-                        ADMIN
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20">
+                        Admin
                       </span>
                     )}
                     {msg.isAnnouncement && (
-                      <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-500/15 text-amber-500 border border-amber-500/20">
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
                         <Megaphone className="w-2.5 h-2.5" />
-                        ANNOUNCEMENT
+                        Announcement
                       </span>
                     )}
                     <span className="text-[11px] text-light-muted dark:text-dark-muted">

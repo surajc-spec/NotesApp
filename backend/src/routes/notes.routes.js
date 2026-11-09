@@ -9,9 +9,12 @@ router.post("/upload-url", authMiddleware.authAdmin, rateLimitMiddleware.uploadL
 router.post("/create-note", authMiddleware.authAdmin, notesController.createNote);
 router.post("/create-notes", authMiddleware.authAdmin, notesController.createNote);
 
-// Multi-Level Caching placed FIRST to serve hits instantly & bypass rate-limit burn
 router.get("/view-notes", cacheMiddleware(300), authMiddleware.authUser, notesController.viewNotes);
 router.get("/:id/view", rateLimitMiddleware.viewPdfLimiter, authMiddleware.authUser, notesController.viewPdf);
+
+// AI Summary endpoints (strictly authenticated users only)
+router.get("/:id/summary", rateLimitMiddleware.apiLimiter, authMiddleware.authUser, notesController.getNoteSummary);
+router.post("/:id/summary/regenerate", rateLimitMiddleware.apiLimiter, authMiddleware.authUser, notesController.regenerateNoteSummary);
 
 // Admin Management & Bulk Actions
 router.put("/:id", authMiddleware.authAdmin, notesController.updateNote);

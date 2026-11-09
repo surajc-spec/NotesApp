@@ -38,8 +38,16 @@ const notesSchema = mongoose.Schema({
         type:String,
         required: [true, "Exam type is required"],
         enum: ["insem", "endsem"],
-        }
-
+    },
+    summary: {
+        content: { type: String, default: null },
+        status: {
+            type: String,
+            enum: ['none', 'generating', 'ready', 'failed'],
+            default: 'none',
+        },
+        generatedAt: { type: Date, default: null },
+    }
     },{
     timestamps: true
 })

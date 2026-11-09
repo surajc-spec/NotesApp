@@ -10,7 +10,8 @@ const config ={
     R2_ACCESS_KEY_ID:process.env.R2_ACCESS_KEY_ID,
     R2_SECRET_ACCESS_KEY:process.env.R2_SECRET_ACCESS_KEY,
     R2_ENDPOINT:process.env.R2_ENDPOINT,
-    R2_BUCKET_NAME:process.env.R2_BUCKET_NAME
+    R2_BUCKET_NAME:process.env.R2_BUCKET_NAME,
+    GEMINI_API_KEY:process.env.GEMINI_API_KEY
 }
 
 module.exports = config;

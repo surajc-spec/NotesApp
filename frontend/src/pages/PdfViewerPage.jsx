@@ -17,11 +17,13 @@ import {
   Sun,
   ArrowLeftRight,
   Share2,
-  X
+  X,
+  FileText
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Capacitor } from '@capacitor/core';
 import { shareToWhatsApp } from '../utils/shareUtils';
+import NoteSummaryModal from '../components/NoteSummaryModal';
 
 // Single Page Canvas Component for Continuous Vertical PDF Scrolling (Edge Reader Style)
 const PdfPageItem = ({ 
@@ -180,6 +182,9 @@ const PdfViewerPage = () => {
   
   // Fit Mode Toggle State: 'width' (Fit to Width) vs 'page' (Fit to Page)
   const [fitMode, setFitMode] = useState('width');
+
+  // AI Exam Summary Modal State
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
 
   // Resume Page Prompt State
   const [resumePromptPage, setResumePromptPage] = useState(null);
@@ -802,6 +807,18 @@ const PdfViewerPage = () => {
 
             {/* Right: Actions */}
             <div className="flex items-center gap-2 shrink-0">
+              {type !== 'question-paper' && (
+                <button
+                  type="button"
+                  onClick={() => setIsSummaryOpen(true)}
+                  title="AI Exam Revision Summary"
+                  className="h-10 px-4 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border hover:border-primary text-light-foreground dark:text-dark-foreground text-xs font-bold rounded-xl transition-all flex items-center gap-2 active:scale-95 shrink-0 cursor-pointer"
+                >
+                  <FileText className="w-4 h-4 text-primary" />
+                  <span>Summary</span>
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={handleSharePdf}
@@ -1086,6 +1103,16 @@ const PdfViewerPage = () => {
 
         </div>
       </div>
+
+      {type !== 'question-paper' && (
+        <NoteSummaryModal
+          isOpen={isSummaryOpen}
+          onClose={() => setIsSummaryOpen(false)}
+          noteId={id}
+          noteTitle={documentDetails?.title || 'Note'}
+          subject={documentDetails?.subjectCode || documentDetails?.subject || ''}
+        />
+      )}
 
     </div>
   );

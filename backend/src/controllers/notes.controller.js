@@ -2,6 +2,7 @@ const crypto = require("crypto");
 const { getUploadUrl, getPdfUrl, deleteFile, getFileStream } = require("../services/r2.service");
 const notesModel = require('../models/notes.model');
 const cacheService = require('../services/cacheService');
+const aiService = require('../services/ai.service');
 
 async function createUploadUrl(req, res) {
   try {
@@ -258,4 +259,132 @@ async function bulkDeleteNotes(req, res) {
   }
 }
 
-module.exports = { createUploadUrl, createNote, viewNotes, viewPdf, updateNote, deleteNotes, bulkDeleteNotes };
+async function getNoteSummary(req, res) {
+  try {
+    const { id } = req.params;
+    const note = await notesModel.findById(id);
+
+    if (!note) {
+      return res.status(404).json({ message: "Note not found" });
+    }
+
+    // 1. If summary is already cached and ready, return instantly (<50ms)
+    if (note.summary && note.summary.status === 'ready' && note.summary.content) {
+      return res.status(200).json({
+        summary: note.summary.content,
+        generatedAt: note.summary.generatedAt,
+        isCached: true,
+      });
+    }
+
+    // 2. If currently generating by another concurrent request, wait briefly
+    if (note.summary && note.summary.status === 'generating') {
+      for (let i = 0; i < 8; i++) {
+        await new Promise((r) => setTimeout(r, 1500));
+        const updated = await notesModel.findById(id).select('summary');
+        if (updated?.summary?.status === 'ready' && updated.summary.content) {
+          return res.status(200).json({
+            summary: updated.summary.content,
+            generatedAt: updated.summary.generatedAt,
+            isCached: true,
+          });
+        }
+      }
+    }
+
+    // 3. Mark as generating
+    note.summary = {
+      content: null,
+      status: 'generating',
+      generatedAt: new Date(),
+    };
+    await note.save();
+
+    // 4. Generate summary using Gemini
+    try {
+      const summaryMarkdown = await aiService.generatePdfSummary(note.pdfKey, {
+        title: note.title,
+        subject: note.subject,
+        branch: note.branch,
+        semester: note.semester,
+      });
+
+      note.summary = {
+        content: summaryMarkdown,
+        status: 'ready',
+        generatedAt: new Date(),
+      };
+      await note.save();
+
+      return res.status(200).json({
+        summary: summaryMarkdown,
+        generatedAt: note.summary.generatedAt,
+        isCached: false,
+      });
+    } catch (genError) {
+      console.error(`AI generation failed for note ${id}:`, genError);
+      note.summary.status = 'failed';
+      await note.save();
+      return res.status(500).json({
+        message: "Failed to generate AI summary. Please try again in a few moments.",
+        error: genError.message,
+      });
+    }
+  } catch (error) {
+    console.error("Error in getNoteSummary:", error);
+    return res.status(500).json({ message: "Failed to retrieve note summary" });
+  }
+}
+
+async function regenerateNoteSummary(req, res) {
+  try {
+    const { id } = req.params;
+    const note = await notesModel.findById(id);
+
+    if (!note) {
+      return res.status(404).json({ message: "Note not found" });
+    }
+
+    note.summary = {
+      content: null,
+      status: 'generating',
+      generatedAt: new Date(),
+    };
+    await note.save();
+
+    const summaryMarkdown = await aiService.generatePdfSummary(note.pdfKey, {
+      title: note.title,
+      subject: note.subject,
+      branch: note.branch,
+      semester: note.semester,
+    });
+
+    note.summary = {
+      content: summaryMarkdown,
+      status: 'ready',
+      generatedAt: new Date(),
+    };
+    await note.save();
+
+    return res.status(200).json({
+      summary: summaryMarkdown,
+      generatedAt: note.summary.generatedAt,
+      isCached: false,
+    });
+  } catch (error) {
+    console.error("Error regenerating note summary:", error);
+    return res.status(500).json({ message: "Failed to regenerate summary" });
+  }
+}
+
+module.exports = {
+  createUploadUrl,
+  createNote,
+  viewNotes,
+  viewPdf,
+  updateNote,
+  deleteNotes,
+  bulkDeleteNotes,
+  getNoteSummary,
+  regenerateNoteSummary,
+};
