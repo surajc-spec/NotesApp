@@ -72,7 +72,11 @@ For each of the 5 to 7 major exam questions, format like this:
 
 ---`;
 
-  const modelsToTry = ['gemini-3.5-flash', 'gemini-3.5-flash-lite'];
+  const modelsToTry = [
+    'gemini-3.5-flash-lite',
+    'gemini-3.8-flash',
+    'gemini-3.5-flash',
+  ];
   let lastError = null;
 
   for (const modelName of modelsToTry) {
