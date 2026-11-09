@@ -10,6 +10,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import NoteCard from '../components/NoteCard';
 import PdfViewerModal from '../components/PdfViewerModal';
+import ContinueReadingBanner from '../components/ContinueReadingBanner';
 
 const Notes = () => {
   const navigate = useNavigate();
@@ -211,6 +212,9 @@ const Notes = () => {
 
           </div>
         </div>
+
+        {/* RESUME READING BANNER */}
+        <ContinueReadingBanner />
 
         {/* MAIN BODY AREA (Notes Grouped by Subject) */}
         {loading ? (

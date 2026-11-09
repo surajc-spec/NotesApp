@@ -15,10 +15,13 @@ import {
   EyeOff,
   Moon,
   Sun,
-  ArrowLeftRight
+  ArrowLeftRight,
+  Share2,
+  X
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Capacitor } from '@capacitor/core';
+import { shareToWhatsApp } from '../utils/shareUtils';
 
 // Single Page Canvas Component for Continuous Vertical PDF Scrolling (Edge Reader Style)
 const PdfPageItem = ({ 
@@ -177,6 +180,9 @@ const PdfViewerPage = () => {
   
   // Fit Mode Toggle State: 'width' (Fit to Width) vs 'page' (Fit to Page)
   const [fitMode, setFitMode] = useState('width');
+
+  // Resume Page Prompt State
+  const [resumePromptPage, setResumePromptPage] = useState(null);
 
   // Security boolean variables
   const [isNotesOpened, setIsNotesOpened] = useState(false);
@@ -524,7 +530,27 @@ const PdfViewerPage = () => {
 
       setPdfDoc(pdf);
       setNumPages(pdf.numPages);
-      setPageNum(1);
+
+      // Check if resuming from specific page or session
+      const pageParam = parseInt(searchParams.get('page'), 10);
+      const savedSessionPage = id ? parseInt(sessionStorage.getItem(`pdf_page_${id}`), 10) : NaN;
+
+      if (!isNaN(pageParam) && pageParam >= 1 && pageParam <= pdf.numPages) {
+        // User explicitly clicked Resume from banner (?page=X)
+        setPageNum(pageParam);
+        setPageInput(String(pageParam));
+        setTimeout(() => {
+          scrollToPage(pageParam);
+        }, 400);
+      } else if (!isNaN(savedSessionPage) && savedSessionPage > 1 && savedSessionPage <= pdf.numPages) {
+        // User opened normally, but has previous progress: Ask them!
+        setPageNum(1);
+        setPageInput('1');
+        setResumePromptPage(savedSessionPage);
+      } else {
+        setPageNum(1);
+        setPageInput('1');
+      }
     } catch (err) {
       console.error('PDF Loading Error:', err);
       setError(err.message || 'Could not load PDF document. Please try again.');
@@ -532,6 +558,37 @@ const PdfViewerPage = () => {
       setLoading(false);
     }
   };
+
+  const saveLastRead = useCallback((currPage, total) => {
+    if (!id) return;
+    try {
+      const data = {
+        id,
+        type: type || 'note',
+        title: documentDetails?.title || (type === 'question-paper' ? 'Question Paper' : 'Note'),
+        subjectCode: documentDetails?.subjectCode || documentDetails?.subject || '',
+        page: currPage,
+        totalPages: total || numPages || 1,
+        timestamp: Date.now(),
+      };
+      localStorage.setItem('noteshare_last_read', JSON.stringify(data));
+    } catch (e) {}
+  }, [id, type, documentDetails, numPages]);
+
+  const handleSharePdf = () => {
+    shareToWhatsApp({
+      id,
+      type: type || 'note',
+      title: documentDetails?.title || (type === 'question-paper' ? 'Question Paper' : 'Note'),
+      subject: documentDetails?.subjectCode || documentDetails?.subject || '',
+    });
+  };
+
+  useEffect(() => {
+    if (documentDetails && id && pageNum >= 1) {
+      saveLastRead(pageNum, numPages);
+    }
+  }, [documentDetails, id, pageNum, numPages, saveLastRead]);
 
   // Scroll smoothly to target page element
   const scrollToPage = (targetPage) => {
@@ -606,19 +663,20 @@ const PdfViewerPage = () => {
         if (prev !== activePage) {
           setPageInput(String(activePage));
           if (id) sessionStorage.setItem(`pdf_page_${id}`, String(activePage));
+          saveLastRead(activePage, numPages);
           return activePage;
         }
         return prev;
       });
     }
-  }, [numPages, id]);
+  }, [numPages, id, saveLastRead]);
 
   const handleScroll = useCallback(() => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     rafRef.current = requestAnimationFrame(updateCurrentPageFromScroll);
   }, [updateCurrentPageFromScroll]);
 
-  const toggleFullscreen = () => {
+  const toggleFullscreen = useCallback(() => {
     if (!containerRef.current) return;
 
     if (!document.fullscreenElement) {
@@ -632,7 +690,29 @@ const PdfViewerPage = () => {
         setTimeout(handleFitToWidth, 300);
       });
     }
-  };
+  }, [handleFitToWidth]);
+
+  // 'F' Keyboard Shortcut for Fullscreen Toggle (YouTube-style)
+  useEffect(() => {
+    const handleKeyDownShortcut = (e) => {
+      // Don't trigger if user is typing in an input, textarea, or contentEditable
+      const targetTag = e.target?.tagName?.toLowerCase();
+      if (targetTag === 'input' || targetTag === 'textarea' || e.target?.isContentEditable) {
+        return;
+      }
+
+      // 'f' or 'F' key pressed without Ctrl, Alt, or Meta keys
+      if ((e.key === 'f' || e.key === 'F') && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        toggleFullscreen();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDownShortcut);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDownShortcut);
+    };
+  }, [toggleFullscreen]);
 
   const handleBack = () => {
     setIsNotesOpened(false);
@@ -720,15 +800,28 @@ const PdfViewerPage = () => {
               </div>
             </div>
 
-            {/* Right: Fullscreen Trigger */}
-            <button
-              type="button"
-              onClick={toggleFullscreen}
-              className="h-10 px-5 bg-primary text-primary-foreground font-bold text-xs rounded-xl hover:bg-emerald-400 transition-all flex items-center gap-2 active:scale-95 shrink-0"
-            >
-              <Maximize className="w-4 h-4 stroke-[2.5]" />
-              <span>Fullscreen View</span>
-            </button>
+            {/* Right: Actions */}
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleSharePdf}
+                title="Share this document on WhatsApp"
+                className="h-10 px-4 bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border hover:border-emerald-500/50 text-light-foreground dark:text-dark-foreground text-xs font-bold rounded-xl transition-all flex items-center gap-2 active:scale-95 shrink-0 cursor-pointer"
+              >
+                <Share2 className="w-4 h-4 text-emerald-500" />
+                <span>Share</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={toggleFullscreen}
+                title="Fullscreen View (Press F)"
+                className="h-10 px-5 bg-primary text-primary-foreground font-bold text-xs rounded-xl hover:bg-emerald-400 transition-all flex items-center gap-2 active:scale-95 shrink-0 cursor-pointer"
+              >
+                <Maximize className="w-4 h-4 stroke-[2.5]" />
+                <span>Fullscreen View</span>
+              </button>
+            </div>
 
           </div>
         </div>
@@ -817,6 +910,35 @@ const PdfViewerPage = () => {
                   userEmail={user?.email || 'noteshare.online'}
                 />
               ))}
+            </div>
+          )}
+
+          {/* ASK USER: CONTINUE WHERE YOU LEFT PROMPT */}
+          {resumePromptPage && resumePromptPage > 1 && !loading && (
+            <div className="fixed bottom-24 sm:bottom-28 landscape:bottom-16 left-1/2 -translate-x-1/2 z-50 bg-dark-surface/95 backdrop-blur-md border border-primary/40 text-white px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-3 animate-fadeIn">
+              <div className="text-xs">
+                <span className="text-primary font-bold">Continue where you left?</span>
+                <span className="text-gray-300 ml-1.5 font-medium">(Page {resumePromptPage})</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  scrollToPage(resumePromptPage);
+                  setResumePromptPage(null);
+                }}
+                className="h-7 px-3 bg-primary hover:bg-emerald-400 text-primary-foreground font-bold text-xs rounded-xl transition-all active:scale-95 cursor-pointer shadow-sm"
+              >
+                Resume
+              </button>
+              <button
+                type="button"
+                onClick={() => setResumePromptPage(null)}
+                className="text-gray-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer"
+                title="Dismiss"
+                aria-label="Dismiss prompt"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
             </div>
           )}
 
@@ -926,10 +1048,22 @@ const PdfViewerPage = () => {
                   <span>{isPdfDarkMode ? 'Light' : 'Dark'}</span>
                 </button>
 
+                {/* Share to WhatsApp Button */}
+                <button
+                  type="button"
+                  onClick={handleSharePdf}
+                  title="Share document on WhatsApp"
+                  className="h-7 sm:h-8 px-2.5 sm:px-3 rounded-xl bg-dark-surface-secondary border border-dark-border text-gray-200 hover:text-white hover:bg-emerald-500/20 hover:border-emerald-500/40 font-bold text-[11px] sm:text-xs transition-all flex items-center gap-1 active:scale-95 shrink-0 cursor-pointer"
+                >
+                  <Share2 className="w-3 h-3 text-emerald-400" />
+                  <span>Share</span>
+                </button>
+
                 {/* Fullscreen Toggle */}
                 <button
                   type="button"
                   onClick={toggleFullscreen}
+                  title={isFullscreen ? "Exit Fullscreen (Press F)" : "Fullscreen (Press F)"}
                   className="h-7 sm:h-8 px-2.5 sm:px-3 bg-primary text-primary-foreground font-bold text-[11px] sm:text-xs rounded-xl hover:bg-emerald-400 transition-all flex items-center gap-1 active:scale-95 shadow-md shrink-0 cursor-pointer"
                 >
                   {isFullscreen ? (

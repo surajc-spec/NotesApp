@@ -7,9 +7,12 @@ import {
   Filter, 
   Loader2, 
   Eye,
-  FileQuestion
+  FileQuestion,
+  Share2
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { shareToWhatsApp } from '../utils/shareUtils';
+import ContinueReadingBanner from '../components/ContinueReadingBanner';
 
 const QuestionPapers = () => {
   const navigate = useNavigate();
@@ -182,6 +185,9 @@ const QuestionPapers = () => {
           </div>
         </div>
 
+        {/* RESUME READING BANNER */}
+        <ContinueReadingBanner />
+
         {/* MAIN BODY AREA */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24 gap-4">
@@ -252,15 +258,35 @@ const QuestionPapers = () => {
                             </h4>
                           </div>
 
-                          {/* Right: View PDF Button */}
-                          <button
-                            type="button"
-                            onClick={() => handleViewPdf(paperId)}
-                            className="h-8 px-3 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary hover:bg-primary hover:text-primary-foreground text-light-foreground dark:text-dark-foreground border border-light-border dark:border-dark-border hover:border-primary transition-all text-xs font-bold flex items-center justify-center gap-1.5 active:scale-95 shadow-sm shrink-0 cursor-pointer"
-                          >
-                            <Eye className="w-3.5 h-3.5 stroke-[2]" />
-                            <span>View PDF</span>
-                          </button>
+                          {/* Right Actions */}
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                shareToWhatsApp({
+                                  id: paperId,
+                                  type: 'question-paper',
+                                  title: paper.title,
+                                  subject: paper.subjectCode || paper.subject,
+                                });
+                              }}
+                              title="Share to WhatsApp"
+                              aria-label="Share question paper on WhatsApp"
+                              className="h-8 w-8 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary hover:bg-emerald-500/10 text-light-muted dark:text-dark-muted hover:text-emerald-500 border border-light-border dark:border-dark-border hover:border-emerald-500/30 transition-all flex items-center justify-center active:scale-95 cursor-pointer"
+                            >
+                              <Share2 className="w-3.5 h-3.5" />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleViewPdf(paperId)}
+                              className="h-8 px-3 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary hover:bg-primary hover:text-primary-foreground text-light-foreground dark:text-dark-foreground border border-light-border dark:border-dark-border hover:border-primary transition-all text-xs font-bold flex items-center justify-center gap-1.5 active:scale-95 shadow-sm shrink-0 cursor-pointer"
+                            >
+                              <Eye className="w-3.5 h-3.5 stroke-[2]" />
+                              <span>View PDF</span>
+                            </button>
+                          </div>
 
                         </div>
                       );

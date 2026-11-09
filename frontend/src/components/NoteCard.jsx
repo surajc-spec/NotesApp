@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye } from 'lucide-react';
+import { Eye, Share2 } from 'lucide-react';
+import { shareToWhatsApp } from '../utils/shareUtils';
 
 const NoteCard = ({ note }) => {
   const navigate = useNavigate();
@@ -8,6 +9,16 @@ const NoteCard = ({ note }) => {
   const handleViewClick = () => {
     const id = note._id || note.id;
     navigate(`/pdf-viewer?type=${note.type || 'note'}&id=${id}`);
+  };
+
+  const handleShareClick = (e) => {
+    e.stopPropagation();
+    shareToWhatsApp({
+      id: note._id || note.id,
+      type: note.type || 'note',
+      title: note.title,
+      subject: note.subjectCode || note.subject,
+    });
   };
 
   return (
@@ -23,15 +34,27 @@ const NoteCard = ({ note }) => {
         </h4>
       </div>
 
-      {/* Right: View PDF Button */}
-      <button
-        type="button"
-        onClick={handleViewClick}
-        className="h-8 px-3 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary hover:bg-primary hover:text-primary-foreground text-light-foreground dark:text-dark-foreground border border-light-border dark:border-dark-border hover:border-primary transition-all text-xs font-bold flex items-center justify-center gap-1.5 active:scale-95 shadow-sm shrink-0"
-      >
-        <Eye className="w-3.5 h-3.5 stroke-[2]" />
-        <span>View PDF</span>
-      </button>
+      {/* Right Actions */}
+      <div className="flex items-center gap-1.5 shrink-0">
+        <button
+          type="button"
+          onClick={handleShareClick}
+          title="Share to WhatsApp"
+          aria-label="Share note on WhatsApp"
+          className="h-8 w-8 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary hover:bg-emerald-500/10 text-light-muted dark:text-dark-muted hover:text-emerald-500 border border-light-border dark:border-dark-border hover:border-emerald-500/30 transition-all flex items-center justify-center active:scale-95"
+        >
+          <Share2 className="w-3.5 h-3.5" />
+        </button>
+
+        <button
+          type="button"
+          onClick={handleViewClick}
+          className="h-8 px-3 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary hover:bg-primary hover:text-primary-foreground text-light-foreground dark:text-dark-foreground border border-light-border dark:border-dark-border hover:border-primary transition-all text-xs font-bold flex items-center justify-center gap-1.5 active:scale-95 shadow-sm"
+        >
+          <Eye className="w-3.5 h-3.5 stroke-[2]" />
+          <span>View PDF</span>
+        </button>
+      </div>
 
     </div>
   );
