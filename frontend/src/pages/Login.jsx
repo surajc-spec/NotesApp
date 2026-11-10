@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, LogIn as LogInIcon, AlertCircle, Info } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
+import { Capacitor } from '@capacitor/core';
 import { useAuth } from '../contexts/AuthContext';
 
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const isNativeApp = Capacitor.isNativePlatform();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -135,27 +137,31 @@ const Login = () => {
             </p>
           </div>
 
-          {/* Clean Google Sign In Button */}
-          <div className="mb-6 flex justify-center w-full">
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={() => setError('Google sign in was cancelled or failed.')}
-              useOneTap
-              theme="outline"
-              shape="pill"
-              text="continue_with"
-              size="large"
-              width="360"
-            />
-          </div>
+          {/* Clean Google Sign In Button - Web / Desktop Only */}
+          {!isNativeApp && (
+            <>
+              <div className="mb-6 flex justify-center w-full">
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={() => setError('Google sign in was cancelled or failed.')}
+                  useOneTap
+                  theme="outline"
+                  shape="pill"
+                  text="continue_with"
+                  size="large"
+                  width="360"
+                />
+              </div>
 
-          {/* Divider */}
-          <div className="relative mb-6 flex items-center justify-center">
-            <div className="border-t border-light-border dark:border-dark-border w-full"></div>
-            <span className="bg-light-surface dark:bg-dark-surface px-3 text-xs uppercase font-bold text-light-muted dark:text-dark-muted absolute">
-              or email
-            </span>
-          </div>
+              {/* Divider */}
+              <div className="relative mb-6 flex items-center justify-center">
+                <div className="border-t border-light-border dark:border-dark-border w-full"></div>
+                <span className="bg-light-surface dark:bg-dark-surface px-3 text-xs uppercase font-bold text-light-muted dark:text-dark-muted absolute">
+                  or email
+                </span>
+              </div>
+            </>
+          )}
 
           {/* Academic Info Note */}
           <div className="mb-6 p-3 rounded-xl bg-light-surface-secondary dark:bg-dark-surface-secondary border border-light-border dark:border-dark-border text-center text-xs font-semibold text-light-muted dark:text-dark-muted flex items-center justify-center gap-2">

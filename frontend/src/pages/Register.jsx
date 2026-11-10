@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, AlertCircle, MailCheck, ShieldCheck, RefreshCw } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
+import { Capacitor } from '@capacitor/core';
 import { useAuth } from '../contexts/AuthContext';
 
 const Register = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const isNativeApp = Capacitor.isNativePlatform();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -203,8 +205,8 @@ const Register = () => {
             </p>
           </div>
 
-          {/* Clean Google Sign Up Button */}
-          {step === 1 && (
+          {/* Clean Google Sign Up Button - Web / Desktop Only */}
+          {step === 1 && !isNativeApp && (
             <>
               <div className="mb-6 flex justify-center w-full">
                 <GoogleLogin
